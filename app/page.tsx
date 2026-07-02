@@ -1,4 +1,5 @@
-import Navbar from "@/components/ui/Navbar";
+import Navbar from "../components/ui/Navbar";
+import FeatureCard from "../components/FeatureCard";
 
 export default function Home() {
   return (
@@ -25,6 +26,36 @@ export default function Home() {
           </button>
         </div>
       </section>
+      <section id="features" className="mx-auto max-w-7xl px-6 pb-24">
+  <div className="mb-10 text-center">
+    <h2 className="text-3xl font-bold md:text-4xl">
+      Why YourDesign?
+    </h2>
+    <p className="mt-3 text-slate-300">
+      Everything creators need to design, export and prepare digital products for sale.
+    </p>
+  </div>
+
+  <div className="grid gap-6 md:grid-cols-3">
+    <FeatureCard
+      icon="🎨"
+      title="Design Faster"
+      description="Create beautiful digital products with a simple, creator-friendly design workspace."
+    />
+
+    <FeatureCard
+      icon="📦"
+      title="Export Ready"
+      description="Prepare print-ready files, product downloads and multiple formats from one place."
+    />
+
+    <FeatureCard
+      icon="🛍️"
+      title="Sell Anywhere"
+      description="Get your digital products ready for Etsy and other marketplaces without the extra stress."
+    />
+  </div>
+</section>
     </main>
   );
 }
