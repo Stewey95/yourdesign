@@ -1,12 +1,12 @@
 import Navbar from "../components/ui/Navbar";
 import FeatureCard from "../components/FeatureCard";
-
+import EditorPreview from "../components/EditorPreview";
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <Navbar />
 
-      <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center">
+      <section id="editor" className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center">
         <h1 className="mb-6 text-5xl font-extrabold tracking-tight md:text-7xl">
           Create. Package. Sell.
         </h1>
@@ -17,14 +17,15 @@ export default function Home() {
         </p>
 
         <div className="flex gap-4">
-          <button className="rounded-xl bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500">
-            Start Creating
-          </button>
+  <a href="#editor" className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-500">
+    Start Creating
+  </a>
 
-          <button className="rounded-xl border border-slate-600 px-6 py-3 font-semibold hover:border-white">
-            Learn More
-          </button>
-        </div>
+  <button className="rounded-xl border border-slate-600 px-6 py-3 font-semibold hover:border-white">
+    Learn More
+  </button>
+</div>
+        <EditorPreview />
       </section>
       <section id="features" className="mx-auto max-w-7xl px-6 pb-24">
   <div className="mb-10 text-center">
