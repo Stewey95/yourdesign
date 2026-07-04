@@ -40,18 +40,18 @@ export default function EditorPreview() {
           </div>
         
 
-        <div className="col-span-3 flex h-64 items-center justify-center rounded-xl bg-white text-slate-500">
-          {image ? (
-            <img
-              src={image}
-              alt="Uploaded design"
-              className="max-h-full max-w-full rounded-lg"
-            />
-          ) : (
-            <p>Your design canvas</p>
-          )}
-        </div>
-      </div>
-    
-  );
+<div className="col-span-3 flex h-64 items-center justify-center rounded-xl bg-white text-slate-500">
+  {image ? (
+    <img
+      src={image}
+      alt="Uploaded design"
+      className="max-h-full max-w-full rounded-lg"
+    />
+  ) : (
+    <p>Your design canvas</p>
+  )}
+</div>
+</div>
+
+);
 }
