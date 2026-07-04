@@ -1,7 +1,15 @@
+"use client";
+
 import Navbar from "../components/ui/Navbar";
 import FeatureCard from "../components/FeatureCard";
 import EditorPreview from "../components/EditorPreview";
+import { useEffect } from "react";
 export default function Home() {
+
+  useEffect(() => {
+  window.scrollTo(0, 0);
+}, []);
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <Navbar />
