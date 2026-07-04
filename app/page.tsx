@@ -30,7 +30,7 @@ export default function Home() {
       <section id="features" className="mx-auto max-w-7xl px-6 pb-24">
   <div className="mb-10 text-center">
     <h2 className="text-3xl font-bold md:text-4xl">
-      Why YourDesign?
+      Why Genvilo?
     </h2>
     <p className="mt-3 text-slate-300">
       Everything creators need to design, export and prepare digital products for sale.

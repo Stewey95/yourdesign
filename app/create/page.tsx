@@ -5,7 +5,7 @@ export default function CreatePage() {
     <main className="min-h-screen bg-slate-950 text-white p-10">
       <section className="max-w-7xl mx-auto">
         <h1 className="text-6xl font-extrabold mb-4">
-          YourDesign Studio
+          Genvilo Studio
         </h1>
 
         <p className="text-xl text-slate-300 mb-12">

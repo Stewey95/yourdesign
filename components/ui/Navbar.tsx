@@ -3,7 +3,7 @@ export default function Navbar() {
     <header className="w-full border-b border-white/10 bg-slate-950 text-white">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <div className="text-2xl font-bold tracking-tight">
-          YourDesign
+          Genvilo
         </div>
 
         <div className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
