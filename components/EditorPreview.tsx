@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function EditorPreview() {
   const [image, setImage] = useState<string | null>(null);
+const [text, setText] = useState<string | null>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -34,22 +35,35 @@ export default function EditorPreview() {
   />
 </label>
 
-         <button className="w-full rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white">
-            Add Text
-          </button>
+<button
+  onClick={() => setText("Your text here")}
+  className="w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white"
+>
+  Add Text
+</button>
           </div>
         
 
-<div className="col-span-3 flex h-64 items-center justify-center rounded-xl bg-white text-slate-500">
+<div className="relative col-span-3 flex h-64 items-center justify-center rounded-xl bg-white text-slate-500">
   {image ? (
     <img
       src={image}
       alt="Uploaded design"
       className="max-h-full max-w-full rounded-lg"
     />
-  ) : (
-    <p>Your design canvas</p>
-  )}
+) : (
+  <p>Your design canvas</p>
+)}
+
+{text !== null && (
+  <input
+    value={text}
+    onChange={(e) => setText(e.target.value)}
+    placeholder="Type here"
+    className="absolute bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
+  />
+)}
+
 </div>
 </div>
 
