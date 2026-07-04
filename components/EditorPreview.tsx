@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import Draggable from "react-draggable";
+import { useRef, useState } from "react";
 
 export default function EditorPreview() {
   const [image, setImage] = useState<string | null>(null);
 const [text, setText] = useState<string | null>(null);
-
+const textRef = useRef<HTMLDivElement>(null);
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
@@ -56,12 +57,16 @@ const [text, setText] = useState<string | null>(null);
 )}
 
 {text !== null && (
-  <input
-    value={text}
-    onChange={(e) => setText(e.target.value)}
-    placeholder="Type here"
-    className="absolute bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
-  />
+  <Draggable nodeRef={textRef}>
+  <div ref={textRef} className="absolute cursor-move">
+    <input
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      placeholder="Type here"
+      className="cursor-move bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
+    />
+  </div>
+</Draggable>
 )}
 
 </div>
