@@ -6,7 +6,7 @@ export default function Home() {
     <main className="min-h-screen bg-slate-950 text-white">
       <Navbar />
 
-      <section id="editor" className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center">
+      <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center">
         <h1 className="mb-6 text-5xl font-extrabold tracking-tight md:text-7xl">
           Create. Package. Sell.
         </h1>
@@ -25,7 +25,7 @@ export default function Home() {
     Learn More
   </button>
 </div>
-        <EditorPreview />
+        
       </section>
       <section id="features" className="mx-auto max-w-7xl px-6 pb-24">
   <div className="mb-10 text-center">
@@ -57,6 +57,11 @@ export default function Home() {
     />
   </div>
 </section>
-    </main>
+
+<section id="editor" className="mx-auto flex max-w-7xl justify-center px-6 pb-24">
+  <EditorPreview />
+</section>
+
+</main>
   );
 }
