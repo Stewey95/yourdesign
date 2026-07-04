@@ -7,6 +7,7 @@ export default function EditorPreview() {
   const [image, setImage] = useState<string | null>(null);
 const [text, setText] = useState<string | null>(null);
 const textRef = useRef<HTMLDivElement>(null);
+const imageRef = useRef<HTMLDivElement>(null);
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
@@ -46,27 +47,34 @@ const textRef = useRef<HTMLDivElement>(null);
         
 
 <div className="relative col-span-3 flex h-64 items-center justify-center rounded-xl bg-white text-slate-500">
-  {image ? (
-    <img
-      src={image}
-      alt="Uploaded design"
-      className="max-h-full max-w-full rounded-lg"
-    />
+{image ? (
+  <Draggable nodeRef={imageRef}>
+    <div ref={imageRef} className="absolute cursor-move">
+      <img
+        src={image}
+        alt="Uploaded design"
+        className="max-h-48 max-w-48 rounded-lg"
+      />
+    </div>
+  </Draggable>
 ) : (
   <p>Your design canvas</p>
 )}
 
 {text !== null && (
   <Draggable nodeRef={textRef}>
-  <div ref={textRef} className="absolute cursor-move">
-    <input
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      placeholder="Type here"
-      className="cursor-move bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
-    />
-  </div>
-</Draggable>
+    <div ref={textRef} className="absolute cursor-move">
+      <input
+        value={text}
+        onChange={(e) => {
+  const value = e.target.value;
+  setText(value === "" ? null : value);
+}}
+        placeholder="Type here"
+        className="cursor-move bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
+      />
+    </div>
+  </Draggable>
 )}
 
 </div>
