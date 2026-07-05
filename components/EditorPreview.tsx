@@ -7,25 +7,66 @@ type Position = {
   y: number;
 };
 
+type DesignItem =
+  | {
+      id: string;
+      type: "image";
+      src: string;
+      position: Position;
+    }
+  | {
+      id: string;
+      type: "text";
+      value: string;
+      position: Position;
+    };
+
 export default function EditorPreview() {
-  const [image, setImage] = useState<string | null>(null);
-  const [text, setText] = useState<string | null>(null);
-
-  const [imagePosition, setImagePosition] = useState<Position>({ x: 80, y: 60 });
-  const [textPosition, setTextPosition] = useState<Position>({ x: 120, y: 120 });
-
-  const [dragging, setDragging] = useState<"image" | "text" | null>(null);
+  const [items, setItems] = useState<DesignItem[]>([]);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (file) {
-      setImage(URL.createObjectURL(file));
+      const newImage: DesignItem = {
+        id: crypto.randomUUID(),
+        type: "image",
+        src: URL.createObjectURL(file),
+        position: { x: 180, y: 120 },
+      };
+
+      setItems((currentItems) => [...currentItems, newImage]);
+      setSelectedItemId(newImage.id);
+      event.target.value = "";
     }
   };
 
+  const addText = () => {
+    const newText: DesignItem = {
+      id: crypto.randomUUID(),
+      type: "text",
+      value: "Your text here",
+      position: { x: 180, y: 120 },
+    };
+
+    setItems((currentItems) => [...currentItems, newText]);
+    setSelectedItemId(newText.id);
+  };
+
+  const deleteSelected = () => {
+    if (!selectedItemId) return;
+
+    setItems((currentItems) =>
+      currentItems.filter((item) => item.id !== selectedItemId)
+    );
+
+    setSelectedItemId(null);
+  };
+
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging) return;
+    if (!draggingItemId) return;
 
     const canvas = event.currentTarget.getBoundingClientRect();
 
@@ -34,17 +75,17 @@ export default function EditorPreview() {
       y: event.clientY - canvas.top,
     };
 
-    if (dragging === "image") {
-      setImagePosition(newPosition);
-    }
-
-    if (dragging === "text") {
-      setTextPosition(newPosition);
-    }
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === draggingItemId
+          ? { ...item, position: newPosition }
+          : item
+      )
+    );
   };
 
   const stopDragging = () => {
-    setDragging(null);
+    setDraggingItemId(null);
   };
 
   return (
@@ -70,59 +111,101 @@ export default function EditorPreview() {
           </label>
 
           <button
-            onClick={() => setText("Your text here")}
+            onClick={addText}
             className="mt-3 w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white"
           >
             Add Text
+          </button>
+
+          <button
+            onClick={deleteSelected}
+            className="mt-3 w-full cursor-pointer rounded-lg bg-red-600 px-4 py-2 font-semibold text-white"
+          >
+            Delete Selected
           </button>
         </div>
 
         <div
           onPointerMove={handlePointerMove}
           onPointerUp={stopDragging}
-          onPointerLeave={stopDragging}
+          onPointerLeave={() => {}}
+          onPointerDown={() => setSelectedItemId(null)}
           className="relative col-span-3 h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
         >
-          {!image && text === null && (
+          {items.length === 0 && (
             <p className="flex h-full items-center justify-center">
               Your design canvas
             </p>
           )}
 
-          {image && (
-            <img
-  src={image}
-  alt="Uploaded design"
-  draggable={false}
-  onPointerDown={() => setDragging("image")}
-  className="absolute max-h-40 max-w-40 cursor-move select-none rounded-lg"
-              style={{
-                left: imagePosition.x,
-                top: imagePosition.y,
-                transform: "translate(-50%, -50%)",
-              }}
-            />
-          )}
+          {items.map((item) => {
+            if (item.type === "image") {
+              return (
+                <img
+                  key={item.id}
+                  src={item.src}
+                  alt="Uploaded design"
+                  draggable={false}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    setDraggingItemId(item.id);
+                    setSelectedItemId(item.id);
+                  }}
+                  className={`absolute max-h-40 max-w-40 cursor-move select-none rounded-lg ${
+                    selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
+                  }`}
+                  style={{
+                    left: item.position.x,
+                    top: item.position.y,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              );
+            }
 
-          {text !== null && (
-            <input
-              value={text}
-            onChange={(e) => setText(e.target.value)}
-onBlur={() => {
-  if (text === "") {
-    setText(null);
-  }
-}}
-              onPointerDown={() => setDragging("text")}
-              placeholder="Type here"
-              className="absolute cursor-move bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
-              style={{
-                left: textPosition.x,
-                top: textPosition.y,
-                transform: "translate(-50%, -50%)",
-              }}
-            />
-          )}
+            return (
+              <input
+                key={item.id}
+                value={item.value}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  setItems((currentItems) =>
+                    currentItems.map((currentItem) =>
+                      currentItem.id === item.id
+                        ? { ...currentItem, value }
+                        : currentItem
+                    )
+                  );
+                }}
+                onBlur={() => {
+                  if (item.value === "") {
+                    setItems((currentItems) =>
+                      currentItems.filter(
+                        (currentItem) => currentItem.id !== item.id
+                      )
+                    );
+                    setSelectedItemId(null);
+                  }
+                }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  setDraggingItemId(item.id);
+                  setSelectedItemId(item.id);
+                }}
+                placeholder="Type here"
+                size={Math.max(item.value.length, 1)}
+                className={`absolute w-auto min-w-0 cursor-move bg-transparent text-center text-3xl font-bold text-slate-900 outline-none ${
+                  selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
+                }`}
+                style={{
+                  left: item.position.x,
+                  top: item.position.y,
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
