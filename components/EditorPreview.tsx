@@ -194,15 +194,15 @@ export default function EditorPreview() {
                   setSelectedItemId(item.id);
                 }}
                 placeholder="Type here"
-                size={Math.max(item.value.length, 1)}
                 className={`absolute w-auto min-w-0 cursor-move bg-transparent text-center text-3xl font-bold text-slate-900 outline-none ${
                   selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
                 }`}
-                style={{
-                  left: item.position.x,
-                  top: item.position.y,
-                  transform: "translate(-50%, -50%)",
-                }}
+              style={{
+  left: item.position.x,
+  top: item.position.y,
+  transform: "translate(-50%, -50%)",
+  width: `${Math.max(item.value.length + 3, 6)}ch`,
+}}
               />
             );
           })}
