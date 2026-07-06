@@ -188,16 +188,14 @@ export default function EditorPreview() {
                     setSelectedItemId(null);
                   }
                 }}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  setDraggingItemId(item.id);
-                  setSelectedItemId(item.id);
-                }}
-                placeholder="Type here"
-                className={`absolute w-auto min-w-0 cursor-move bg-transparent text-center text-3xl font-bold text-slate-900 outline-none ${
-                  selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
-                }`}
-              style={{
+
+
+
+placeholder="Type here"
+className={`absolute w-auto min-w-0 cursor-text bg-transparent text-center text-3xl font-bold text-slate-900 outline-none ${
+  selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
+}`}
+style={{
   left: item.position.x,
   top: item.position.y,
   transform: "translate(-50%, -50%)",
