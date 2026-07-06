@@ -171,7 +171,7 @@ export default function EditorPreview() {
                   left: item.position.x,
                   top: item.position.y,
                   transform: "translate(-50%, -50%)",
-                  width: `${Math.max(item.value.length + 3, 6)}ch`,
+                  width: `${Math.max(item.value.length + 6, 12)}ch`,
                 }}
               >
                 <button
