@@ -77,9 +77,7 @@ export default function EditorPreview() {
 
     setItems((currentItems) =>
       currentItems.map((item) =>
-        item.id === draggingItemId
-          ? { ...item, position: newPosition }
-          : item
+        item.id === draggingItemId ? { ...item, position: newPosition } : item
       )
     );
   };
@@ -164,44 +162,57 @@ export default function EditorPreview() {
             }
 
             return (
-              <input
+              <div
                 key={item.id}
-                value={item.value}
-                onChange={(e) => {
-                  const value = e.target.value;
-
-                  setItems((currentItems) =>
-                    currentItems.map((currentItem) =>
-                      currentItem.id === item.id
-                        ? { ...currentItem, value }
-                        : currentItem
-                    )
-                  );
+                className={`absolute ${
+                  selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
+                }`}
+                style={{
+                  left: item.position.x,
+                  top: item.position.y,
+                  transform: "translate(-50%, -50%)",
+                  width: `${Math.max(item.value.length + 3, 6)}ch`,
                 }}
-                onBlur={() => {
-                  if (item.value === "") {
+              >
+                <button
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    setDraggingItemId(item.id);
+                    setSelectedItemId(item.id);
+                  }}
+                  className="absolute -right-4 -top-4 z-10 h-7 w-7 cursor-move rounded-full bg-blue-600 text-xs text-white"
+                >
+                  ↔
+                </button>
+
+                <input
+                  value={item.value}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
                     setItems((currentItems) =>
-                      currentItems.filter(
-                        (currentItem) => currentItem.id !== item.id
+                      currentItems.map((currentItem) =>
+                        currentItem.id === item.id
+                          ? { ...currentItem, value }
+                          : currentItem
                       )
                     );
-                    setSelectedItemId(null);
-                  }
-                }}
-
-
-
-placeholder="Type here"
-className={`absolute w-auto min-w-0 cursor-text bg-transparent text-center text-3xl font-bold text-slate-900 outline-none ${
-  selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
-}`}
-style={{
-  left: item.position.x,
-  top: item.position.y,
-  transform: "translate(-50%, -50%)",
-  width: `${Math.max(item.value.length + 3, 6)}ch`,
-}}
-              />
+                  }}
+                  onBlur={() => {
+                    if (item.value === "") {
+                      setItems((currentItems) =>
+                        currentItems.filter(
+                          (currentItem) => currentItem.id !== item.id
+                        )
+                      );
+                      setSelectedItemId(null);
+                    }
+                  }}
+                  placeholder="Type here"
+                  className="w-full cursor-text bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
+                />
+              </div>
             );
           })}
         </div>
