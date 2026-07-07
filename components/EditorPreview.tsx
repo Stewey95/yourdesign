@@ -29,6 +29,16 @@ export default function EditorPreview() {
     return Math.sqrt(dx * dx + dy * dy);
   };
 
+  const changeTextSize = (id: string, amount: number) => {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "text"
+          ? { ...item, fontSize: Math.max(12, Math.min(140, item.fontSize + amount)) }
+          : item
+      )
+    );
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -61,11 +71,7 @@ export default function EditorPreview() {
 
   const deleteSelected = () => {
     if (!selectedItemId) return;
-
-    setItems((currentItems) =>
-      currentItems.filter((item) => item.id !== selectedItemId)
-    );
-
+    setItems((currentItems) => currentItems.filter((item) => item.id !== selectedItemId));
     setSelectedItemId(null);
   };
 
@@ -93,10 +99,7 @@ export default function EditorPreview() {
     setDraggingItemId(null);
   };
 
-  const handlePinchStart = (
-    event: React.TouchEvent<HTMLDivElement>,
-    item: DesignItem
-  ) => {
+  const handlePinchStart = (event: React.TouchEvent<HTMLDivElement>, item: DesignItem) => {
     if (event.touches.length !== 2) return;
 
     event.preventDefault();
@@ -140,10 +143,7 @@ export default function EditorPreview() {
 
         return {
           ...item,
-          fontSize: Math.max(
-            12,
-            Math.min(140, (pinchRef.current.startFontSize || 32) * scale)
-          ),
+          fontSize: Math.max(12, Math.min(140, (pinchRef.current.startFontSize || 32) * scale)),
         };
       })
     );
@@ -165,11 +165,7 @@ export default function EditorPreview() {
     const startHeight = item.size.height;
 
     const resize = (moveEvent: PointerEvent) => {
-      const changeX = moveEvent.clientX - startX;
-      const changeY = moveEvent.clientY - startY;
-      const change = Math.max(changeX, changeY);
-
-      const newSize = Math.max(60, startWidth + change);
+      const change = Math.max(moveEvent.clientX - startX, moveEvent.clientY - startY);
 
       setItems((currentItems) =>
         currentItems.map((currentItem) =>
@@ -177,7 +173,7 @@ export default function EditorPreview() {
             ? {
                 ...currentItem,
                 size: {
-                  width: newSize,
+                  width: Math.max(60, startWidth + change),
                   height: Math.max(60, startHeight + change),
                 },
               }
@@ -209,12 +205,7 @@ export default function EditorPreview() {
         <div className="rounded-xl bg-slate-900 p-4 text-sm text-slate-300">
           <label className="flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white">
             Upload Image
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
           </label>
 
           <button
@@ -239,9 +230,7 @@ export default function EditorPreview() {
           className="relative col-span-3 h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
         >
           {items.length === 0 && (
-            <p className="flex h-full items-center justify-center">
-              Your design canvas
-            </p>
+            <p className="flex h-full items-center justify-center">Your design canvas</p>
           )}
 
           {items.map((item) => (
@@ -251,10 +240,8 @@ export default function EditorPreview() {
               onTouchMove={handlePinchMove}
               onTouchEnd={handlePinchEnd}
               className={`absolute ${
-  selectedItemId === item.id && item.type === "image"
-    ? "ring-2 ring-blue-500"
-    : ""
-}`}
+                selectedItemId === item.id && item.type === "image" ? "ring-2 ring-blue-500" : ""
+              }`}
               style={{
                 left: item.position.x,
                 top: item.position.y,
@@ -262,12 +249,7 @@ export default function EditorPreview() {
               }}
             >
               {item.type === "image" && (
-                <div
-                  style={{
-                    width: item.size.width,
-                    height: item.size.height,
-                  }}
-                >
+                <div style={{ width: item.size.width, height: item.size.height }}>
                   <img
                     src={item.src}
                     alt="Uploaded design"
@@ -290,46 +272,72 @@ export default function EditorPreview() {
               )}
 
               {item.type === "text" && (
-                <textarea
-                  value={item.value}
-                  onChange={(e) => {
-                    const value = e.target.value;
+                <div className="relative">
+                  {selectedItemId === item.id && (
+                    <div className="absolute -top-9 left-1/2 z-10 hidden -translate-x-1/2 gap-2 md:flex">
+                      <button
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => changeTextSize(item.id, -4)}
+                        className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
+                      >
+                        A-
+                      </button>
+                      <button
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => changeTextSize(item.id, 4)}
+                        className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
+                      >
+                        A+
+                      </button>
+                    </div>
+                  )}
 
-                    setItems((currentItems) =>
-                      currentItems.map((currentItem) =>
-                        currentItem.id === item.id
-                          ? { ...currentItem, value }
-                          : currentItem
-                      )
-                    );
-                  }}
-                  onBlur={() => {
-                    if (item.value === "") {
+                  <textarea
+                    value={item.value}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
                       setItems((currentItems) =>
-                        currentItems.filter(
-                          (currentItem) => currentItem.id !== item.id
+                        currentItems.map((currentItem) =>
+                          currentItem.id === item.id ? { ...currentItem, value } : currentItem
                         )
                       );
-                    }
-                  }}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
+                    }}
+                    onBlur={() => {
+                      if (item.value === "") {
+                        setItems((currentItems) =>
+                          currentItems.filter((currentItem) => currentItem.id !== item.id)
+                        );
+                      }
+                    }}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
 
-                    if (document.activeElement !== e.currentTarget) {
-                      setDraggingItemId(item.id);
-                    }
+                      if (e.pointerType === "mouse") {
+                        e.preventDefault();
+                        setDraggingItemId(item.id);
+                        setSelectedItemId(item.id);
+                        return;
+                      }
 
-                    setSelectedItemId(item.id);
-                  }}
-                  placeholder="Type here"
-                  rows={1}
-                  className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none touch-none cursor-move"
-                  style={{
-  fontSize: item.fontSize,
-  lineHeight: 1.15,
-  touchAction: "none",
-}}
-                />
+                      if (document.activeElement !== e.currentTarget) {
+                        setDraggingItemId(item.id);
+                      }
+
+                      setSelectedItemId(item.id);
+                    }}
+                    placeholder="Type here"
+                    rows={1}
+                    className="min-h-[1.2em] w-auto cursor-move resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none touch-none"
+                    style={{
+                      fontSize: item.fontSize,
+                      lineHeight: 1.15,
+                      touchAction: "none",
+                    }}
+                  />
+                </div>
               )}
             </div>
           ))}
