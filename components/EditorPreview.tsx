@@ -6,21 +6,8 @@ type Position = { x: number; y: number };
 type Size = { width: number; height: number };
 
 type DesignItem =
-  | {
-      id: string;
-      type: "image";
-      src: string;
-      position: Position;
-      size: Size;
-    }
-  | {
-      id: string;
-      type: "text";
-      value: string;
-      position: Position;
-      size: Size;
-      fontSize: number;
-    };
+  | { id: string; type: "image"; src: string; position: Position; size: Size }
+  | { id: string; type: "text"; value: string; position: Position; fontSize: number };
 
 export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
@@ -31,8 +18,8 @@ export default function EditorPreview() {
     itemId: string;
     itemType: "image" | "text";
     startDistance: number;
-    startWidth: number;
-    startHeight: number;
+    startWidth?: number;
+    startHeight?: number;
     startFontSize?: number;
   } | null>(null);
 
@@ -40,66 +27,6 @@ export default function EditorPreview() {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  const handlePinchStart = (
-    event: React.TouchEvent<HTMLDivElement>,
-    item: DesignItem
-  ) => {
-    if (event.touches.length !== 2) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    pinchRef.current = {
-      itemId: item.id,
-      itemType: item.type,
-      startDistance: getTouchDistance(event.touches),
-      startWidth: item.size.width,
-      startHeight: item.size.height,
-      startFontSize: item.type === "text" ? item.fontSize : undefined,
-    };
-
-    setDraggingItemId(null);
-    setSelectedItemId(item.id);
-  };
-
-  const handlePinchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 2 || !pinchRef.current) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const newDistance = getTouchDistance(event.touches);
-    const scale = newDistance / pinchRef.current.startDistance;
-
-    setItems((currentItems) =>
-      currentItems.map((item) => {
-        if (item.id !== pinchRef.current?.itemId) return item;
-
-        if (item.type === "image") {
-          return {
-            ...item,
-            size: {
-              width: Math.max(80, pinchRef.current.startWidth * scale),
-              height: Math.max(80, pinchRef.current.startHeight * scale),
-            },
-          };
-        }
-
-        return {
-          ...item,
-          fontSize: Math.max(
-            12,
-            Math.min(120, (pinchRef.current.startFontSize || 32) * scale)
-          ),
-        };
-      })
-    );
-  };
-
-  const handlePinchEnd = () => {
-    pinchRef.current = null;
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,7 +52,6 @@ export default function EditorPreview() {
       type: "text",
       value: "",
       position: { x: 180, y: 120 },
-      size: { width: 320, height: 80 },
       fontSize: 32,
     };
 
@@ -163,9 +89,73 @@ export default function EditorPreview() {
     );
   };
 
-  const startResize = (
-    event: React.PointerEvent<HTMLDivElement>,
+  const stopDragging = () => {
+    setDraggingItemId(null);
+  };
+
+  const handlePinchStart = (
+    event: React.TouchEvent<HTMLDivElement>,
     item: DesignItem
+  ) => {
+    if (event.touches.length !== 2) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    pinchRef.current = {
+      itemId: item.id,
+      itemType: item.type,
+      startDistance: getTouchDistance(event.touches),
+      startWidth: item.type === "image" ? item.size.width : undefined,
+      startHeight: item.type === "image" ? item.size.height : undefined,
+      startFontSize: item.type === "text" ? item.fontSize : undefined,
+    };
+
+    setDraggingItemId(null);
+    setSelectedItemId(item.id);
+  };
+
+  const handlePinchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const newDistance = getTouchDistance(event.touches);
+    const scale = newDistance / pinchRef.current.startDistance;
+
+    setItems((currentItems) =>
+      currentItems.map((item) => {
+        if (item.id !== pinchRef.current?.itemId) return item;
+
+        if (item.type === "image") {
+          return {
+            ...item,
+            size: {
+              width: Math.max(60, (pinchRef.current.startWidth || 160) * scale),
+              height: Math.max(60, (pinchRef.current.startHeight || 160) * scale),
+            },
+          };
+        }
+
+        return {
+          ...item,
+          fontSize: Math.max(
+            12,
+            Math.min(140, (pinchRef.current.startFontSize || 32) * scale)
+          ),
+        };
+      })
+    );
+  };
+
+  const handlePinchEnd = () => {
+    pinchRef.current = null;
+  };
+
+  const startImageResize = (
+    event: React.PointerEvent<HTMLDivElement>,
+    item: Extract<DesignItem, { type: "image" }>
   ) => {
     event.stopPropagation();
 
@@ -175,13 +165,22 @@ export default function EditorPreview() {
     const startHeight = item.size.height;
 
     const resize = (moveEvent: PointerEvent) => {
-      const newWidth = Math.max(80, startWidth + moveEvent.clientX - startX);
-      const newHeight = Math.max(40, startHeight + moveEvent.clientY - startY);
+      const changeX = moveEvent.clientX - startX;
+      const changeY = moveEvent.clientY - startY;
+      const change = Math.max(changeX, changeY);
+
+      const newSize = Math.max(60, startWidth + change);
 
       setItems((currentItems) =>
         currentItems.map((currentItem) =>
-          currentItem.id === item.id
-            ? { ...currentItem, size: { width: newWidth, height: newHeight } }
+          currentItem.id === item.id && currentItem.type === "image"
+            ? {
+                ...currentItem,
+                size: {
+                  width: newSize,
+                  height: Math.max(60, startHeight + change),
+                },
+              }
             : currentItem
         )
       );
@@ -235,7 +234,7 @@ export default function EditorPreview() {
 
         <div
           onPointerMove={moveItem}
-          onPointerUp={() => setDraggingItemId(null)}
+          onPointerUp={stopDragging}
           onPointerDown={() => setSelectedItemId(null)}
           className="relative col-span-3 h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
         >
@@ -252,28 +251,42 @@ export default function EditorPreview() {
               onTouchMove={handlePinchMove}
               onTouchEnd={handlePinchEnd}
               className={`absolute ${
-                selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
-              }`}
+  selectedItemId === item.id && item.type === "image"
+    ? "ring-2 ring-blue-500"
+    : ""
+}`}
               style={{
                 left: item.position.x,
                 top: item.position.y,
-                width: item.size.width,
-                height: item.size.height,
                 transform: "translate(-50%, -50%)",
               }}
             >
               {item.type === "image" && (
-                <img
-                  src={item.src}
-                  alt="Uploaded design"
-                  draggable={false}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    setDraggingItemId(item.id);
-                    setSelectedItemId(item.id);
+                <div
+                  style={{
+                    width: item.size.width,
+                    height: item.size.height,
                   }}
-                  className="h-full w-full cursor-move select-none rounded-lg object-contain"
-                />
+                >
+                  <img
+                    src={item.src}
+                    alt="Uploaded design"
+                    draggable={false}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      setDraggingItemId(item.id);
+                      setSelectedItemId(item.id);
+                    }}
+                    className="h-full w-full cursor-move select-none rounded-lg object-contain"
+                  />
+
+                  {selectedItemId === item.id && (
+                    <div
+                      onPointerDown={(e) => startImageResize(e, item)}
+                      className="absolute bottom-0 right-0 hidden h-5 w-5 cursor-se-resize rounded-full bg-blue-500 md:block"
+                    />
+                  )}
+                </div>
               )}
 
               {item.type === "text" && (
@@ -285,14 +298,7 @@ export default function EditorPreview() {
                     setItems((currentItems) =>
                       currentItems.map((currentItem) =>
                         currentItem.id === item.id
-                          ? {
-                              ...currentItem,
-                              value,
-                              size: {
-                                ...currentItem.size,
-                                height: Math.max(60, e.target.scrollHeight),
-                              },
-                            }
+                          ? { ...currentItem, value }
                           : currentItem
                       )
                     );
@@ -316,18 +322,12 @@ export default function EditorPreview() {
                     setSelectedItemId(item.id);
                   }}
                   placeholder="Type here"
-                  className="h-full w-full resize-none overflow-hidden bg-transparent text-center font-bold text-slate-900 outline-none"
+                  rows={1}
+                  className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none"
                   style={{
                     fontSize: item.fontSize,
                     lineHeight: 1.15,
                   }}
-                />
-              )}
-
-              {selectedItemId === item.id && (
-                <div
-                  onPointerDown={(e) => startResize(e, item)}
-                  className="absolute bottom-0 right-0 hidden h-5 w-5 cursor-se-resize rounded-full bg-blue-500 md:block"
                 />
               )}
             </div>
