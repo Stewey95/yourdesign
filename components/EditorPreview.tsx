@@ -288,7 +288,7 @@ export default function EditorPreview() {
               {selectedItemId === item.id && (
                 <div
                   onPointerDown={(e) => startResize(e, item)}
-                  className="absolute bottom-0 right-0 h-5 w-5 cursor-se-resize rounded-full bg-blue-500"
+                 className="absolute bottom-0 right-0 hidden h-5 w-5 cursor-se-resize rounded-full bg-blue-500 md:block"
                 />
               )}
             </div>
