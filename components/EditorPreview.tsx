@@ -13,6 +13,14 @@ export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
+  const pendingDragRef = useRef<{
+    itemId: string;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
 
   const pinchRef = useRef<{
     itemId: string;
@@ -67,18 +75,54 @@ export default function EditorPreview() {
 
     setItems((currentItems) => [...currentItems, newText]);
     setSelectedItemId(newText.id);
+    setEditingItemId(newText.id);
   };
 
   const deleteSelected = () => {
     if (!selectedItemId) return;
-    setItems((currentItems) => currentItems.filter((item) => item.id !== selectedItemId));
+
+    setItems((currentItems) =>
+      currentItems.filter((item) => item.id !== selectedItemId)
+    );
+
     setSelectedItemId(null);
+    setEditingItemId(null);
   };
 
   const moveItem = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingItemId || pinchRef.current) return;
+    if (pinchRef.current) return;
 
+    const pending = pendingDragRef.current;
     const canvas = event.currentTarget.getBoundingClientRect();
+
+    if (pending) {
+      const movedEnough =
+        Math.abs(event.clientX - pending.startX) > 5 ||
+        Math.abs(event.clientY - pending.startY) > 5;
+
+      if (movedEnough || pending.moved) {
+        pending.moved = true;
+        setDraggingItemId(pending.itemId);
+
+        setItems((currentItems) =>
+          currentItems.map((item) =>
+            item.id === pending.itemId
+              ? {
+                  ...item,
+                  position: {
+                    x: event.clientX - canvas.left,
+                    y: event.clientY - canvas.top,
+                  },
+                }
+              : item
+          )
+        );
+      }
+
+      return;
+    }
+
+    if (!draggingItemId) return;
 
     setItems((currentItems) =>
       currentItems.map((item) =>
@@ -96,6 +140,12 @@ export default function EditorPreview() {
   };
 
   const stopDragging = () => {
+    if (pendingDragRef.current && !pendingDragRef.current.moved) {
+      setEditingItemId(pendingDragRef.current.itemId);
+      setSelectedItemId(pendingDragRef.current.itemId);
+    }
+
+    pendingDragRef.current = null;
     setDraggingItemId(null);
   };
 
@@ -116,6 +166,7 @@ export default function EditorPreview() {
 
     setDraggingItemId(null);
     setSelectedItemId(item.id);
+    setEditingItemId(null);
   };
 
   const handlePinchMove = (event: React.TouchEvent<HTMLDivElement>) => {
@@ -208,17 +259,11 @@ export default function EditorPreview() {
             <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
           </label>
 
-          <button
-            onClick={addText}
-            className="mt-3 w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white"
-          >
+          <button onClick={addText} className="mt-3 w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white">
             Add Text
           </button>
 
-          <button
-            onClick={deleteSelected}
-            className="mt-3 w-full cursor-pointer rounded-lg bg-red-600 px-4 py-2 font-semibold text-white"
-          >
+          <button onClick={deleteSelected} className="mt-3 w-full cursor-pointer rounded-lg bg-red-600 px-4 py-2 font-semibold text-white">
             Delete Selected
           </button>
         </div>
@@ -226,7 +271,10 @@ export default function EditorPreview() {
         <div
           onPointerMove={moveItem}
           onPointerUp={stopDragging}
-          onPointerDown={() => setSelectedItemId(null)}
+          onPointerDown={() => {
+            setSelectedItemId(null);
+            setEditingItemId(null);
+          }}
           className="relative col-span-3 h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
         >
           {items.length === 0 && (
@@ -258,6 +306,7 @@ export default function EditorPreview() {
                       e.stopPropagation();
                       setDraggingItemId(item.id);
                       setSelectedItemId(item.id);
+                      setEditingItemId(null);
                     }}
                     className="h-full w-full cursor-move select-none rounded-lg object-contain"
                   />
@@ -294,49 +343,66 @@ export default function EditorPreview() {
                     </div>
                   )}
 
-                  <textarea
-                    value={item.value}
-                    onChange={(e) => {
-                      const value = e.target.value;
+                  {editingItemId === item.id ? (
+                    <textarea
+                      autoFocus
+                      value={item.value}
+                      onChange={(e) => {
+                        const value = e.target.value;
 
-                      setItems((currentItems) =>
-                        currentItems.map((currentItem) =>
-                          currentItem.id === item.id ? { ...currentItem, value } : currentItem
-                        )
-                      );
-                    }}
-                    onBlur={() => {
-                      if (item.value === "") {
                         setItems((currentItems) =>
-                          currentItems.filter((currentItem) => currentItem.id !== item.id)
+                          currentItems.map((currentItem) =>
+                            currentItem.id === item.id ? { ...currentItem, value } : currentItem
+                          )
                         );
-                      }
-                    }}
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
+                      }}
+                      onBlur={() => {
+                        if (item.value === "") {
+                          setItems((currentItems) =>
+                            currentItems.filter((currentItem) => currentItem.id !== item.id)
+                          );
+                        }
 
-                      if (e.pointerType === "mouse" && item.value !== "") {
-  e.preventDefault();
-  setDraggingItemId(item.id);
-  setSelectedItemId(item.id);
-  return;
-}
+                        setEditingItemId(null);
+                      }}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        setSelectedItemId(item.id);
+                      }}
+                      placeholder="Type here"
+                      rows={1}
+                      className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none touch-none"
+                      style={{
+                        fontSize: item.fontSize,
+                        lineHeight: 1.15,
+                        touchAction: "none",
+                        width: `${Math.max(item.value.length + 1, 4)}ch`,
+                      }}
+                    />
+                  ) : (
+                    <div
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
 
-                      if (document.activeElement !== e.currentTarget) {
-                        setDraggingItemId(item.id);
-                      }
+                        pendingDragRef.current = {
+                          itemId: item.id,
+                          startX: e.clientX,
+                          startY: e.clientY,
+                          moved: false,
+                        };
 
-                      setSelectedItemId(item.id);
-                    }}
-                    placeholder="Type here"
-                    rows={1}
-                    className="min-h-[1.2em] w-auto cursor-move resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none touch-none"
-                    style={{
-                      fontSize: item.fontSize,
-                      lineHeight: 1.15,
-                      touchAction: "none",
-                    }}
-                  />
+                        setSelectedItemId(item.id);
+                      }}
+                      className="cursor-move select-none whitespace-pre-wrap text-center font-bold text-slate-900 touch-none"
+                      style={{
+                        fontSize: item.fontSize,
+                        lineHeight: 1.15,
+                        touchAction: "none",
+                      }}
+                    >
+                      {item.value || "Type here"}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
