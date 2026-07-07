@@ -315,12 +315,12 @@ export default function EditorPreview() {
                     onPointerDown={(e) => {
                       e.stopPropagation();
 
-                      if (e.pointerType === "mouse") {
-                        e.preventDefault();
-                        setDraggingItemId(item.id);
-                        setSelectedItemId(item.id);
-                        return;
-                      }
+                      if (e.pointerType === "mouse" && item.value !== "") {
+  e.preventDefault();
+  setDraggingItemId(item.id);
+  setSelectedItemId(item.id);
+  return;
+}
 
                       if (document.activeElement !== e.currentTarget) {
                         setDraggingItemId(item.id);
