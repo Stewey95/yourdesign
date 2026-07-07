@@ -387,7 +387,7 @@ export default function EditorPreview() {
                         fontSize: item.fontSize,
                         lineHeight: 1.15,
                         touchAction: "none",
-                        width: `${Math.max(item.value.length + 1, 4)}ch`,
+                        width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
                       }}
                     />
                   ) : (
