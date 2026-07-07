@@ -323,11 +323,12 @@ export default function EditorPreview() {
                   }}
                   placeholder="Type here"
                   rows={1}
-                  className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none"
+                  className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none touch-none cursor-move"
                   style={{
-                    fontSize: item.fontSize,
-                    lineHeight: 1.15,
-                  }}
+  fontSize: item.fontSize,
+  lineHeight: 1.15,
+  touchAction: "none",
+}}
                 />
               )}
             </div>
