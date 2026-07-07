@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 
-type Position = {
-  x: number;
-  y: number;
-};
+type Position = { x: number; y: number };
+type Size = { width: number; height: number };
 
 type DesignItem =
-  | { id: string; type: "image"; src: string; position: Position }
-  | { id: string; type: "text"; value: string; position: Position };
+  | { id: string; type: "image"; src: string; position: Position; size: Size }
+  | { id: string; type: "text"; value: string; position: Position; size: Size };
 
 export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
@@ -25,6 +23,7 @@ export default function EditorPreview() {
       type: "image",
       src: URL.createObjectURL(file),
       position: { x: 180, y: 120 },
+      size: { width: 160, height: 160 },
     };
 
     setItems((currentItems) => [...currentItems, newImage]);
@@ -38,6 +37,7 @@ export default function EditorPreview() {
       type: "text",
       value: "",
       position: { x: 180, y: 120 },
+      size: { width: 320, height: 120 },
     };
 
     setItems((currentItems) => [...currentItems, newText]);
@@ -74,8 +74,37 @@ export default function EditorPreview() {
     );
   };
 
-  const stopDragging = () => {
-    setDraggingItemId(null);
+  const startResize = (
+    event: React.PointerEvent<HTMLDivElement>,
+    item: DesignItem
+  ) => {
+    event.stopPropagation();
+
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startWidth = item.size.width;
+    const startHeight = item.size.height;
+
+    const resize = (moveEvent: PointerEvent) => {
+      const newWidth = Math.max(80, startWidth + moveEvent.clientX - startX);
+      const newHeight = Math.max(40, startHeight + moveEvent.clientY - startY);
+
+      setItems((currentItems) =>
+        currentItems.map((currentItem) =>
+          currentItem.id === item.id
+            ? { ...currentItem, size: { width: newWidth, height: newHeight } }
+            : currentItem
+        )
+      );
+    };
+
+    const stopResize = () => {
+      window.removeEventListener("pointermove", resize);
+      window.removeEventListener("pointerup", stopResize);
+    };
+
+    window.addEventListener("pointermove", resize);
+    window.addEventListener("pointerup", stopResize);
   };
 
   return (
@@ -117,8 +146,7 @@ export default function EditorPreview() {
 
         <div
           onPointerMove={moveItem}
-          onPointerUp={stopDragging}
-          onPointerLeave={() => {}}
+          onPointerUp={() => setDraggingItemId(null)}
           onPointerDown={() => setSelectedItemId(null)}
           className="relative col-span-3 h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
         >
@@ -128,11 +156,22 @@ export default function EditorPreview() {
             </p>
           )}
 
-          {items.map((item) => {
-            if (item.type === "image") {
-              return (
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className={`absolute ${
+                selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{
+                left: item.position.x,
+                top: item.position.y,
+                width: item.size.width,
+                height: item.size.height,
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+              {item.type === "image" && (
                 <img
-                  key={item.id}
                   src={item.src}
                   alt="Uploaded design"
                   draggable={false}
@@ -141,69 +180,55 @@ export default function EditorPreview() {
                     setDraggingItemId(item.id);
                     setSelectedItemId(item.id);
                   }}
-                  className={`absolute max-h-40 max-w-40 cursor-move select-none rounded-lg ${
-                    selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
-                  }`}
-                  style={{
-                    left: item.position.x,
-                    top: item.position.y,
-                    transform: "translate(-50%, -50%)",
-                  }}
+                  className="h-full w-full cursor-move select-none rounded-lg object-contain"
                 />
-              );
-            }
+              )}
 
-            return (
-              <textarea
-                key={item.id}
-                value={item.value}
-                onChange={(e) => {
-                  const value = e.target.value;
+              {item.type === "text" && (
+                <textarea
+                  value={item.value}
+                  onChange={(e) => {
+                    const value = e.target.value;
 
-                  setItems((currentItems) =>
-                    currentItems.map((currentItem) =>
-                      currentItem.id === item.id
-                        ? { ...currentItem, value }
-                        : currentItem
-                    )
-                  );
-                }}
-                onFocus={() => setSelectedItemId(item.id)}
-                onBlur={() => {
-                  if (item.value === "") {
                     setItems((currentItems) =>
-                      currentItems.filter(
-                        (currentItem) => currentItem.id !== item.id
+                      currentItems.map((currentItem) =>
+                        currentItem.id === item.id
+                          ? { ...currentItem, value }
+                          : currentItem
                       )
                     );
-                  }
+                  }}
+                  onBlur={() => {
+                    if (item.value === "") {
+                      setItems((currentItems) =>
+                        currentItems.filter(
+                          (currentItem) => currentItem.id !== item.id
+                        )
+                      );
+                    }
+                  }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
 
-                  
-                }}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
+                    if (document.activeElement !== e.currentTarget) {
+                      setDraggingItemId(item.id);
+                    }
 
-                  if (document.activeElement !== e.currentTarget) {
-                    setDraggingItemId(item.id);
-                  }
+                    setSelectedItemId(item.id);
+                  }}
+                  placeholder="Type here"
+                  className="h-full w-full resize-none overflow-hidden bg-transparent text-center text-3xl font-bold text-slate-900 outline-none"
+                />
+              )}
 
-                  setSelectedItemId(item.id);
-                }}
-                placeholder="Type here"
-                className={`absolute resize-none overflow-hidden bg-transparent text-center text-3xl font-bold text-slate-900 outline-none ${
-                  selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
-                }`}
-                style={{
-                  left: item.position.x,
-                  top: item.position.y,
-                  transform: "translate(-50%, -50%)",
-                  width: "320px",
-                  maxWidth: "90vw",
-                  height: "120px",
-                }}
-              />
-            );
-          })}
+              {selectedItemId === item.id && (
+                <div
+                  onPointerDown={(e) => startResize(e, item)}
+                  className="absolute bottom-0 right-0 h-5 w-5 cursor-se-resize rounded-full bg-blue-500"
+                />
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
