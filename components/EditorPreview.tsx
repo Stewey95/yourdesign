@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type Position = { x: number; y: number };
 type Size = { width: number; height: number };
@@ -13,6 +13,67 @@ export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+
+  const pinchRef = useRef<{
+    itemId: string;
+    startDistance: number;
+    startWidth: number;
+    startHeight: number;
+  } | null>(null);
+
+  const getTouchDistance = (touches: React.TouchList) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handlePinchStart = (
+    event: React.TouchEvent<HTMLDivElement>,
+    item: DesignItem
+  ) => {
+    if (event.touches.length !== 2) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    pinchRef.current = {
+      itemId: item.id,
+      startDistance: getTouchDistance(event.touches),
+      startWidth: item.size.width,
+      startHeight: item.size.height,
+    };
+
+    setDraggingItemId(null);
+    setSelectedItemId(item.id);
+  };
+
+  const handlePinchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const newDistance = getTouchDistance(event.touches);
+    const scale = newDistance / pinchRef.current.startDistance;
+
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === pinchRef.current?.itemId
+          ? {
+              ...item,
+              size: {
+                width: Math.max(80, pinchRef.current.startWidth * scale),
+                height: Math.max(40, pinchRef.current.startHeight * scale),
+              },
+            }
+          : item
+      )
+    );
+  };
+
+  const handlePinchEnd = () => {
+    pinchRef.current = null;
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,7 +116,7 @@ export default function EditorPreview() {
   };
 
   const moveItem = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingItemId) return;
+    if (!draggingItemId || pinchRef.current) return;
 
     const canvas = event.currentTarget.getBoundingClientRect();
 
@@ -159,6 +220,9 @@ export default function EditorPreview() {
           {items.map((item) => (
             <div
               key={item.id}
+              onTouchStart={(e) => handlePinchStart(e, item)}
+              onTouchMove={handlePinchMove}
+              onTouchEnd={handlePinchEnd}
               className={`absolute ${
                 selectedItemId === item.id ? "ring-2 ring-blue-500" : ""
               }`}
