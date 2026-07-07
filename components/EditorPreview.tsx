@@ -14,6 +14,7 @@ export default function EditorPreview() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
 
   const pendingDragRef = useRef<{
     itemId: string;
@@ -65,13 +66,23 @@ export default function EditorPreview() {
   };
 
   const addText = () => {
-    const newText: DesignItem = {
-      id: crypto.randomUUID(),
-      type: "text",
-      value: "",
-      position: { x: 180, y: 120 },
-      fontSize: 32,
-    };
+  const canvas = canvasRef.current;
+
+  const canvasWidth = canvas?.clientWidth || 360;
+  const canvasHeight = canvas?.clientHeight || 256;
+
+  const newText: DesignItem = {
+    id: crypto.randomUUID(),
+    type: "text",
+    value: "",
+    position: {
+      x: canvasWidth / 2,
+      y: canvasHeight / 2,
+    },
+    fontSize: 32,
+  };
+
+ 
 
     setItems((currentItems) => [...currentItems, newText]);
     setSelectedItemId(newText.id);
