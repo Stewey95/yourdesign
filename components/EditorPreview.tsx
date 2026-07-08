@@ -365,13 +365,16 @@ export default function EditorPreview() {
               {item.type === "text" && (
                 <div className="relative">
                   {selectedItemId === item.id && (
-                    <div className="absolute -top-20 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2">
+                    <div
+                      data-text-toolbar={item.id}
+                      className="absolute -top-20 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2"
+                    >
                       <div className="flex gap-2 rounded-full bg-slate-900/95 px-3 py-2 shadow-lg">
                         <button
                           type="button"
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={() => changeTextSize(item.id, -4)}
-                          className="rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+                          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
                         >
                           A-
                         </button>
@@ -380,7 +383,7 @@ export default function EditorPreview() {
                           type="button"
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={() => changeTextSize(item.id, 4)}
-                          className="rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+                          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
                         >
                           A+
                         </button>
@@ -417,15 +420,26 @@ export default function EditorPreview() {
                         );
                       }}
                       onBlur={() => {
-                        if (item.value.trim() === "") {
-                          setItems((currentItems) =>
-                            currentItems.filter(
-                              (currentItem) => currentItem.id !== item.id
-                            )
-                          );
-                        }
+                        setTimeout(() => {
+                          const activeElement = document.activeElement;
 
-                        setEditingItemId(null);
+                          if (
+                            activeElement instanceof HTMLElement &&
+                            activeElement.closest(`[data-text-toolbar="${item.id}"]`)
+                          ) {
+                            return;
+                          }
+
+                          if (item.value.trim() === "") {
+                            setItems((currentItems) =>
+                              currentItems.filter(
+                                (currentItem) => currentItem.id !== item.id
+                              )
+                            );
+                          }
+
+                          setEditingItemId(null);
+                        }, 0);
                       }}
                       onPointerDown={(e) => {
                         e.stopPropagation();
