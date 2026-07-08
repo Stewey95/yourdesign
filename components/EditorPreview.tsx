@@ -66,23 +66,21 @@ export default function EditorPreview() {
   };
 
   const addText = () => {
-  const canvas = canvasRef.current;
+    const canvas = canvasRef.current;
 
-  const canvasWidth = canvas?.clientWidth || 360;
-  const canvasHeight = canvas?.clientHeight || 256;
+    const canvasWidth = canvas?.clientWidth || 360;
+    const canvasHeight = canvas?.clientHeight || 256;
 
-  const newText: DesignItem = {
-    id: crypto.randomUUID(),
-    type: "text",
-    value: "",
-    position: {
-      x: canvasWidth / 2,
-      y: canvasHeight / 2,
-    },
-    fontSize: 32,
-  };
-
- 
+    const newText: DesignItem = {
+      id: crypto.randomUUID(),
+      type: "text",
+      value: "",
+      position: {
+        x: canvasWidth / 2,
+        y: canvasHeight / 2,
+      },
+      fontSize: 32,
+    };
 
     setItems((currentItems) => [...currentItems, newText]);
     setSelectedItemId(newText.id);
@@ -205,7 +203,10 @@ export default function EditorPreview() {
 
         return {
           ...item,
-          fontSize: Math.max(12, Math.min(140, (pinchRef.current.startFontSize || 32) * scale)),
+          fontSize: Math.max(
+            12,
+            Math.min(140, (pinchRef.current.startFontSize || 32) * scale)
+          ),
         };
       })
     );
@@ -267,19 +268,31 @@ export default function EditorPreview() {
         <div className="rounded-xl bg-slate-900 p-4 text-sm text-slate-300">
           <label className="flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white">
             Upload Image
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
           </label>
 
-          <button onClick={addText} className="mt-3 w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white">
+          <button
+            onClick={addText}
+            className="mt-3 w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white"
+          >
             Add Text
           </button>
 
-          <button onClick={deleteSelected} className="mt-3 w-full cursor-pointer rounded-lg bg-red-600 px-4 py-2 font-semibold text-white">
+          <button
+            onClick={deleteSelected}
+            className="mt-3 w-full cursor-pointer rounded-lg bg-red-600 px-4 py-2 font-semibold text-white"
+          >
             Delete Selected
           </button>
         </div>
 
         <div
+          ref={canvasRef}
           onPointerMove={moveItem}
           onPointerUp={stopDragging}
           onPointerDown={() => {
@@ -299,7 +312,9 @@ export default function EditorPreview() {
               onTouchMove={handlePinchMove}
               onTouchEnd={handlePinchEnd}
               className={`absolute ${
-                selectedItemId === item.id && item.type === "image" ? "ring-2 ring-blue-500" : ""
+                selectedItemId === item.id && item.type === "image"
+                  ? "ring-2 ring-blue-500"
+                  : ""
               }`}
               style={{
                 left: item.position.x,
@@ -363,14 +378,18 @@ export default function EditorPreview() {
 
                         setItems((currentItems) =>
                           currentItems.map((currentItem) =>
-                            currentItem.id === item.id ? { ...currentItem, value } : currentItem
+                            currentItem.id === item.id
+                              ? { ...currentItem, value }
+                              : currentItem
                           )
                         );
                       }}
                       onBlur={() => {
-                        if (item.value === "") {
+                        if (item.value.trim() === "") {
                           setItems((currentItems) =>
-                            currentItems.filter((currentItem) => currentItem.id !== item.id)
+                            currentItems.filter(
+                              (currentItem) => currentItem.id !== item.id
+                            )
                           );
                         }
 
@@ -411,7 +430,7 @@ export default function EditorPreview() {
                         touchAction: "none",
                       }}
                     >
-                      {item.value || "Type here"}
+                      {item.value}
                     </div>
                   )}
                 </div>
