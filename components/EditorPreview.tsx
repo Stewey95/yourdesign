@@ -7,7 +7,23 @@ type Size = { width: number; height: number };
 
 type DesignItem =
   | { id: string; type: "image"; src: string; position: Position; size: Size }
-  | { id: string; type: "text"; value: string; position: Position; fontSize: number };
+  | {
+      id: string;
+      type: "text";
+      value: string;
+      position: Position;
+      fontSize: number;
+      color: string;
+    };
+
+const textColors = [
+  "#0f172a",
+  "#ffffff",
+  "#ef4444",
+  "#3b82f6",
+  "#22c55e",
+  "#a855f7",
+];
 
 export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
@@ -48,6 +64,14 @@ export default function EditorPreview() {
     );
   };
 
+  const changeTextColor = (id: string, color: string) => {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "text" ? { ...item, color } : item
+      )
+    );
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -80,6 +104,7 @@ export default function EditorPreview() {
         y: canvasHeight / 2,
       },
       fontSize: 32,
+      color: "#0f172a",
     };
 
     setItems((currentItems) => [...currentItems, newText]);
@@ -349,23 +374,38 @@ export default function EditorPreview() {
               {item.type === "text" && (
                 <div className="relative">
                   {selectedItemId === item.id && (
-                    <div className="absolute -top-9 left-1/2 z-10 hidden -translate-x-1/2 gap-2 md:flex">
-                      <button
-                        type="button"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={() => changeTextSize(item.id, -4)}
-                        className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
-                      >
-                        A-
-                      </button>
-                      <button
-                        type="button"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={() => changeTextSize(item.id, 4)}
-                        className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
-                      >
-                        A+
-                      </button>
+                    <div className="absolute -top-20 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={() => changeTextSize(item.id, -4)}
+                          className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
+                        >
+                          A-
+                        </button>
+                        <button
+                          type="button"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={() => changeTextSize(item.id, 4)}
+                          className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
+                        >
+                          A+
+                        </button>
+                      </div>
+
+                      <div className="flex gap-1 rounded-full bg-slate-900 px-2 py-1">
+                        {textColors.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => changeTextColor(item.id, color)}
+                            className="h-5 w-5 rounded-full border border-white/40"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -401,9 +441,10 @@ export default function EditorPreview() {
                       }}
                       placeholder="Type here"
                       rows={1}
-                      className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold text-slate-900 outline-none touch-none"
+                      className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none"
                       style={{
                         fontSize: item.fontSize,
+                        color: item.color,
                         lineHeight: 1.15,
                         touchAction: "none",
                         width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
@@ -423,9 +464,10 @@ export default function EditorPreview() {
 
                         setSelectedItemId(item.id);
                       }}
-                      className="cursor-move select-none whitespace-pre-wrap text-center font-bold text-slate-900 touch-none"
+                      className="cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none"
                       style={{
                         fontSize: item.fontSize,
+                        color: item.color,
                         lineHeight: 1.15,
                         touchAction: "none",
                       }}
