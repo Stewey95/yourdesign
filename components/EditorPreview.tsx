@@ -16,15 +16,6 @@ type DesignItem =
       color: string;
     };
 
-const textColors = [
-  "#0f172a",
-  "#ffffff",
-  "#ef4444",
-  "#3b82f6",
-  "#22c55e",
-  "#a855f7",
-];
-
 export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -374,37 +365,38 @@ export default function EditorPreview() {
               {item.type === "text" && (
                 <div className="relative">
                   {selectedItemId === item.id && (
-                    <div className="absolute -top-20 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
-                      <div className="flex gap-2">
+                    <div className="absolute -top-20 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2">
+                      <div className="flex gap-2 rounded-full bg-slate-900/95 px-3 py-2 shadow-lg">
                         <button
                           type="button"
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={() => changeTextSize(item.id, -4)}
-                          className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
+                          className="rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
                         >
                           A-
                         </button>
+
                         <button
                           type="button"
                           onPointerDown={(e) => e.stopPropagation()}
                           onClick={() => changeTextSize(item.id, 4)}
-                          className="rounded-full bg-slate-900 px-3 py-1 text-sm font-bold text-white"
+                          className="rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
                         >
                           A+
                         </button>
-                      </div>
 
-                      <div className="flex gap-1 rounded-full bg-slate-900 px-2 py-1">
-                        {textColors.map((color) => (
-                          <button
-                            key={color}
-                            type="button"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => changeTextColor(item.id, color)}
-                            className="h-5 w-5 rounded-full border border-white/40"
-                            style={{ backgroundColor: color }}
+                        <label
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+                        >
+                          🎨
+                          <input
+                            type="color"
+                            value={item.color}
+                            onChange={(e) => changeTextColor(item.id, e.target.value)}
+                            className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
                           />
-                        ))}
+                        </label>
                       </div>
                     </div>
                   )}
@@ -445,6 +437,7 @@ export default function EditorPreview() {
                       style={{
                         fontSize: item.fontSize,
                         color: item.color,
+                        textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                         lineHeight: 1.15,
                         touchAction: "none",
                         width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
@@ -468,6 +461,7 @@ export default function EditorPreview() {
                       style={{
                         fontSize: item.fontSize,
                         color: item.color,
+                        textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                         lineHeight: 1.15,
                         touchAction: "none",
                       }}
