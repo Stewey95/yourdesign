@@ -372,7 +372,10 @@ export default function EditorPreview() {
                       <div className="flex gap-2 rounded-full bg-slate-900/95 px-3 py-2 shadow-lg">
                         <button
                           type="button"
-                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
                           onClick={() => changeTextSize(item.id, -4)}
                           className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
                         >
@@ -381,7 +384,10 @@ export default function EditorPreview() {
 
                         <button
                           type="button"
-                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
                           onClick={() => changeTextSize(item.id, 4)}
                           className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
                         >
@@ -389,13 +395,17 @@ export default function EditorPreview() {
                         </button>
 
                         <label
-                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
                           className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
                         >
                           🎨
                           <input
                             type="color"
                             value={item.color}
+                            onPointerDown={(e) => e.stopPropagation()}
                             onChange={(e) => changeTextColor(item.id, e.target.value)}
                             className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
                           />
