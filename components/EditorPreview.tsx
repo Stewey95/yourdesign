@@ -129,7 +129,7 @@ export default function EditorPreview() {
   const TextToolbar = ({ item }: { item: Extract<DesignItem, { type: "text" }> }) => (
     <div
       data-text-toolbar={item.id}
-      className="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg"
+      className="mb-3 flex w-full select-none items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg"
     >
       <div className="hidden gap-2 md:flex">
         <button
