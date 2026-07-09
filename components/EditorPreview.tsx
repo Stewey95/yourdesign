@@ -409,7 +409,7 @@ setTimeout(() => {
               setSelectedItemId(null);
               setEditingItemId(null);
             }}
-            className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
+           className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
           >
             {items.length === 0 && (
               <p className="flex h-full items-center justify-center">Your design canvas</p>
@@ -515,6 +515,8 @@ setTimeout(() => {
                           textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                           lineHeight: 1.15,
                           touchAction: "none",
+WebkitUserSelect: "none",
+userSelect: "none",
                           width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
                         }}
                       />
@@ -540,6 +542,8 @@ setTimeout(() => {
                           textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                           lineHeight: 1.15,
                           touchAction: "none",
+                          WebkitUserSelect: "none",
+                          userSelect: "none",
                         }}
                       >
                         {item.value}
