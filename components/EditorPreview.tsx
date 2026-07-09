@@ -104,29 +104,31 @@ export default function EditorPreview() {
           : "hidden gap-2 rounded-full bg-slate-900/95 px-3 py-2 shadow-lg md:flex"
       }
     >
-      <button
-        type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={() => changeTextSize(item.id, -4)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-      >
-        A-
-      </button>
+      <div className="hidden gap-2 md:flex">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={() => changeTextSize(item.id, -4)}
+          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        >
+          A-
+        </button>
 
-      <button
-        type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={() => changeTextSize(item.id, 4)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-      >
-        A+
-      </button>
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={() => changeTextSize(item.id, 4)}
+          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        >
+          A+
+        </button>
+      </div>
 
       <label className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
         🎨
@@ -143,7 +145,7 @@ export default function EditorPreview() {
         value={item.fontFamily}
         onPointerDown={(e) => e.stopPropagation()}
         onChange={(e) => changeTextFont(item.id, e.target.value)}
-        className="max-w-[120px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
+        className="max-w-[150px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
       >
         {fontOptions.map((font) => (
           <option key={font} value={font}>
@@ -187,23 +189,27 @@ export default function EditorPreview() {
     };
 
     setItems((currentItems) => [...currentItems, newText]);
-setSelectedItemId(newText.id);
-setEditingItemId(newText.id);
+    setSelectedItemId(newText.id);
+    setEditingItemId(newText.id);
 
-setTimeout(() => {
-  canvasRef.current?.scrollIntoView({
-    behavior: "smooth",
-    block: "center",
-  });
-}, 100);
-};
+    setTimeout(() => {
+      canvasRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 100);
+  };
 
-  function deleteSelected() {
-      if (!selectedItemId) return;
-      setItems((currentItems) => currentItems.filter((item) => item.id !== selectedItemId));
-      setSelectedItemId(null);
-      setEditingItemId(null);
-    }
+  const deleteSelected = () => {
+    if (!selectedItemId) return;
+
+    setItems((currentItems) =>
+      currentItems.filter((item) => item.id !== selectedItemId)
+    );
+
+    setSelectedItemId(null);
+    setEditingItemId(null);
+  };
 
   const moveItem = (event: React.PointerEvent<HTMLDivElement>) => {
     if (pinchRef.current) return;
@@ -362,7 +368,7 @@ setTimeout(() => {
   };
 
   return (
-  <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
+    <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
       <div className="mb-4 flex items-center justify-between">
         <p className="font-semibold text-white">Genvilo Editor</p>
 
@@ -409,7 +415,7 @@ setTimeout(() => {
               setSelectedItemId(null);
               setEditingItemId(null);
             }}
-           className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+            className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
           >
             {items.length === 0 && (
               <p className="flex h-full items-center justify-center">Your design canvas</p>
@@ -515,8 +521,8 @@ setTimeout(() => {
                           textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                           lineHeight: 1.15,
                           touchAction: "none",
-WebkitUserSelect: "none",
-userSelect: "none",
+                          WebkitUserSelect: "none",
+                          userSelect: "none",
                           width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
                         }}
                       />
