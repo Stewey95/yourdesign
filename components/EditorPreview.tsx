@@ -13,9 +13,21 @@ type DesignItem =
       value: string;
       position: Position;
       fontSize: number;
-      color: string;
+color: string;
+fontFamily: string;
     };
 
+    const fontOptions = [
+  "Arial",
+  "Georgia",
+  "Verdana",
+  "Impact",
+  "Courier New",
+  "Trebuchet MS",
+  "Comic Sans MS",
+  "Brush Script MT",
+  "Times New Roman",
+];
 export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -63,6 +75,14 @@ export default function EditorPreview() {
     );
   };
 
+  const changeTextFont = (id: string, fontFamily: string) => {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "text" ? { ...item, fontFamily } : item
+      )
+    );
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -86,17 +106,18 @@ export default function EditorPreview() {
     const canvasWidth = canvas?.clientWidth || 360;
     const canvasHeight = canvas?.clientHeight || 256;
 
-    const newText: DesignItem = {
-      id: crypto.randomUUID(),
-      type: "text",
-      value: "",
-      position: {
-        x: canvasWidth / 2,
-        y: canvasHeight / 2,
-      },
-      fontSize: 32,
-      color: "#0f172a",
-    };
+   const newText: DesignItem = {
+  id: crypto.randomUUID(),
+  type: "text",
+  value: "",
+  position: {
+    x: canvasWidth / 2,
+    y: canvasHeight / 2,
+  },
+  fontSize: 32,
+  color: "#0f172a",
+  fontFamily: "Arial",
+};
 
     setItems((currentItems) => [...currentItems, newText]);
     setSelectedItemId(newText.id);
@@ -410,6 +431,21 @@ export default function EditorPreview() {
                             className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
                           />
                         </label>
+                        <select
+  value={item.fontFamily}
+  onPointerDown={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  onChange={(e) => changeTextFont(item.id, e.target.value)}
+  className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
+>
+  {fontOptions.map((font) => (
+    <option key={font} value={font}>
+      {font}
+    </option>
+  ))}
+</select>
                       </div>
                     </div>
                   )}
