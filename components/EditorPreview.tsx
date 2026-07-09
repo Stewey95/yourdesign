@@ -109,6 +109,79 @@ export default function EditorPreview() {
     );
   };
 
+  const startCanvasPinch = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2 || !selectedItemId) return;
+
+    const selectedItem = items.find((item) => item.id === selectedItemId);
+    if (!selectedItem) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    pinchRef.current = {
+      itemId: selectedItem.id,
+      itemType: selectedItem.type,
+      startDistance: getTouchDistance(event.touches),
+      startWidth: selectedItem.type === "image" ? selectedItem.size.width : undefined,
+      startHeight: selectedItem.type === "image" ? selectedItem.size.height : undefined,
+      startFontSize: selectedItem.type === "text" ? selectedItem.fontSize : undefined,
+    };
+
+    justPinchedRef.current = true;
+    pendingDragRef.current = null;
+    setDraggingItemId(null);
+
+    if (selectedItem.type === "image") {
+      setEditingItemId(null);
+    }
+  };
+
+  const moveCanvasPinch = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const newDistance = getTouchDistance(event.touches);
+    const scale = newDistance / pinchRef.current.startDistance;
+
+    setItems((currentItems) =>
+      currentItems.map((item) => {
+        if (item.id !== pinchRef.current?.itemId) return item;
+
+        if (item.type === "image") {
+          return {
+            ...item,
+            size: {
+              width: Math.max(60, (pinchRef.current.startWidth || 160) * scale),
+              height: Math.max(60, (pinchRef.current.startHeight || 160) * scale),
+            },
+          };
+        }
+
+        return {
+          ...item,
+          fontSize: Math.max(
+            12,
+            Math.min(140, (pinchRef.current.startFontSize || 32) * scale)
+          ),
+        };
+      })
+    );
+  };
+
+  const endCanvasPinch = () => {
+    if (pinchRef.current) {
+      justPinchedRef.current = true;
+
+      setTimeout(() => {
+        justPinchedRef.current = false;
+      }, 500);
+    }
+
+    pinchRef.current = null;
+  };
+
   const TextToolbar = ({ item }: { item: Extract<DesignItem, { type: "text" }> }) => (
     <div
       data-text-toolbar={item.id}
@@ -291,76 +364,6 @@ export default function EditorPreview() {
     setDraggingItemId(null);
   };
 
-  const handlePinchStart = (event: React.TouchEvent<HTMLDivElement>, item: DesignItem) => {
-    if (event.touches.length !== 2) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    pinchRef.current = {
-      itemId: item.id,
-      itemType: item.type,
-      startDistance: getTouchDistance(event.touches),
-      startWidth: item.type === "image" ? item.size.width : undefined,
-      startHeight: item.type === "image" ? item.size.height : undefined,
-      startFontSize: item.type === "text" ? item.fontSize : undefined,
-    };
-
-    pendingDragRef.current = null;
-setDraggingItemId(null);
-setSelectedItemId(item.id);
-
-if (item.type === "image") {
-  setEditingItemId(null);
-}
-};
-
-  const handlePinchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 2 || !pinchRef.current) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const newDistance = getTouchDistance(event.touches);
-    const scale = newDistance / pinchRef.current.startDistance;
-
-    setItems((currentItems) =>
-      currentItems.map((item) => {
-        if (item.id !== pinchRef.current?.itemId) return item;
-
-        if (item.type === "image") {
-          return {
-            ...item,
-            size: {
-              width: Math.max(60, (pinchRef.current.startWidth || 160) * scale),
-              height: Math.max(60, (pinchRef.current.startHeight || 160) * scale),
-            },
-          };
-        }
-
-        return {
-          ...item,
-          fontSize: Math.max(
-            12,
-            Math.min(140, (pinchRef.current.startFontSize || 32) * scale)
-          ),
-        };
-      })
-    );
-  };
-
-  const handlePinchEnd = () => {
-    if (pinchRef.current) {
-      justPinchedRef.current = true;
-
-      setTimeout(() => {
-        justPinchedRef.current = false;
-      }, 300);
-    }
-
-    pinchRef.current = null;
-  };
-
   const startImageResize = (
     event: React.PointerEvent<HTMLDivElement>,
     item: Extract<DesignItem, { type: "image" }>
@@ -441,10 +444,23 @@ if (item.type === "image") {
 
           <div
             ref={canvasRef}
+            onTouchStartCapture={startCanvasPinch}
+            onTouchMoveCapture={moveCanvasPinch}
+            onTouchEndCapture={endCanvasPinch}
             onPointerMove={moveItem}
             onPointerUp={stopDragging}
-            onPointerDown={clearSelection}
+            onPointerDown={(e) => {
+              if (e.pointerType === "mouse") {
+                clearSelection();
+              }
+            }}
             className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+            style={{
+              touchAction: "none",
+              WebkitUserSelect: "none",
+              userSelect: "none",
+              overscrollBehavior: "contain",
+            }}
           >
             {items.length === 0 && (
               <p className="flex h-full items-center justify-center">Your design canvas</p>
@@ -463,15 +479,12 @@ if (item.type === "image") {
                   top: item.position.y,
                   transform: "translate(-50%, -50%)",
                   touchAction: "none",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
                 }}
               >
                 {item.type === "image" && (
-                  <div
-                    onTouchStart={(e) => handlePinchStart(e, item)}
-                    onTouchMove={handlePinchMove}
-                    onTouchEnd={handlePinchEnd}
-                    style={{ width: item.size.width, height: item.size.height, touchAction: "none" }}
-                  >
+                  <div style={{ width: item.size.width, height: item.size.height }}>
                     <img
                       src={item.src}
                       alt="Uploaded design"
@@ -562,9 +575,6 @@ if (item.type === "image") {
                       />
                     ) : (
                       <div
-                        onTouchStart={(e) => handlePinchStart(e, item)}
-                        onTouchMove={handlePinchMove}
-                        onTouchEnd={handlePinchEnd}
                         onPointerDown={(e) => {
                           e.stopPropagation();
 
