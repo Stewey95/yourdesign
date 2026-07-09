@@ -390,7 +390,7 @@ export default function EditorPreview() {
                       data-text-toolbar={item.id}
                       className="absolute -top-20 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2"
                     >
-                      <div className="flex gap-2 rounded-full bg-slate-900/95 px-3 py-2 shadow-lg">
+                      <div className="flex max-w-[280px] flex-wrap justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg md:max-w-none md:flex-nowrap md:rounded-full">
                         <button
                           type="button"
                           onPointerDown={(e) => {
@@ -437,7 +437,7 @@ export default function EditorPreview() {
     e.stopPropagation();
   }}
   onChange={(e) => changeTextFont(item.id, e.target.value)}
-  className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
+  className="max-w-[120px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
 >
   {fontOptions.map((font) => (
     <option key={font} value={font}>
