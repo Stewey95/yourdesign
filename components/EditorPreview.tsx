@@ -388,7 +388,7 @@ export default function EditorPreview() {
                   {selectedItemId === item.id && (
                     <div
                       data-text-toolbar={item.id}
-                    className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 flex-col items-center gap-2 md:-top-24 md:top-auto"
+                    className="fixed left-1/2 top-36 z-50 flex -translate-x-1/2 flex-col items-center gap-2 md:absolute md:-top-24 md:z-10"
                     >
                       <div className="flex max-w-[280px] flex-wrap justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg md:max-w-none md:flex-nowrap md:rounded-full">
                         <button
