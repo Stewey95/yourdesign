@@ -34,7 +34,9 @@ export default function EditorPreview() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const justPinchedRef = useRef(false);
 
   const selectedTextItem = items.find(
     (item): item is Extract<DesignItem, { type: "text" }> =>
@@ -63,6 +65,19 @@ export default function EditorPreview() {
     return Math.sqrt(dx * dx + dy * dy);
   };
 
+  const clearSelection = () => {
+    if (selectedItemId) {
+      setItems((currentItems) =>
+        currentItems.filter(
+          (item) => !(item.id === selectedItemId && item.type === "text" && item.value.trim() === "")
+        )
+      );
+    }
+
+    setSelectedItemId(null);
+    setEditingItemId(null);
+  };
+
   const changeTextSize = (id: string, amount: number) => {
     setItems((currentItems) =>
       currentItems.map((item) =>
@@ -89,20 +104,10 @@ export default function EditorPreview() {
     );
   };
 
-  const TextToolbar = ({
-    item,
-    mobile = false,
-  }: {
-    item: Extract<DesignItem, { type: "text" }>;
-    mobile?: boolean;
-  }) => (
+  const TextToolbar = ({ item }: { item: Extract<DesignItem, { type: "text" }> }) => (
     <div
       data-text-toolbar={item.id}
-      className={
-        mobile
-          ? "mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg md:hidden"
-          : "hidden gap-2 rounded-full bg-slate-900/95 px-3 py-2 shadow-lg md:flex"
-      }
+      className="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg"
     >
       <div className="hidden gap-2 md:flex">
         <button
@@ -170,6 +175,7 @@ export default function EditorPreview() {
 
     setItems((currentItems) => [...currentItems, newImage]);
     setSelectedItemId(newImage.id);
+    setEditingItemId(null);
     event.target.value = "";
   };
 
@@ -190,7 +196,7 @@ export default function EditorPreview() {
 
     setItems((currentItems) => [...currentItems, newText]);
     setSelectedItemId(newText.id);
-    setEditingItemId(newText.id);
+    setEditingItemId(null);
 
     setTimeout(() => {
       canvasRef.current?.scrollIntoView({
@@ -262,6 +268,12 @@ export default function EditorPreview() {
   };
 
   const stopDragging = () => {
+    if (justPinchedRef.current) {
+      pendingDragRef.current = null;
+      setDraggingItemId(null);
+      return;
+    }
+
     if (pendingDragRef.current && !pendingDragRef.current.moved) {
       setEditingItemId(pendingDragRef.current.itemId);
       setSelectedItemId(pendingDragRef.current.itemId);
@@ -286,6 +298,7 @@ export default function EditorPreview() {
       startFontSize: item.type === "text" ? item.fontSize : undefined,
     };
 
+    pendingDragRef.current = null;
     setDraggingItemId(null);
     setSelectedItemId(item.id);
     setEditingItemId(null);
@@ -326,6 +339,14 @@ export default function EditorPreview() {
   };
 
   const handlePinchEnd = () => {
+    if (pinchRef.current) {
+      justPinchedRef.current = true;
+
+      setTimeout(() => {
+        justPinchedRef.current = false;
+      }, 300);
+    }
+
     pinchRef.current = null;
   };
 
@@ -405,16 +426,13 @@ export default function EditorPreview() {
         </div>
 
         <div className="md:col-span-3">
-          {selectedTextItem && <TextToolbar item={selectedTextItem} mobile />}
+          {selectedTextItem && <TextToolbar item={selectedTextItem} />}
 
           <div
             ref={canvasRef}
             onPointerMove={moveItem}
             onPointerUp={stopDragging}
-            onPointerDown={() => {
-              setSelectedItemId(null);
-              setEditingItemId(null);
-            }}
+            onPointerDown={clearSelection}
             className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
           >
             {items.length === 0 && (
@@ -464,12 +482,6 @@ export default function EditorPreview() {
 
                 {item.type === "text" && (
                   <div className="relative">
-                    {selectedItemId === item.id && (
-                      <div className="absolute -top-24 left-1/2 z-10 -translate-x-1/2">
-                        <TextToolbar item={item} />
-                      </div>
-                    )}
-
                     {editingItemId === item.id ? (
                       <textarea
                         autoFocus
@@ -552,7 +564,7 @@ export default function EditorPreview() {
                           userSelect: "none",
                         }}
                       >
-                        {item.value}
+                        {item.value || "Type here"}
                       </div>
                     )}
                   </div>
