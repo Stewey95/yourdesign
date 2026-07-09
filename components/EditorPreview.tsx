@@ -434,7 +434,6 @@ export default function EditorPreview() {
                         <select
   value={item.fontFamily}
   onPointerDown={(e) => {
-    e.preventDefault();
     e.stopPropagation();
   }}
   onChange={(e) => changeTextFont(item.id, e.target.value)}
