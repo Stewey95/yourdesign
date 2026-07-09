@@ -509,7 +509,7 @@ setTimeout(() => {
                         rows={1}
                         className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none"
                         style={{
-                          fontSize: item.fontSize,
+                          fontSize: Math.max(16, item.fontSize),
                           color: item.color,
                           fontFamily: item.fontFamily,
                           textShadow: "0 1px 4px rgba(0,0,0,0.35)",
