@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 type Position = { x: number; y: number };
 type Size = { width: number; height: number };
@@ -58,23 +58,6 @@ export default function EditorPreview() {
     startHeight?: number;
     startFontSize?: number;
   } | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const stopPageZoom = (event: TouchEvent) => {
-      if (event.touches.length > 1) {
-        event.preventDefault();
-      }
-    };
-
-    canvas.addEventListener("touchmove", stopPageZoom, { passive: false });
-
-    return () => {
-      canvas.removeEventListener("touchmove", stopPageZoom);
-    };
-  }, []);
 
   const getTouchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -467,9 +450,6 @@ export default function EditorPreview() {
             {items.map((item) => (
               <div
                 key={item.id}
-                onTouchStart={(e) => handlePinchStart(e, item)}
-                onTouchMove={handlePinchMove}
-                onTouchEnd={handlePinchEnd}
                 className={`absolute ${
                   selectedItemId === item.id && item.type === "image"
                     ? "ring-2 ring-blue-500"
@@ -479,10 +459,16 @@ export default function EditorPreview() {
                   left: item.position.x,
                   top: item.position.y,
                   transform: "translate(-50%, -50%)",
+                  touchAction: "none",
                 }}
               >
                 {item.type === "image" && (
-                  <div style={{ width: item.size.width, height: item.size.height }}>
+                  <div
+                    onTouchStart={(e) => handlePinchStart(e, item)}
+                    onTouchMove={handlePinchMove}
+                    onTouchEnd={handlePinchEnd}
+                    style={{ width: item.size.width, height: item.size.height, touchAction: "none" }}
+                  >
                     <img
                       src={item.src}
                       alt="Uploaded design"
@@ -573,6 +559,9 @@ export default function EditorPreview() {
                       />
                     ) : (
                       <div
+                        onTouchStart={(e) => handlePinchStart(e, item)}
+                        onTouchMove={handlePinchMove}
+                        onTouchEnd={handlePinchEnd}
                         onPointerDown={(e) => {
                           e.stopPropagation();
 
