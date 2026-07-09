@@ -307,10 +307,13 @@ export default function EditorPreview() {
     };
 
     pendingDragRef.current = null;
-    setDraggingItemId(null);
-    setSelectedItemId(item.id);
-    setEditingItemId(null);
-  };
+setDraggingItemId(null);
+setSelectedItemId(item.id);
+
+if (item.type === "image") {
+  setEditingItemId(null);
+}
+};
 
   const handlePinchMove = (event: React.TouchEvent<HTMLDivElement>) => {
     if (event.touches.length !== 2 || !pinchRef.current) return;
