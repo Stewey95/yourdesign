@@ -362,7 +362,7 @@ setTimeout(() => {
   };
 
   return (
-    <div className="mt-16 w-full max-w-4xl rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
+  <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
       <div className="mb-4 flex items-center justify-between">
         <p className="font-semibold text-white">Genvilo Editor</p>
 
