@@ -187,16 +187,23 @@ export default function EditorPreview() {
     };
 
     setItems((currentItems) => [...currentItems, newText]);
-    setSelectedItemId(newText.id);
-    setEditingItemId(newText.id);
-  };
+setSelectedItemId(newText.id);
+setEditingItemId(newText.id);
 
-  const deleteSelected = () => {
-    if (!selectedItemId) return;
-    setItems((currentItems) => currentItems.filter((item) => item.id !== selectedItemId));
-    setSelectedItemId(null);
-    setEditingItemId(null);
-  };
+setTimeout(() => {
+  canvasRef.current?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+}, 100);
+};
+
+  function deleteSelected() {
+      if (!selectedItemId) return;
+      setItems((currentItems) => currentItems.filter((item) => item.id !== selectedItemId));
+      setSelectedItemId(null);
+      setEditingItemId(null);
+    }
 
   const moveItem = (event: React.PointerEvent<HTMLDivElement>) => {
     if (pinchRef.current) return;
