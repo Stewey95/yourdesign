@@ -13,11 +13,11 @@ type DesignItem =
       value: string;
       position: Position;
       fontSize: number;
-color: string;
-fontFamily: string;
+      color: string;
+      fontFamily: string;
     };
 
-    const fontOptions = [
+const fontOptions = [
   "Arial",
   "Georgia",
   "Verdana",
@@ -28,12 +28,18 @@ fontFamily: string;
   "Brush Script MT",
   "Times New Roman",
 ];
+
 export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+
+  const selectedTextItem = items.find(
+    (item): item is Extract<DesignItem, { type: "text" }> =>
+      item.id === selectedItemId && item.type === "text"
+  );
 
   const pendingDragRef = useRef<{
     itemId: string;
@@ -83,6 +89,71 @@ export default function EditorPreview() {
     );
   };
 
+  const TextToolbar = ({
+    item,
+    mobile = false,
+  }: {
+    item: Extract<DesignItem, { type: "text" }>;
+    mobile?: boolean;
+  }) => (
+    <div
+      data-text-toolbar={item.id}
+      className={
+        mobile
+          ? "mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg md:hidden"
+          : "hidden gap-2 rounded-full bg-slate-900/95 px-3 py-2 shadow-lg md:flex"
+      }
+    >
+      <button
+        type="button"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={() => changeTextSize(item.id, -4)}
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+      >
+        A-
+      </button>
+
+      <button
+        type="button"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={() => changeTextSize(item.id, 4)}
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+      >
+        A+
+      </button>
+
+      <label className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
+        🎨
+        <input
+          type="color"
+          value={item.color}
+          onPointerDown={(e) => e.stopPropagation()}
+          onChange={(e) => changeTextColor(item.id, e.target.value)}
+          className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
+        />
+      </label>
+
+      <select
+        value={item.fontFamily}
+        onPointerDown={(e) => e.stopPropagation()}
+        onChange={(e) => changeTextFont(item.id, e.target.value)}
+        className="max-w-[120px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
+      >
+        {fontOptions.map((font) => (
+          <option key={font} value={font}>
+            {font}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -102,22 +173,18 @@ export default function EditorPreview() {
 
   const addText = () => {
     const canvas = canvasRef.current;
-
     const canvasWidth = canvas?.clientWidth || 360;
     const canvasHeight = canvas?.clientHeight || 256;
 
-   const newText: DesignItem = {
-  id: crypto.randomUUID(),
-  type: "text",
-  value: "",
-  position: {
-    x: canvasWidth / 2,
-    y: canvasHeight / 2,
-  },
-  fontSize: 32,
-  color: "#0f172a",
-  fontFamily: "Arial",
-};
+    const newText: DesignItem = {
+      id: crypto.randomUUID(),
+      type: "text",
+      value: "",
+      position: { x: canvasWidth / 2, y: canvasHeight / 2 },
+      fontSize: 32,
+      color: "#0f172a",
+      fontFamily: "Arial",
+    };
 
     setItems((currentItems) => [...currentItems, newText]);
     setSelectedItemId(newText.id);
@@ -126,11 +193,7 @@ export default function EditorPreview() {
 
   const deleteSelected = () => {
     if (!selectedItemId) return;
-
-    setItems((currentItems) =>
-      currentItems.filter((item) => item.id !== selectedItemId)
-    );
-
+    setItems((currentItems) => currentItems.filter((item) => item.id !== selectedItemId));
     setSelectedItemId(null);
     setEditingItemId(null);
   };
@@ -328,212 +391,158 @@ export default function EditorPreview() {
           </button>
         </div>
 
-        <div
-          ref={canvasRef}
-          onPointerMove={moveItem}
-          onPointerUp={stopDragging}
-          onPointerDown={() => {
-            setSelectedItemId(null);
-            setEditingItemId(null);
-          }}
-          className="relative col-span-3 h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
-        >
-          {items.length === 0 && (
-            <p className="flex h-full items-center justify-center">Your design canvas</p>
-          )}
+        <div className="md:col-span-3">
+          {selectedTextItem && <TextToolbar item={selectedTextItem} mobile />}
 
-          {items.map((item) => (
-            <div
-              key={item.id}
-              onTouchStart={(e) => handlePinchStart(e, item)}
-              onTouchMove={handlePinchMove}
-              onTouchEnd={handlePinchEnd}
-              className={`absolute ${
-                selectedItemId === item.id && item.type === "image"
-                  ? "ring-2 ring-blue-500"
-                  : ""
-              }`}
-              style={{
-                left: item.position.x,
-                top: item.position.y,
-                transform: "translate(-50%, -50%)",
-              }}
-            >
-              {item.type === "image" && (
-                <div style={{ width: item.size.width, height: item.size.height }}>
-                  <img
-                    src={item.src}
-                    alt="Uploaded design"
-                    draggable={false}
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
-                      setDraggingItemId(item.id);
-                      setSelectedItemId(item.id);
-                      setEditingItemId(null);
-                    }}
-                    className="h-full w-full cursor-move select-none rounded-lg object-contain"
-                  />
+          <div
+            ref={canvasRef}
+            onPointerMove={moveItem}
+            onPointerUp={stopDragging}
+            onPointerDown={() => {
+              setSelectedItemId(null);
+              setEditingItemId(null);
+            }}
+            className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none"
+          >
+            {items.length === 0 && (
+              <p className="flex h-full items-center justify-center">Your design canvas</p>
+            )}
 
-                  {selectedItemId === item.id && (
-                    <div
-                      onPointerDown={(e) => startImageResize(e, item)}
-                      className="absolute bottom-0 right-0 hidden h-5 w-5 cursor-se-resize rounded-full bg-blue-500 md:block"
+            {items.map((item) => (
+              <div
+                key={item.id}
+                onTouchStart={(e) => handlePinchStart(e, item)}
+                onTouchMove={handlePinchMove}
+                onTouchEnd={handlePinchEnd}
+                className={`absolute ${
+                  selectedItemId === item.id && item.type === "image"
+                    ? "ring-2 ring-blue-500"
+                    : ""
+                }`}
+                style={{
+                  left: item.position.x,
+                  top: item.position.y,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                {item.type === "image" && (
+                  <div style={{ width: item.size.width, height: item.size.height }}>
+                    <img
+                      src={item.src}
+                      alt="Uploaded design"
+                      draggable={false}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        setDraggingItemId(item.id);
+                        setSelectedItemId(item.id);
+                        setEditingItemId(null);
+                      }}
+                      className="h-full w-full cursor-move select-none rounded-lg object-contain"
                     />
-                  )}
-                </div>
-              )}
 
-              {item.type === "text" && (
-                <div className="relative">
-                  {selectedItemId === item.id && editingItemId !== item.id && (
-                    <div
-                      data-text-toolbar={item.id}
-                    className="fixed left-1/2 top-36 z-50 flex -translate-x-1/2 flex-col items-center gap-2 md:absolute md:-top-24 md:z-10"
-                    >
-                      <div className="flex max-w-[280px] flex-wrap justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg md:max-w-none md:flex-nowrap md:rounded-full">
-                        <button
-                          type="button"
-                          onPointerDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={() => changeTextSize(item.id, -4)}
-                          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-                        >
-                          A-
-                        </button>
+                    {selectedItemId === item.id && (
+                      <div
+                        onPointerDown={(e) => startImageResize(e, item)}
+                        className="absolute bottom-0 right-0 hidden h-5 w-5 cursor-se-resize rounded-full bg-blue-500 md:block"
+                      />
+                    )}
+                  </div>
+                )}
 
-                        <button
-                          type="button"
-                          onPointerDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={() => changeTextSize(item.id, 4)}
-                          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-                        >
-                          A+
-                        </button>
-
-                        <label
-                          onPointerDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-                        >
-                          🎨
-                          <input
-                            type="color"
-                            value={item.color}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onChange={(e) => changeTextColor(item.id, e.target.value)}
-                            className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
-                          />
-                        </label>
-                        <select
-  value={item.fontFamily}
-  onPointerDown={(e) => {
-    e.stopPropagation();
-  }}
-  onChange={(e) => changeTextFont(item.id, e.target.value)}
-  className="max-w-[120px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
->
-  {fontOptions.map((font) => (
-    <option key={font} value={font}>
-      {font}
-    </option>
-  ))}
-</select>
+                {item.type === "text" && (
+                  <div className="relative">
+                    {selectedItemId === item.id && (
+                      <div className="absolute -top-24 left-1/2 z-10 -translate-x-1/2">
+                        <TextToolbar item={item} />
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {editingItemId === item.id ? (
-                    <textarea
-                      autoFocus
-                      value={item.value}
-                      onChange={(e) => {
-                        const value = e.target.value;
+                    {editingItemId === item.id ? (
+                      <textarea
+                        autoFocus
+                        value={item.value}
+                        onChange={(e) => {
+                          const value = e.target.value;
 
-                        setItems((currentItems) =>
-                          currentItems.map((currentItem) =>
-                            currentItem.id === item.id
-                              ? { ...currentItem, value }
-                              : currentItem
-                          )
-                        );
-                      }}
-                      onBlur={() => {
-                        setTimeout(() => {
-                          const activeElement = document.activeElement;
+                          setItems((currentItems) =>
+                            currentItems.map((currentItem) =>
+                              currentItem.id === item.id
+                                ? { ...currentItem, value }
+                                : currentItem
+                            )
+                          );
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            const activeElement = document.activeElement;
 
-                          if (
-                            activeElement instanceof HTMLElement &&
-                            activeElement.closest(`[data-text-toolbar="${item.id}"]`)
-                          ) {
-                            return;
-                          }
+                            if (
+                              activeElement instanceof HTMLElement &&
+                              activeElement.closest(`[data-text-toolbar="${item.id}"]`)
+                            ) {
+                              return;
+                            }
 
-                          if (item.value.trim() === "") {
-                            setItems((currentItems) =>
-                              currentItems.filter(
-                                (currentItem) => currentItem.id !== item.id
-                              )
-                            );
-                          }
+                            if (item.value.trim() === "") {
+                              setItems((currentItems) =>
+                                currentItems.filter(
+                                  (currentItem) => currentItem.id !== item.id
+                                )
+                              );
+                            }
 
-                          setEditingItemId(null);
-                        }, 0);
-                      }}
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        setSelectedItemId(item.id);
-                      }}
-                      placeholder="Type here"
-                      rows={1}
-                      className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none"
-                      style={{
-                        fontSize: item.fontSize,
-color: item.color,
-fontFamily: item.fontFamily,
-textShadow: "0 1px 4px rgba(0,0,0,0.35)",
-                        lineHeight: 1.15,
-                        touchAction: "none",
-                        width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
+                            setEditingItemId(null);
+                          }, 0);
+                        }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          setSelectedItemId(item.id);
+                        }}
+                        placeholder="Type here"
+                        rows={1}
+                        className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none"
+                        style={{
+                          fontSize: item.fontSize,
+                          color: item.color,
+                          fontFamily: item.fontFamily,
+                          textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                          lineHeight: 1.15,
+                          touchAction: "none",
+                          width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
 
-                        pendingDragRef.current = {
-                          itemId: item.id,
-                          startX: e.clientX,
-                          startY: e.clientY,
-                          moved: false,
-                        };
+                          pendingDragRef.current = {
+                            itemId: item.id,
+                            startX: e.clientX,
+                            startY: e.clientY,
+                            moved: false,
+                          };
 
-                        setSelectedItemId(item.id);
-                      }}
-                      className="cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none"
-                      style={{
-                        fontSize: item.fontSize,
-                        color: item.color,
-                        fontFamily: item.fontFamily,
-                        textShadow: "0 1px 4px rgba(0,0,0,0.35)",
-                        lineHeight: 1.15,
-                        touchAction: "none",
-                      }}
-                    >
-                      {item.value}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+                          setSelectedItemId(item.id);
+                        }}
+                        className="cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none"
+                        style={{
+                          fontSize: item.fontSize,
+                          color: item.color,
+                          fontFamily: item.fontFamily,
+                          textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                          lineHeight: 1.15,
+                          touchAction: "none",
+                        }}
+                      >
+                        {item.value}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
