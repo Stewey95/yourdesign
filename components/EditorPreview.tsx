@@ -385,7 +385,7 @@ export default function EditorPreview() {
 
               {item.type === "text" && (
                 <div className="relative">
-                  {selectedItemId === item.id && (
+                  {selectedItemId === item.id && editingItemId !== item.id && (
                     <div
                       data-text-toolbar={item.id}
                     className="fixed left-1/2 top-36 z-50 flex -translate-x-1/2 flex-col items-center gap-2 md:absolute md:-top-24 md:z-10"
