@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Position = { x: number; y: number };
 type Size = { width: number; height: number };
@@ -59,6 +59,23 @@ export default function EditorPreview() {
     startFontSize?: number;
   } | null>(null);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const stopPageZoom = (event: TouchEvent) => {
+      if (event.touches.length > 1) {
+        event.preventDefault();
+      }
+    };
+
+    canvas.addEventListener("touchmove", stopPageZoom, { passive: false });
+
+    return () => {
+      canvas.removeEventListener("touchmove", stopPageZoom);
+    };
+  }, []);
+
   const getTouchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
@@ -69,7 +86,12 @@ export default function EditorPreview() {
     if (selectedItemId) {
       setItems((currentItems) =>
         currentItems.filter(
-          (item) => !(item.id === selectedItemId && item.type === "text" && item.value.trim() === "")
+          (item) =>
+            !(
+              item.id === selectedItemId &&
+              item.type === "text" &&
+              item.value.trim() === ""
+            )
         )
       );
     }
@@ -231,6 +253,7 @@ export default function EditorPreview() {
       if (movedEnough || pending.moved) {
         pending.moved = true;
         setDraggingItemId(pending.itemId);
+        setEditingItemId(null);
 
         setItems((currentItems) =>
           currentItems.map((item) =>
@@ -251,6 +274,8 @@ export default function EditorPreview() {
     }
 
     if (!draggingItemId) return;
+
+    setEditingItemId(null);
 
     setItems((currentItems) =>
       currentItems.map((item) =>
@@ -521,6 +546,14 @@ export default function EditorPreview() {
                         }}
                         onPointerDown={(e) => {
                           e.stopPropagation();
+
+                          pendingDragRef.current = {
+                            itemId: item.id,
+                            startX: e.clientX,
+                            startY: e.clientY,
+                            moved: false,
+                          };
+
                           setSelectedItemId(item.id);
                         }}
                         placeholder="Type here"
