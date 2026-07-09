@@ -495,8 +495,9 @@ export default function EditorPreview() {
                       className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none"
                       style={{
                         fontSize: item.fontSize,
-                        color: item.color,
-                        textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+color: item.color,
+fontFamily: item.fontFamily,
+textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                         lineHeight: 1.15,
                         touchAction: "none",
                         width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
@@ -520,6 +521,7 @@ export default function EditorPreview() {
                       style={{
                         fontSize: item.fontSize,
                         color: item.color,
+                        fontFamily: item.fontFamily,
                         textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                         lineHeight: 1.15,
                         touchAction: "none",
