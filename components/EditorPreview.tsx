@@ -208,9 +208,15 @@ export default function EditorPreview() {
   item: Extract<DesignItem, { type: "text" }>;
 }) => (
   <div
-    data-text-toolbar={item.id}
-    className="mb-3 flex w-full min-w-0 items-center justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg md:justify-center"
-  >
+  data-text-toolbar={item.id}
+  onDragStart={(e) => e.preventDefault()}
+  onPointerMove={(e) => e.stopPropagation()}
+  className="mb-3 flex w-full min-w-0 select-none items-center justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none md:justify-center"
+  style={{
+    WebkitUserSelect: "none",
+    userSelect: "none",
+  }}
+>
     <div className="hidden shrink-0 gap-2 md:flex">
       <button
         type="button"
