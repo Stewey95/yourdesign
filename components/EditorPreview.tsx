@@ -209,9 +209,9 @@ export default function EditorPreview() {
 }) => (
   <div
     data-text-toolbar={item.id}
-    className="mb-3 flex w-full select-none items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg"
+    className="mb-3 flex w-full min-w-0 items-center justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg md:justify-center"
   >
-<div className="flex gap-2">
+    <div className="hidden shrink-0 gap-2 md:flex">
       <button
         type="button"
         onPointerDown={(e) => {
@@ -235,33 +235,35 @@ export default function EditorPreview() {
       >
         A+
       </button>
-
-      <button
-        type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={() => rotateItem(item.id, -15)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-      >
-        ↺
-      </button>
-
-      <button
-        type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onClick={() => rotateItem(item.id, 15)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-      >
-        ↻
-      </button>
     </div>
 
-    <label className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
+    <button
+      type="button"
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onClick={() => rotateItem(item.id, -15)}
+      className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
+      aria-label="Rotate left"
+    >
+      ↺
+    </button>
+
+    <button
+      type="button"
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onClick={() => rotateItem(item.id, 15)}
+      className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
+      aria-label="Rotate right"
+    >
+      ↻
+    </button>
+
+    <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
       🎨
       <input
         type="color"
@@ -276,7 +278,7 @@ export default function EditorPreview() {
       value={item.fontFamily}
       onPointerDown={(e) => e.stopPropagation()}
       onChange={(e) => changeTextFont(item.id, e.target.value)}
-      className="max-w-[150px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
+      className="w-[110px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none md:w-[150px]"
     >
       {fontOptions.map((font) => (
         <option key={font} value={font}>
@@ -489,7 +491,7 @@ export default function EditorPreview() {
           </button>
         </div>
 
-        <div className="md:col-span-3">
+        <div className="min-w-0 md:col-span-3">
           {selectedTextItem && <TextToolbar item={selectedTextItem} />}
 
           <div
