@@ -211,7 +211,7 @@ export default function EditorPreview() {
     data-text-toolbar={item.id}
     className="mb-3 flex w-full select-none items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg"
   >
-    <div className="hidden gap-2 md:flex">
+<div className="flex gap-2">
       <button
         type="button"
         onPointerDown={(e) => {
@@ -243,7 +243,7 @@ export default function EditorPreview() {
           e.stopPropagation();
         }}
         onClick={() => rotateItem(item.id, -15)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
       >
         ↺
       </button>
@@ -255,7 +255,7 @@ export default function EditorPreview() {
           e.stopPropagation();
         }}
         onClick={() => rotateItem(item.id, 15)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
       >
         ↻
       </button>
