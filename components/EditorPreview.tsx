@@ -6,7 +6,14 @@ type Position = { x: number; y: number };
 type Size = { width: number; height: number };
 
 type DesignItem =
-  | { id: string; type: "image"; src: string; position: Position; size: Size }
+  | {
+      id: string;
+      type: "image";
+      src: string;
+      position: Position;
+      size: Size;
+      rotation: number;
+    }
   | {
       id: string;
       type: "text";
@@ -15,6 +22,7 @@ type DesignItem =
       fontSize: number;
       color: string;
       fontFamily: string;
+      rotation: number;
     };
 
 const fontOptions = [
@@ -108,6 +116,18 @@ export default function EditorPreview() {
       )
     );
   };
+  const rotateItem = (id: string, amount: number) => {
+  setItems((currentItems) =>
+    currentItems.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            rotation: item.rotation + amount,
+          }
+        : item
+    )
+  );
+};
 
   const startCanvasPinch = (event: React.TouchEvent<HTMLDivElement>) => {
     if (event.touches.length !== 2 || !selectedItemId) return;
@@ -182,74 +202,103 @@ export default function EditorPreview() {
     pinchRef.current = null;
   };
 
-  const TextToolbar = ({ item }: { item: Extract<DesignItem, { type: "text" }> }) => (
-    <div
-      data-text-toolbar={item.id}
-      className="mb-3 flex w-full select-none items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg"
-    >
-      <div className="hidden gap-2 md:flex">
-        <button
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onClick={() => changeTextSize(item.id, -4)}
-          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-        >
-          A-
-        </button>
-
-        <button
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onClick={() => changeTextSize(item.id, 4)}
-          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-        >
-          A+
-        </button>
-      </div>
-
-      <label className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
-        🎨
-        <input
-          type="color"
-          value={item.color}
-          onPointerDown={(e) => e.stopPropagation()}
-          onChange={(e) => changeTextColor(item.id, e.target.value)}
-          className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
-        />
-      </label>
-
-      <select
-        value={item.fontFamily}
-        onPointerDown={(e) => e.stopPropagation()}
-        onChange={(e) => changeTextFont(item.id, e.target.value)}
-        className="max-w-[150px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
+  const TextToolbar = ({
+  item,
+}: {
+  item: Extract<DesignItem, { type: "text" }>;
+}) => (
+  <div
+    data-text-toolbar={item.id}
+    className="mb-3 flex w-full select-none items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg"
+  >
+    <div className="hidden gap-2 md:flex">
+      <button
+        type="button"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={() => changeTextSize(item.id, -4)}
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
       >
-        {fontOptions.map((font) => (
-          <option key={font} value={font}>
-            {font}
-          </option>
-        ))}
-      </select>
+        A-
+      </button>
+
+      <button
+        type="button"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={() => changeTextSize(item.id, 4)}
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+      >
+        A+
+      </button>
+
+      <button
+        type="button"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={() => rotateItem(item.id, -15)}
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+      >
+        ↺
+      </button>
+
+      <button
+        type="button"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={() => rotateItem(item.id, 15)}
+        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+      >
+        ↻
+      </button>
     </div>
-  );
+
+    <label className="flex cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
+      🎨
+      <input
+        type="color"
+        value={item.color}
+        onPointerDown={(e) => e.stopPropagation()}
+        onChange={(e) => changeTextColor(item.id, e.target.value)}
+        className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
+      />
+    </label>
+
+    <select
+      value={item.fontFamily}
+      onPointerDown={(e) => e.stopPropagation()}
+      onChange={(e) => changeTextFont(item.id, e.target.value)}
+      className="max-w-[150px] cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none"
+    >
+      {fontOptions.map((font) => (
+        <option key={font} value={font}>
+          {font}
+        </option>
+      ))}
+    </select>
+  </div>
+);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const newImage: DesignItem = {
-      id: crypto.randomUUID(),
-      type: "image",
-      src: URL.createObjectURL(file),
-      position: { x: 180, y: 120 },
-      size: { width: 160, height: 160 },
-    };
+   const newImage: DesignItem = {
+  id: crypto.randomUUID(),
+  type: "image",
+  src: URL.createObjectURL(file),
+  position: { x: 180, y: 120 },
+  size: { width: 160, height: 160 },
+  rotation: 0,
+};
 
     setItems((currentItems) => [...currentItems, newImage]);
     setSelectedItemId(newImage.id);
@@ -263,14 +312,15 @@ export default function EditorPreview() {
     const canvasHeight = canvas?.clientHeight || 256;
 
     const newText: DesignItem = {
-      id: crypto.randomUUID(),
-      type: "text",
-      value: "",
-      position: { x: canvasWidth / 2, y: canvasHeight / 2 },
-      fontSize: 32,
-      color: "#0f172a",
-      fontFamily: "Arial",
-    };
+  id: crypto.randomUUID(),
+  type: "text",
+  value: "",
+  position: { x: canvasWidth / 2, y: canvasHeight / 2 },
+  fontSize: 32,
+  color: "#0f172a",
+  fontFamily: "Arial",
+  rotation: 0,
+};
 
     setItems((currentItems) => [...currentItems, newText]);
     setSelectedItemId(newText.id);
@@ -477,7 +527,7 @@ export default function EditorPreview() {
                 style={{
                   left: item.position.x,
                   top: item.position.y,
-                  transform: "translate(-50%, -50%)",
+                 transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
                   touchAction: "none",
                   WebkitUserSelect: "none",
                   userSelect: "none",
