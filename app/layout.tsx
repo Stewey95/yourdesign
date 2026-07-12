@@ -34,9 +34,13 @@ export const viewport = {
   userScalable: false,
 };
 
+/*
+  This remains Genvilo's normal website font.
+  Keeping --font-sans restores the previous layout appearance.
+*/
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-sans",
 });
 
 const poppins = Poppins({
@@ -169,8 +173,14 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "h-full antialiased font-sans",
+        "h-full",
+        "antialiased",
+        "font-sans",
         inter.variable,
+        geistSans.variable,
+        geistMono.variable,
+
+        // These are available only when selected inside the editor.
         poppins.variable,
         montserrat.variable,
         lato.variable,
@@ -189,9 +199,7 @@ export default function RootLayout({
         greatVibes.variable,
         lobster.variable,
         permanentMarker.variable,
-        bangers.variable,
-        geistSans.variable,
-        geistMono.variable
+        bangers.variable
       )}
     >
       <body className="flex min-h-full flex-col">
