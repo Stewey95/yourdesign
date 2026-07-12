@@ -51,6 +51,11 @@ export default function EditorPreview() {
       item.id === selectedItemId && item.type === "text"
   );
 
+  const selectedImageItem = items.find(
+    (item): item is Extract<DesignItem, { type: "image" }> =>
+      item.id === selectedItemId && item.type === "image"
+  );
+
   const pendingDragRef = useRef<{
     itemId: string;
     startX: number;
@@ -70,6 +75,7 @@ export default function EditorPreview() {
   const getTouchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
+
     return Math.sqrt(dx * dx + dy * dy);
   };
 
@@ -95,7 +101,13 @@ export default function EditorPreview() {
     setItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id && item.type === "text"
-          ? { ...item, fontSize: Math.max(12, Math.min(140, item.fontSize + amount)) }
+          ? {
+              ...item,
+              fontSize: Math.max(
+                12,
+                Math.min(140, item.fontSize + amount)
+              ),
+            }
           : item
       )
     );
@@ -104,7 +116,9 @@ export default function EditorPreview() {
   const changeTextColor = (id: string, color: string) => {
     setItems((currentItems) =>
       currentItems.map((item) =>
-        item.id === id && item.type === "text" ? { ...item, color } : item
+        item.id === id && item.type === "text"
+          ? { ...item, color }
+          : item
       )
     );
   };
@@ -112,27 +126,35 @@ export default function EditorPreview() {
   const changeTextFont = (id: string, fontFamily: string) => {
     setItems((currentItems) =>
       currentItems.map((item) =>
-        item.id === id && item.type === "text" ? { ...item, fontFamily } : item
+        item.id === id && item.type === "text"
+          ? { ...item, fontFamily }
+          : item
       )
     );
   };
-  const rotateItem = (id: string, amount: number) => {
-  setItems((currentItems) =>
-    currentItems.map((item) =>
-      item.id === id
-        ? {
-            ...item,
-            rotation: item.rotation + amount,
-          }
-        : item
-    )
-  );
-};
 
-  const startCanvasPinch = (event: React.TouchEvent<HTMLDivElement>) => {
+  const rotateItem = (id: string, amount: number) => {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              rotation: item.rotation + amount,
+            }
+          : item
+      )
+    );
+  };
+
+  const startCanvasPinch = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
     if (event.touches.length !== 2 || !selectedItemId) return;
 
-    const selectedItem = items.find((item) => item.id === selectedItemId);
+    const selectedItem = items.find(
+      (item) => item.id === selectedItemId
+    );
+
     if (!selectedItem) return;
 
     event.preventDefault();
@@ -142,9 +164,18 @@ export default function EditorPreview() {
       itemId: selectedItem.id,
       itemType: selectedItem.type,
       startDistance: getTouchDistance(event.touches),
-      startWidth: selectedItem.type === "image" ? selectedItem.size.width : undefined,
-      startHeight: selectedItem.type === "image" ? selectedItem.size.height : undefined,
-      startFontSize: selectedItem.type === "text" ? selectedItem.fontSize : undefined,
+      startWidth:
+        selectedItem.type === "image"
+          ? selectedItem.size.width
+          : undefined,
+      startHeight:
+        selectedItem.type === "image"
+          ? selectedItem.size.height
+          : undefined,
+      startFontSize:
+        selectedItem.type === "text"
+          ? selectedItem.fontSize
+          : undefined,
     };
 
     justPinchedRef.current = true;
@@ -156,25 +187,36 @@ export default function EditorPreview() {
     }
   };
 
-  const moveCanvasPinch = (event: React.TouchEvent<HTMLDivElement>) => {
+  const moveCanvasPinch = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
     if (event.touches.length !== 2 || !pinchRef.current) return;
 
     event.preventDefault();
     event.stopPropagation();
 
     const newDistance = getTouchDistance(event.touches);
-    const scale = newDistance / pinchRef.current.startDistance;
+    const scale =
+      newDistance / pinchRef.current.startDistance;
 
     setItems((currentItems) =>
       currentItems.map((item) => {
-        if (item.id !== pinchRef.current?.itemId) return item;
+        if (item.id !== pinchRef.current?.itemId) {
+          return item;
+        }
 
         if (item.type === "image") {
           return {
             ...item,
             size: {
-              width: Math.max(60, (pinchRef.current.startWidth || 160) * scale),
-              height: Math.max(60, (pinchRef.current.startHeight || 160) * scale),
+              width: Math.max(
+                60,
+                (pinchRef.current.startWidth || 160) * scale
+              ),
+              height: Math.max(
+                60,
+                (pinchRef.current.startHeight || 160) * scale
+              ),
             },
           };
         }
@@ -183,7 +225,10 @@ export default function EditorPreview() {
           ...item,
           fontSize: Math.max(
             12,
-            Math.min(140, (pinchRef.current.startFontSize || 32) * scale)
+            Math.min(
+              140,
+              (pinchRef.current.startFontSize || 32) * scale
+            )
           ),
         };
       })
@@ -203,134 +248,206 @@ export default function EditorPreview() {
   };
 
   const TextToolbar = ({
-  item,
-}: {
-  item: Extract<DesignItem, { type: "text" }>;
-}) => (
-  <div
-  data-text-toolbar={item.id}
-  onDragStart={(e) => e.preventDefault()}
-  onPointerMove={(e) => e.stopPropagation()}
-  className="mb-3 flex w-full min-w-0 select-none items-center justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none md:justify-center"
-  style={{
-    WebkitUserSelect: "none",
-    userSelect: "none",
-  }}
->
-    <div className="hidden shrink-0 gap-2 md:flex">
+    item,
+  }: {
+    item: Extract<DesignItem, { type: "text" }>;
+  }) => (
+    <div
+      data-text-toolbar={item.id}
+      onDragStart={(event) => event.preventDefault()}
+      onPointerMove={(event) => event.stopPropagation()}
+      className="mb-3 flex w-full min-w-0 select-none items-center justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none md:justify-center"
+      style={{
+        WebkitUserSelect: "none",
+        userSelect: "none",
+      }}
+    >
+      <div className="hidden shrink-0 gap-2 md:flex">
+        <button
+          type="button"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={() => changeTextSize(item.id, -4)}
+          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        >
+          A-
+        </button>
+
+        <button
+          type="button"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={() => changeTextSize(item.id, 4)}
+          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        >
+          A+
+        </button>
+      </div>
+
       <button
         type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
         }}
-        onClick={() => changeTextSize(item.id, -4)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        onClick={() => rotateItem(item.id, -15)}
+        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
+        aria-label="Rotate text left"
       >
-        A-
+        ↺
       </button>
 
       <button
         type="button"
-        onPointerDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
         }}
-        onClick={() => changeTextSize(item.id, 4)}
-        className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+        onClick={() => rotateItem(item.id, 15)}
+        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
+        aria-label="Rotate text right"
       >
-        A+
+        ↻
       </button>
+
+      <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
+        🎨
+
+        <input
+          type="color"
+          value={item.color}
+          onPointerDown={(event) =>
+            event.stopPropagation()
+          }
+          onChange={(event) =>
+            changeTextColor(item.id, event.target.value)
+          }
+          className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
+        />
+      </label>
+
+      <select
+        value={item.fontFamily}
+        onPointerDown={(event) =>
+          event.stopPropagation()
+        }
+        onChange={(event) =>
+          changeTextFont(item.id, event.target.value)
+        }
+        className="w-[110px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none md:w-[150px]"
+      >
+        {fontOptions.map((font) => (
+          <option key={font} value={font}>
+            {font}
+          </option>
+        ))}
+      </select>
     </div>
+  );
 
-    <button
-      type="button"
-      onPointerDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
+  const ImageToolbar = ({
+    item,
+  }: {
+    item: Extract<DesignItem, { type: "image" }>;
+  }) => (
+    <div
+      data-image-toolbar={item.id}
+      onDragStart={(event) => event.preventDefault()}
+      onPointerMove={(event) => event.stopPropagation()}
+      className="mb-3 flex w-full min-w-0 select-none items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none"
+      style={{
+        WebkitUserSelect: "none",
+        userSelect: "none",
       }}
-      onClick={() => rotateItem(item.id, -15)}
-      className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-      aria-label="Rotate left"
     >
-      ↺
-    </button>
+      <button
+        type="button"
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onClick={() => rotateItem(item.id, -15)}
+        className="cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
+        aria-label="Rotate image left"
+      >
+        ↺
+      </button>
 
-    <button
-      type="button"
-      onPointerDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      onClick={() => rotateItem(item.id, 15)}
-      className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-      aria-label="Rotate right"
-    >
-      ↻
-    </button>
+      <button
+        type="button"
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onClick={() => rotateItem(item.id, 15)}
+        className="cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
+        aria-label="Rotate image right"
+      >
+        ↻
+      </button>
 
-    <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
-      🎨
-      <input
-        type="color"
-        value={item.color}
-        onPointerDown={(e) => e.stopPropagation()}
-        onChange={(e) => changeTextColor(item.id, e.target.value)}
-        className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
-      />
-    </label>
+      <span className="select-none text-sm font-semibold text-slate-300">
+        Rotate image
+      </span>
+    </div>
+  );
 
-    <select
-      value={item.fontFamily}
-      onPointerDown={(e) => e.stopPropagation()}
-      onChange={(e) => changeTextFont(item.id, e.target.value)}
-      className="w-[110px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none md:w-[150px]"
-    >
-      {fontOptions.map((font) => (
-        <option key={font} value={font}>
-          {font}
-        </option>
-      ))}
-    </select>
-  </div>
-);
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
+
     if (!file) return;
 
-   const newImage: DesignItem = {
-  id: crypto.randomUUID(),
-  type: "image",
-  src: URL.createObjectURL(file),
-  position: { x: 180, y: 120 },
-  size: { width: 160, height: 160 },
-  rotation: 0,
-};
+    const newImage: DesignItem = {
+      id: crypto.randomUUID(),
+      type: "image",
+      src: URL.createObjectURL(file),
+      position: { x: 180, y: 120 },
+      size: { width: 160, height: 160 },
+      rotation: 0,
+    };
 
-    setItems((currentItems) => [...currentItems, newImage]);
+    setItems((currentItems) => [
+      ...currentItems,
+      newImage,
+    ]);
+
     setSelectedItemId(newImage.id);
     setEditingItemId(null);
+
     event.target.value = "";
   };
 
   const addText = () => {
     const canvas = canvasRef.current;
+
     const canvasWidth = canvas?.clientWidth || 360;
     const canvasHeight = canvas?.clientHeight || 256;
 
     const newText: DesignItem = {
-  id: crypto.randomUUID(),
-  type: "text",
-  value: "",
-  position: { x: canvasWidth / 2, y: canvasHeight / 2 },
-  fontSize: 32,
-  color: "#0f172a",
-  fontFamily: "Arial",
-  rotation: 0,
-};
+      id: crypto.randomUUID(),
+      type: "text",
+      value: "",
+      position: {
+        x: canvasWidth / 2,
+        y: canvasHeight / 2,
+      },
+      fontSize: 32,
+      color: "#0f172a",
+      fontFamily: "Arial",
+      rotation: 0,
+    };
 
-    setItems((currentItems) => [...currentItems, newText]);
+    setItems((currentItems) => [
+      ...currentItems,
+      newText,
+    ]);
+
     setSelectedItemId(newText.id);
     setEditingItemId(null);
 
@@ -346,18 +463,23 @@ export default function EditorPreview() {
     if (!selectedItemId) return;
 
     setItems((currentItems) =>
-      currentItems.filter((item) => item.id !== selectedItemId)
+      currentItems.filter(
+        (item) => item.id !== selectedItemId
+      )
     );
 
     setSelectedItemId(null);
     setEditingItemId(null);
   };
 
-  const moveItem = (event: React.PointerEvent<HTMLDivElement>) => {
+  const moveItem = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
     if (pinchRef.current) return;
 
     const pending = pendingDragRef.current;
-    const canvas = event.currentTarget.getBoundingClientRect();
+    const canvas =
+      event.currentTarget.getBoundingClientRect();
 
     if (pending) {
       const movedEnough =
@@ -366,6 +488,7 @@ export default function EditorPreview() {
 
       if (movedEnough || pending.moved) {
         pending.moved = true;
+
         setDraggingItemId(pending.itemId);
         setEditingItemId(null);
 
@@ -410,12 +533,21 @@ export default function EditorPreview() {
     if (justPinchedRef.current) {
       pendingDragRef.current = null;
       setDraggingItemId(null);
+
       return;
     }
 
-    if (pendingDragRef.current && !pendingDragRef.current.moved) {
-      setEditingItemId(pendingDragRef.current.itemId);
-      setSelectedItemId(pendingDragRef.current.itemId);
+    if (
+      pendingDragRef.current &&
+      !pendingDragRef.current.moved
+    ) {
+      setEditingItemId(
+        pendingDragRef.current.itemId
+      );
+
+      setSelectedItemId(
+        pendingDragRef.current.itemId
+      );
     }
 
     pendingDragRef.current = null;
@@ -434,16 +566,26 @@ export default function EditorPreview() {
     const startHeight = item.size.height;
 
     const resize = (moveEvent: PointerEvent) => {
-      const change = Math.max(moveEvent.clientX - startX, moveEvent.clientY - startY);
+      const change = Math.max(
+        moveEvent.clientX - startX,
+        moveEvent.clientY - startY
+      );
 
       setItems((currentItems) =>
         currentItems.map((currentItem) =>
-          currentItem.id === item.id && currentItem.type === "image"
+          currentItem.id === item.id &&
+          currentItem.type === "image"
             ? {
                 ...currentItem,
                 size: {
-                  width: Math.max(60, startWidth + change),
-                  height: Math.max(60, startHeight + change),
+                  width: Math.max(
+                    60,
+                    startWidth + change
+                  ),
+                  height: Math.max(
+                    60,
+                    startHeight + change
+                  ),
                 },
               }
             : currentItem
@@ -452,18 +594,34 @@ export default function EditorPreview() {
     };
 
     const stopResize = () => {
-      window.removeEventListener("pointermove", resize);
-      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener(
+        "pointermove",
+        resize
+      );
+
+      window.removeEventListener(
+        "pointerup",
+        stopResize
+      );
     };
 
-    window.addEventListener("pointermove", resize);
-    window.addEventListener("pointerup", stopResize);
+    window.addEventListener(
+      "pointermove",
+      resize
+    );
+
+    window.addEventListener(
+      "pointerup",
+      stopResize
+    );
   };
 
   return (
     <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
       <div className="mb-4 flex items-center justify-between">
-        <p className="font-semibold text-white">Genvilo Editor</p>
+        <p className="font-semibold text-white">
+          Genvilo Editor
+        </p>
 
         <button className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-sm text-white">
           Export
@@ -474,6 +632,7 @@ export default function EditorPreview() {
         <div className="rounded-xl bg-slate-900 p-4 text-sm text-slate-300">
           <label className="flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white">
             Upload Image
+
             <input
               type="file"
               accept="image/*"
@@ -498,7 +657,13 @@ export default function EditorPreview() {
         </div>
 
         <div className="min-w-0 md:col-span-3">
-          {selectedTextItem && <TextToolbar item={selectedTextItem} />}
+          {selectedTextItem && (
+            <TextToolbar item={selectedTextItem} />
+          )}
+
+          {selectedImageItem && (
+            <ImageToolbar item={selectedImageItem} />
+          )}
 
           <div
             ref={canvasRef}
@@ -507,8 +672,8 @@ export default function EditorPreview() {
             onTouchEndCapture={endCanvasPinch}
             onPointerMove={moveItem}
             onPointerUp={stopDragging}
-            onPointerDown={(e) => {
-              if (e.pointerType === "mouse") {
+            onPointerDown={(event) => {
+              if (event.pointerType === "mouse") {
                 clearSelection();
               }
             }}
@@ -521,34 +686,43 @@ export default function EditorPreview() {
             }}
           >
             {items.length === 0 && (
-              <p className="flex h-full items-center justify-center">Your design canvas</p>
+              <p className="flex h-full items-center justify-center">
+                Your design canvas
+              </p>
             )}
 
             {items.map((item) => (
               <div
                 key={item.id}
                 className={`absolute ${
-                  selectedItemId === item.id && item.type === "image"
+                  selectedItemId === item.id &&
+                  item.type === "image"
                     ? "ring-2 ring-blue-500"
                     : ""
                 }`}
                 style={{
                   left: item.position.x,
                   top: item.position.y,
-                 transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
+                  transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
                   touchAction: "none",
                   WebkitUserSelect: "none",
                   userSelect: "none",
                 }}
               >
                 {item.type === "image" && (
-                  <div style={{ width: item.size.width, height: item.size.height }}>
+                  <div
+                    style={{
+                      width: item.size.width,
+                      height: item.size.height,
+                    }}
+                  >
                     <img
                       src={item.src}
                       alt="Uploaded design"
                       draggable={false}
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+
                         setDraggingItemId(item.id);
                         setSelectedItemId(item.id);
                         setEditingItemId(null);
@@ -558,7 +732,9 @@ export default function EditorPreview() {
 
                     {selectedItemId === item.id && (
                       <div
-                        onPointerDown={(e) => startImageResize(e, item)}
+                        onPointerDown={(event) =>
+                          startImageResize(event, item)
+                        }
                         className="absolute bottom-0 right-0 hidden h-5 w-5 cursor-se-resize rounded-full bg-blue-500 md:block"
                       />
                     )}
@@ -571,32 +747,45 @@ export default function EditorPreview() {
                       <textarea
                         autoFocus
                         value={item.value}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                        onChange={(event) => {
+                          const value =
+                            event.target.value;
 
                           setItems((currentItems) =>
-                            currentItems.map((currentItem) =>
-                              currentItem.id === item.id
-                                ? { ...currentItem, value }
-                                : currentItem
+                            currentItems.map(
+                              (currentItem) =>
+                                currentItem.id === item.id
+                                  ? {
+                                      ...currentItem,
+                                      value,
+                                    }
+                                  : currentItem
                             )
                           );
                         }}
                         onBlur={() => {
                           setTimeout(() => {
-                            const activeElement = document.activeElement;
+                            const activeElement =
+                              document.activeElement;
 
                             if (
-                              activeElement instanceof HTMLElement &&
-                              activeElement.closest(`[data-text-toolbar="${item.id}"]`)
+                              activeElement instanceof
+                                HTMLElement &&
+                              activeElement.closest(
+                                `[data-text-toolbar="${item.id}"]`
+                              )
                             ) {
                               return;
                             }
 
-                            if (item.value.trim() === "") {
+                            if (
+                              item.value.trim() === ""
+                            ) {
                               setItems((currentItems) =>
                                 currentItems.filter(
-                                  (currentItem) => currentItem.id !== item.id
+                                  (currentItem) =>
+                                    currentItem.id !==
+                                    item.id
                                 )
                               );
                             }
@@ -604,13 +793,13 @@ export default function EditorPreview() {
                             setEditingItemId(null);
                           }, 0);
                         }}
-                        onPointerDown={(e) => {
-                          e.stopPropagation();
+                        onPointerDown={(event) => {
+                          event.stopPropagation();
 
                           pendingDragRef.current = {
                             itemId: item.id,
-                            startX: e.clientX,
-                            startY: e.clientY,
+                            startX: event.clientX,
+                            startY: event.clientY,
                             moved: false,
                           };
 
@@ -620,26 +809,35 @@ export default function EditorPreview() {
                         rows={1}
                         className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none"
                         style={{
-                          fontSize: Math.max(16, item.fontSize),
+                          fontSize: Math.max(
+                            16,
+                            item.fontSize
+                          ),
                           color: item.color,
                           fontFamily: item.fontFamily,
-                          textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                          textShadow:
+                            "0 1px 4px rgba(0,0,0,0.35)",
                           lineHeight: 1.15,
                           touchAction: "none",
                           WebkitUserSelect: "none",
                           userSelect: "none",
-                          width: `${Math.max((item.value || "Type here").length + 1, 9)}ch`,
+                          width: `${Math.max(
+                            (
+                              item.value || "Type here"
+                            ).length + 1,
+                            9
+                          )}ch`,
                         }}
                       />
                     ) : (
                       <div
-                        onPointerDown={(e) => {
-                          e.stopPropagation();
+                        onPointerDown={(event) => {
+                          event.stopPropagation();
 
                           pendingDragRef.current = {
                             itemId: item.id,
-                            startX: e.clientX,
-                            startY: e.clientY,
+                            startX: event.clientX,
+                            startY: event.clientY,
                             moved: false,
                           };
 
@@ -650,7 +848,8 @@ export default function EditorPreview() {
                           fontSize: item.fontSize,
                           color: item.color,
                           fontFamily: item.fontFamily,
-                          textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                          textShadow:
+                            "0 1px 4px rgba(0,0,0,0.35)",
                           lineHeight: 1.15,
                           touchAction: "none",
                           WebkitUserSelect: "none",
