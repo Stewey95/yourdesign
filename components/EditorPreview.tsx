@@ -334,7 +334,7 @@ export default function EditorPreview() {
     pinchRef.current = null;
   };
 
-  const TextToolbar = ({
+    const TextToolbar = ({
     item,
   }: {
     item: Extract<DesignItem, { type: "text" }>;
@@ -343,129 +343,143 @@ export default function EditorPreview() {
       data-text-toolbar={item.id}
       onDragStart={(event) => event.preventDefault()}
       onPointerMove={(event) => event.stopPropagation()}
-      className="mb-3 flex w-full min-w-0 select-none items-center justify-start gap-2 overflow-x-auto rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none md:justify-center"
+      className="mb-3 w-full min-w-0 select-none overflow-hidden rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none"
       style={{
         WebkitUserSelect: "none",
         userSelect: "none",
       }}
     >
-      <div className="hidden shrink-0 gap-2 md:flex">
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => changeTextSize(item.id, -4)}
-          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-        >
-          A-
-        </button>
-
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => changeTextSize(item.id, 4)}
-          className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-        >
-          A+
-        </button>
-      </div>
-
-      <button
-        type="button"
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={() => rotateItem(item.id, -15)}
-        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-        aria-label="Rotate text left"
-      >
-        ↺
-      </button>
-
-      <button
-        type="button"
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={() => rotateItem(item.id, 15)}
-        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-        aria-label="Rotate text right"
-      >
-        ↻
-      </button>
+      <div className="relative min-w-0">
+        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10 md:justify-center md:pr-0">
+          <div className="hidden shrink-0 gap-2 md:flex">
             <button
-        type="button"
-        disabled={!canSendBackward}
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={() =>
-          moveItemLayer(item.id, "backward")
-        }
-        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label="Send text backward"
-        title="Send Backward"
-      >
-        Backward
-      </button>
+              type="button"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onClick={() => changeTextSize(item.id, -4)}
+              className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+            >
+              A-
+            </button>
 
-      <button
-        type="button"
-        disabled={!canBringForward}
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={() =>
-          moveItemLayer(item.id, "forward")
-        }
-        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label="Bring text forward"
-        title="Bring Forward"
-      >
-        Forward
-      </button>
+            <button
+              type="button"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onClick={() => changeTextSize(item.id, 4)}
+              className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
+            >
+              A+
+            </button>
+          </div>
 
-      <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
-        🎨
+          <button
+            type="button"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() => rotateItem(item.id, -15)}
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
+            aria-label="Rotate text left"
+          >
+            ↺
+          </button>
 
-        <input
-          type="color"
-          value={item.color}
-          onPointerDown={(event) =>
-            event.stopPropagation()
-          }
-          onChange={(event) =>
-            changeTextColor(item.id, event.target.value)
-          }
-          className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
-        />
-      </label>
+          <button
+            type="button"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() => rotateItem(item.id, 15)}
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
+            aria-label="Rotate text right"
+          >
+            ↻
+          </button>
 
-      <select
-        value={item.fontFamily}
-        onPointerDown={(event) =>
-          event.stopPropagation()
-        }
-        onChange={(event) =>
-          changeTextFont(item.id, event.target.value)
-        }
-        className="w-[110px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none md:w-[150px]"
-      >
-        {fontOptions.map((font) => (
-          <option key={font} value={font}>
-            {font}
-          </option>
-        ))}
-      </select>
+          <button
+            type="button"
+            disabled={!canSendBackward}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() =>
+              moveItemLayer(item.id, "backward")
+            }
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Send text backward"
+            title="Send Backward"
+          >
+            Backward
+          </button>
+
+          <button
+            type="button"
+            disabled={!canBringForward}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() =>
+              moveItemLayer(item.id, "forward")
+            }
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Bring text forward"
+            title="Bring Forward"
+          >
+            Forward
+          </button>
+
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
+            🎨
+
+            <input
+              type="color"
+              value={item.color}
+              onPointerDown={(event) =>
+                event.stopPropagation()
+              }
+              onChange={(event) =>
+                changeTextColor(item.id, event.target.value)
+              }
+              className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
+            />
+          </label>
+
+          <select
+            value={item.fontFamily}
+            onPointerDown={(event) =>
+              event.stopPropagation()
+            }
+            onChange={(event) =>
+              changeTextFont(item.id, event.target.value)
+            }
+            className="w-[110px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none md:w-[150px]"
+          >
+            {fontOptions.map((font) => (
+              <option key={font} value={font}>
+                {font}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-end bg-gradient-to-l from-slate-900 via-slate-900/90 to-transparent pr-2 md:hidden"
+        >
+          <span className="animate-pulse text-3xl font-light text-white/50">
+            ›
+          </span>
+        </div>
+      </div>
     </div>
   );
 
