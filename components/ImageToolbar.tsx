@@ -18,8 +18,12 @@ type ImageAdjustment =
 type ImageToolbarProps = {
   item: ImageItem;
   showAdjustments: boolean;
+  canBringForward: boolean;
+  canSendBackward: boolean;
   onToggleAdjustments: () => void;
   onRotate: (id: string, amount: number) => void;
+  onBringForward: (id: string) => void;
+  onSendBackward: (id: string) => void;
   onAdjustmentChange: (
     id: string,
     adjustment: ImageAdjustment,
@@ -31,8 +35,12 @@ type ImageToolbarProps = {
 export default function ImageToolbar({
   item,
   showAdjustments,
+  canBringForward,
+  canSendBackward,
   onToggleAdjustments,
   onRotate,
+  onBringForward,
+  onSendBackward,
   onAdjustmentChange,
   onResetAdjustments,
 }: ImageToolbarProps) {
@@ -55,11 +63,11 @@ export default function ImageToolbar({
         userSelect: "none",
       }}
     >
-      <div className="flex min-w-0 items-center justify-center gap-2 overflow-x-auto">
+      <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto md:justify-center">
         <button
           type="button"
           onPointerDown={(event) => {
-            
+            event.preventDefault();
             event.stopPropagation();
           }}
           onClick={() => onRotate(item.id, -15)}
@@ -80,6 +88,36 @@ export default function ImageToolbar({
           aria-label="Rotate image right"
         >
           ↻
+        </button>
+
+        <button
+          type="button"
+          disabled={!canSendBackward}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={() => onSendBackward(item.id)}
+          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Send image backward"
+          title="Send Backward"
+        >
+          Backward
+        </button>
+
+        <button
+          type="button"
+          disabled={!canBringForward}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={() => onBringForward(item.id)}
+          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Bring image forward"
+          title="Bring Forward"
+        >
+          Forward
         </button>
 
         <button
@@ -195,28 +233,28 @@ function AdjustmentSlider({
       </span>
 
       <input
-  type="range"
-  min={min}
-  max={max}
-  step={1}
-  value={value}
-  onPointerDown={(event) => {
-    event.stopPropagation();
-  }}
-  onPointerMove={(event) => {
-    event.stopPropagation();
-  }}
-  onPointerUp={(event) => {
-    event.stopPropagation();
-  }}
-  onPointerCancel={(event) => {
-    event.stopPropagation();
-  }}
-  onChange={(event) =>
-    onChange(Number(event.target.value))
-  }
-  className="block w-full min-w-0 cursor-pointer"
-/>
+        type="range"
+        min={min}
+        max={max}
+        step={1}
+        value={value}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+        }}
+        onPointerMove={(event) => {
+          event.stopPropagation();
+        }}
+        onPointerUp={(event) => {
+          event.stopPropagation();
+        }}
+        onPointerCancel={(event) => {
+          event.stopPropagation();
+        }}
+        onChange={(event) =>
+          onChange(Number(event.target.value))
+        }
+        className="block w-full min-w-0 cursor-pointer"
+      />
     </label>
   );
 }

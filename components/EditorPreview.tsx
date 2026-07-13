@@ -61,6 +61,15 @@ export default function EditorPreview() {
     (item): item is Extract<DesignItem, { type: "image" }> =>
       item.id === selectedItemId && item.type === "image"
   );
+    const selectedItemIndex = items.findIndex(
+    (item) => item.id === selectedItemId
+  );
+
+  const canSendBackward = selectedItemIndex > 0;
+
+  const canBringForward =
+    selectedItemIndex !== -1 &&
+    selectedItemIndex < items.length - 1;
 
   const pendingDragRef = useRef<{
     itemId: string;
@@ -151,6 +160,44 @@ export default function EditorPreview() {
           : item
       )
     );
+  };
+    const moveItemLayer = (
+    id: string,
+    direction: "forward" | "backward"
+  ) => {
+    setItems((currentItems) => {
+      const currentIndex = currentItems.findIndex(
+        (item) => item.id === id
+      );
+
+      if (currentIndex === -1) {
+        return currentItems;
+      }
+
+      const targetIndex =
+        direction === "forward"
+          ? currentIndex + 1
+          : currentIndex - 1;
+
+      if (
+        targetIndex < 0 ||
+        targetIndex >= currentItems.length
+      ) {
+        return currentItems;
+      }
+
+      const reorderedItems = [...currentItems];
+
+      [
+        reorderedItems[currentIndex],
+        reorderedItems[targetIndex],
+      ] = [
+        reorderedItems[targetIndex],
+        reorderedItems[currentIndex],
+      ];
+
+      return reorderedItems;
+    });
   };
 
   const changeImageAdjustment = (
@@ -352,6 +399,39 @@ export default function EditorPreview() {
         aria-label="Rotate text right"
       >
         ↻
+      </button>
+            <button
+        type="button"
+        disabled={!canSendBackward}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onClick={() =>
+          moveItemLayer(item.id, "backward")
+        }
+        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Send text backward"
+        title="Send Backward"
+      >
+        Backward
+      </button>
+
+      <button
+        type="button"
+        disabled={!canBringForward}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onClick={() =>
+          moveItemLayer(item.id, "forward")
+        }
+        className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Bring text forward"
+        title="Bring Forward"
+      >
+        Forward
       </button>
 
       <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
@@ -682,16 +762,24 @@ export default function EditorPreview() {
             <TextToolbar item={selectedTextItem} />
           )}
 
-         {selectedImageItem && (
-  <ImageToolbar
-    item={selectedImageItem}
-    showAdjustments={showImageAdjustments}
-    onToggleAdjustments={toggleImageAdjustments}
-    onRotate={rotateItem}
-    onAdjustmentChange={changeImageAdjustment}
-    onResetAdjustments={resetImageAdjustments}
-  />
-)}
+                   {selectedImageItem && (
+            <ImageToolbar
+              item={selectedImageItem}
+              showAdjustments={showImageAdjustments}
+              canBringForward={canBringForward}
+              canSendBackward={canSendBackward}
+              onToggleAdjustments={toggleImageAdjustments}
+              onRotate={rotateItem}
+              onBringForward={(id) =>
+                moveItemLayer(id, "forward")
+              }
+              onSendBackward={(id) =>
+                moveItemLayer(id, "backward")
+              }
+              onAdjustmentChange={changeImageAdjustment}
+              onResetAdjustments={resetImageAdjustments}
+            />
+          )}
 
           <div
             ref={canvasRef}
