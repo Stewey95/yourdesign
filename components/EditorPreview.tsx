@@ -453,21 +453,35 @@ export default function EditorPreview() {
               <span>{item.brightness}%</span>
             </span>
 
-            <input
-              type="range"
-              min="0"
-              max="200"
-              value={item.brightness}
-              onPointerDown={(event) => event.stopPropagation()}
-              onChange={(event) =>
-                changeImageAdjustment(
-                  item.id,
-                  "brightness",
-                  Number(event.target.value)
-                )
-              }
-              className="w-full cursor-pointer"
-            />
+           <input
+  type="range"
+  min="0"
+  max="200"
+  value={item.brightness}
+
+  onPointerDown={(event) => {
+    event.stopPropagation();
+    setDraggingItemId(null);
+  }}
+
+  onPointerMove={(event) => {
+    event.stopPropagation();
+  }}
+
+  onPointerUp={(event) => {
+    event.stopPropagation();
+  }}
+
+  onChange={(event) =>
+    changeImageAdjustment(
+      item.id,
+      "brightness",
+      Number(event.target.value)
+    )
+  }
+
+  className="w-full cursor-pointer"
+/>
           </label>
 
           <label className="block text-xs font-semibold text-slate-200">
@@ -481,7 +495,16 @@ export default function EditorPreview() {
               min="0"
               max="200"
               value={item.contrast}
-              onPointerDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                setDraggingItemId(null);
+              }}
+              onPointerMove={(event) => {
+                event.stopPropagation();
+              }}
+              onPointerUp={(event) => {
+                event.stopPropagation();
+              }}
               onChange={(event) =>
                 changeImageAdjustment(
                   item.id,
@@ -500,20 +523,34 @@ export default function EditorPreview() {
             </span>
 
             <input
-              type="range"
-              min="0"
-              max="200"
-              value={item.saturation}
-              onPointerDown={(event) => event.stopPropagation()}
-              onChange={(event) =>
-                changeImageAdjustment(
-                  item.id,
-                  "saturation",
-                  Number(event.target.value)
-                )
-              }
-              className="w-full cursor-pointer"
-            />
+  type="range"
+  min="0"
+  max="200"
+  value={item.brightness}
+
+  onPointerDown={(event) => {
+    event.stopPropagation();
+    setDraggingItemId(null);
+  }}
+
+  onPointerMove={(event) => {
+    event.stopPropagation();
+  }}
+
+  onPointerUp={(event) => {
+    event.stopPropagation();
+  }}
+
+  onChange={(event) =>
+    changeImageAdjustment(
+      item.id,
+      "brightness",
+      Number(event.target.value)
+    )
+  }
+
+  className="w-full cursor-pointer"
+/>
           </label>
 
           <label className="block text-xs font-semibold text-slate-200">
@@ -523,20 +560,34 @@ export default function EditorPreview() {
             </span>
 
             <input
-              type="range"
-              min="0"
-              max="100"
-              value={item.opacity}
-              onPointerDown={(event) => event.stopPropagation()}
-              onChange={(event) =>
-                changeImageAdjustment(
-                  item.id,
-                  "opacity",
-                  Number(event.target.value)
-                )
-              }
-              className="w-full cursor-pointer"
-            />
+  type="range"
+  min="0"
+  max="200"
+  value={item.brightness}
+
+  onPointerDown={(event) => {
+    event.stopPropagation();
+    setDraggingItemId(null);
+  }}
+
+  onPointerMove={(event) => {
+    event.stopPropagation();
+  }}
+
+  onPointerUp={(event) => {
+    event.stopPropagation();
+  }}
+
+  onChange={(event) =>
+    changeImageAdjustment(
+      item.id,
+      "brightness",
+      Number(event.target.value)
+    )
+  }
+
+  className="w-full cursor-pointer"
+/>
           </label>
 
           <button
