@@ -195,38 +195,28 @@ function AdjustmentSlider({
       </span>
 
       <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={value}
-        onPointerDown={(event) => {
-          event.stopPropagation();
-          event.currentTarget.setPointerCapture(
-            event.pointerId
-          );
-        }}
-        onPointerMove={(event) => {
-          event.stopPropagation();
-        }}
-        onPointerUp={(event) => {
-          event.stopPropagation();
-
-          if (
-            event.currentTarget.hasPointerCapture(
-              event.pointerId
-            )
-          ) {
-            event.currentTarget.releasePointerCapture(
-              event.pointerId
-            );
-          }
-        }}
-        onChange={(event) =>
-          onChange(Number(event.target.value))
-        }
-        className="block w-full min-w-0 cursor-pointer"
-      />
+  type="range"
+  min={min}
+  max={max}
+  step={1}
+  value={value}
+  onPointerDown={(event) => {
+    event.stopPropagation();
+  }}
+  onPointerMove={(event) => {
+    event.stopPropagation();
+  }}
+  onPointerUp={(event) => {
+    event.stopPropagation();
+  }}
+  onPointerCancel={(event) => {
+    event.stopPropagation();
+  }}
+  onChange={(event) =>
+    onChange(Number(event.target.value))
+  }
+  className="block w-full min-w-0 cursor-pointer"
+/>
     </label>
   );
 }
