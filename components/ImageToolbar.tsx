@@ -59,7 +59,7 @@ export default function ImageToolbar({
         <button
           type="button"
           onPointerDown={(event) => {
-            event.preventDefault();
+            
             event.stopPropagation();
           }}
           onClick={() => onRotate(item.id, -15)}

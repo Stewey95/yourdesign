@@ -617,6 +617,25 @@ export default function EditorPreview() {
       stopResize
     );
   };
+  const toggleImageAdjustments = () => {
+  setShowImageAdjustments((currentValue) => {
+    const nextValue = !currentValue;
+
+    if (nextValue) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          canvasRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "nearest",
+          });
+        });
+      });
+    }
+
+    return nextValue;
+  });
+};
 
   return (
     <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
@@ -632,7 +651,7 @@ export default function EditorPreview() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-xl bg-slate-900 p-4 text-sm text-slate-300">
-          <label className="flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white">
+          <label className="flex h-10 w-full cursor-pointer select-none items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white">
             Upload Image
 
             <input
@@ -667,9 +686,7 @@ export default function EditorPreview() {
   <ImageToolbar
     item={selectedImageItem}
     showAdjustments={showImageAdjustments}
-    onToggleAdjustments={() =>
-      setShowImageAdjustments((currentValue) => !currentValue)
-    }
+    onToggleAdjustments={toggleImageAdjustments}
     onRotate={rotateItem}
     onAdjustmentChange={changeImageAdjustment}
     onResetAdjustments={resetImageAdjustments}
