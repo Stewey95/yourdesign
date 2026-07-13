@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import ImageToolbar from "./ImageToolbar";
 
 type Position = { x: number; y: number };
 type Size = { width: number; height: number };
@@ -388,223 +389,7 @@ export default function EditorPreview() {
     </div>
   );
 
-  const ImageToolbar = ({
-    item,
-  }: {
-    item: Extract<DesignItem, { type: "image" }>;
-  }) => (
-    <div
-      data-image-toolbar={item.id}
-      onDragStart={(event) => event.preventDefault()}
-      onPointerMove={(event) => event.stopPropagation()}
-      className="mb-3 w-full min-w-0 select-none rounded-2xl bg-slate-900/95 p-3 shadow-lg [&_*]:select-none"
-      style={{
-        WebkitUserSelect: "none",
-        userSelect: "none",
-      }}
-    >
-      <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto md:justify-center">
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => rotateItem(item.id, -15)}
-          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
-          aria-label="Rotate image left"
-        >
-          ↺
-        </button>
 
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => rotateItem(item.id, 15)}
-          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
-          aria-label="Rotate image right"
-        >
-          ↻
-        </button>
-
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() =>
-            setShowImageAdjustments((currentValue) => !currentValue)
-          }
-          className="shrink-0 cursor-pointer rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white"
-        >
-          {showImageAdjustments ? "Hide Adjustments" : "Adjust Image"}
-        </button>
-      </div>
-
-      {showImageAdjustments && (
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="block text-xs font-semibold text-slate-200">
-            <span className="mb-1 flex justify-between">
-              <span>Brightness</span>
-              <span>{item.brightness}%</span>
-            </span>
-
-           <input
-  type="range"
-  min="0"
-  max="200"
-  value={item.brightness}
-
-  onPointerDown={(event) => {
-    event.stopPropagation();
-    setDraggingItemId(null);
-  }}
-
-  onPointerMove={(event) => {
-    event.stopPropagation();
-  }}
-
-  onPointerUp={(event) => {
-    event.stopPropagation();
-  }}
-
-  onChange={(event) =>
-    changeImageAdjustment(
-      item.id,
-      "brightness",
-      Number(event.target.value)
-    )
-  }
-
-  className="w-full cursor-pointer"
-/>
-          </label>
-
-          <label className="block text-xs font-semibold text-slate-200">
-            <span className="mb-1 flex justify-between">
-              <span>Contrast</span>
-              <span>{item.contrast}%</span>
-            </span>
-
-            <input
-              type="range"
-              min="0"
-              max="200"
-              value={item.contrast}
-              onPointerDown={(event) => {
-                event.stopPropagation();
-                setDraggingItemId(null);
-              }}
-              onPointerMove={(event) => {
-                event.stopPropagation();
-              }}
-              onPointerUp={(event) => {
-                event.stopPropagation();
-              }}
-              onChange={(event) =>
-                changeImageAdjustment(
-                  item.id,
-                  "contrast",
-                  Number(event.target.value)
-                )
-              }
-              className="w-full cursor-pointer"
-            />
-          </label>
-
-          <label className="block text-xs font-semibold text-slate-200">
-            <span className="mb-1 flex justify-between">
-              <span>Saturation</span>
-              <span>{item.saturation}%</span>
-            </span>
-
-            <input
-  type="range"
-  min="0"
-  max="200"
-  value={item.brightness}
-
-  onPointerDown={(event) => {
-    event.stopPropagation();
-    setDraggingItemId(null);
-  }}
-
-  onPointerMove={(event) => {
-    event.stopPropagation();
-  }}
-
-  onPointerUp={(event) => {
-    event.stopPropagation();
-  }}
-
-  onChange={(event) =>
-    changeImageAdjustment(
-      item.id,
-      "brightness",
-      Number(event.target.value)
-    )
-  }
-
-  className="w-full cursor-pointer"
-/>
-          </label>
-
-          <label className="block text-xs font-semibold text-slate-200">
-            <span className="mb-1 flex justify-between">
-              <span>Opacity</span>
-              <span>{item.opacity}%</span>
-            </span>
-
-            <input
-  type="range"
-  min="0"
-  max="200"
-  value={item.brightness}
-
-  onPointerDown={(event) => {
-    event.stopPropagation();
-    setDraggingItemId(null);
-  }}
-
-  onPointerMove={(event) => {
-    event.stopPropagation();
-  }}
-
-  onPointerUp={(event) => {
-    event.stopPropagation();
-  }}
-
-  onChange={(event) =>
-    changeImageAdjustment(
-      item.id,
-      "brightness",
-      Number(event.target.value)
-    )
-  }
-
-  className="w-full cursor-pointer"
-/>
-          </label>
-
-          <button
-            type="button"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-            onClick={() => resetImageAdjustments(item.id)}
-            className="cursor-pointer rounded-lg bg-slate-700 px-4 py-2 text-sm font-bold text-white md:col-span-2"
-          >
-            Reset Adjustments
-          </button>
-        </div>
-      )}
-    </div>
-  );
 
   const handleImageUpload = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -878,9 +663,18 @@ export default function EditorPreview() {
             <TextToolbar item={selectedTextItem} />
           )}
 
-          {selectedImageItem && (
-            <ImageToolbar item={selectedImageItem} />
-          )}
+         {selectedImageItem && (
+  <ImageToolbar
+    item={selectedImageItem}
+    showAdjustments={showImageAdjustments}
+    onToggleAdjustments={() =>
+      setShowImageAdjustments((currentValue) => !currentValue)
+    }
+    onRotate={rotateItem}
+    onAdjustmentChange={changeImageAdjustment}
+    onResetAdjustments={resetImageAdjustments}
+  />
+)}
 
           <div
             ref={canvasRef}
