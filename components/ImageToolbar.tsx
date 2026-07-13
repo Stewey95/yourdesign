@@ -63,76 +63,87 @@ export default function ImageToolbar({
         userSelect: "none",
       }}
     >
-      <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto md:justify-center">
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => onRotate(item.id, -15)}
-          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
-          aria-label="Rotate image left"
-        >
-          ↺
-        </button>
+      <div className="relative min-w-0">
+        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10 md:justify-center md:pr-0">
+          <button
+            type="button"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() => onRotate(item.id, -15)}
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
+            aria-label="Rotate image left"
+          >
+            ↺
+          </button>
 
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => onRotate(item.id, 15)}
-          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
-          aria-label="Rotate image right"
-        >
-          ↻
-        </button>
+          <button
+            type="button"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() => onRotate(item.id, 15)}
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
+            aria-label="Rotate image right"
+          >
+            ↻
+          </button>
 
-        <button
-          type="button"
-          disabled={!canSendBackward}
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => onSendBackward(item.id)}
-          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Send image backward"
-          title="Send Backward"
-        >
-          Backward
-        </button>
+          <button
+            type="button"
+            disabled={!canSendBackward}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() => onSendBackward(item.id)}
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Send image backward"
+            title="Send Backward"
+          >
+            Backward
+          </button>
 
-        <button
-          type="button"
-          disabled={!canBringForward}
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={() => onBringForward(item.id)}
-          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Bring image forward"
-          title="Bring Forward"
-        >
-          Forward
-        </button>
+          <button
+            type="button"
+            disabled={!canBringForward}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() => onBringForward(item.id)}
+            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Bring image forward"
+            title="Bring Forward"
+          >
+            Forward
+          </button>
 
-        <button
-          type="button"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={onToggleAdjustments}
-          className="shrink-0 cursor-pointer rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white"
+          <button
+            type="button"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={onToggleAdjustments}
+            className="shrink-0 cursor-pointer rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white"
+          >
+            {showAdjustments
+              ? "Hide Adjustments"
+              : "Adjust Image"}
+          </button>
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-end bg-gradient-to-l from-slate-900 via-slate-900/90 to-transparent pr-2 md:hidden"
         >
-          {showAdjustments
-            ? "Hide Adjustments"
-            : "Adjust Image"}
-        </button>
+          <span className="animate-pulse text-3xl font-light text-white/50">
+            ›
+          </span>
+        </div>
       </div>
 
       {showAdjustments && (
