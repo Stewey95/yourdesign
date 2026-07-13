@@ -13,6 +13,10 @@ type DesignItem =
       position: Position;
       size: Size;
       rotation: number;
+      brightness: number;
+      contrast: number;
+      saturation: number;
+      opacity: number;
     }
   | {
       id: string;
@@ -42,6 +46,7 @@ export default function EditorPreview() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [showImageAdjustments, setShowImageAdjustments] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const justPinchedRef = useRef(false);
@@ -95,6 +100,7 @@ export default function EditorPreview() {
 
     setSelectedItemId(null);
     setEditingItemId(null);
+    setShowImageAdjustments(false);
   };
 
   const changeTextSize = (id: string, amount: number) => {
@@ -140,6 +146,39 @@ export default function EditorPreview() {
           ? {
               ...item,
               rotation: item.rotation + amount,
+            }
+          : item
+      )
+    );
+  };
+
+  const changeImageAdjustment = (
+    id: string,
+    adjustment: "brightness" | "contrast" | "saturation" | "opacity",
+    value: number
+  ) => {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "image"
+          ? {
+              ...item,
+              [adjustment]: value,
+            }
+          : item
+      )
+    );
+  };
+
+  const resetImageAdjustments = (id: string) => {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "image"
+          ? {
+              ...item,
+              brightness: 100,
+              contrast: 100,
+              saturation: 100,
+              opacity: 100,
             }
           : item
       )
@@ -358,41 +397,161 @@ export default function EditorPreview() {
       data-image-toolbar={item.id}
       onDragStart={(event) => event.preventDefault()}
       onPointerMove={(event) => event.stopPropagation()}
-      className="mb-3 flex w-full min-w-0 select-none items-center justify-center gap-2 rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none"
+      className="mb-3 w-full min-w-0 select-none rounded-2xl bg-slate-900/95 p-3 shadow-lg [&_*]:select-none"
       style={{
         WebkitUserSelect: "none",
         userSelect: "none",
       }}
     >
-      <button
-        type="button"
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={() => rotateItem(item.id, -15)}
-        className="cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
-        aria-label="Rotate image left"
-      >
-        ↺
-      </button>
+      <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto md:justify-center">
+        <button
+          type="button"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={() => rotateItem(item.id, -15)}
+          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
+          aria-label="Rotate image left"
+        >
+          ↺
+        </button>
 
-      <button
-        type="button"
-        onPointerDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onClick={() => rotateItem(item.id, 15)}
-        className="cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
-        aria-label="Rotate image right"
-      >
-        ↻
-      </button>
+        <button
+          type="button"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={() => rotateItem(item.id, 15)}
+          className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-4 py-1 text-xl font-bold text-white"
+          aria-label="Rotate image right"
+        >
+          ↻
+        </button>
 
-      <span className="select-none text-sm font-semibold text-slate-300">
-        Rotate image
-      </span>
+        <button
+          type="button"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={() =>
+            setShowImageAdjustments((currentValue) => !currentValue)
+          }
+          className="shrink-0 cursor-pointer rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white"
+        >
+          {showImageAdjustments ? "Hide Adjustments" : "Adjust Image"}
+        </button>
+      </div>
+
+      {showImageAdjustments && (
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="block text-xs font-semibold text-slate-200">
+            <span className="mb-1 flex justify-between">
+              <span>Brightness</span>
+              <span>{item.brightness}%</span>
+            </span>
+
+            <input
+              type="range"
+              min="0"
+              max="200"
+              value={item.brightness}
+              onPointerDown={(event) => event.stopPropagation()}
+              onChange={(event) =>
+                changeImageAdjustment(
+                  item.id,
+                  "brightness",
+                  Number(event.target.value)
+                )
+              }
+              className="w-full cursor-pointer"
+            />
+          </label>
+
+          <label className="block text-xs font-semibold text-slate-200">
+            <span className="mb-1 flex justify-between">
+              <span>Contrast</span>
+              <span>{item.contrast}%</span>
+            </span>
+
+            <input
+              type="range"
+              min="0"
+              max="200"
+              value={item.contrast}
+              onPointerDown={(event) => event.stopPropagation()}
+              onChange={(event) =>
+                changeImageAdjustment(
+                  item.id,
+                  "contrast",
+                  Number(event.target.value)
+                )
+              }
+              className="w-full cursor-pointer"
+            />
+          </label>
+
+          <label className="block text-xs font-semibold text-slate-200">
+            <span className="mb-1 flex justify-between">
+              <span>Saturation</span>
+              <span>{item.saturation}%</span>
+            </span>
+
+            <input
+              type="range"
+              min="0"
+              max="200"
+              value={item.saturation}
+              onPointerDown={(event) => event.stopPropagation()}
+              onChange={(event) =>
+                changeImageAdjustment(
+                  item.id,
+                  "saturation",
+                  Number(event.target.value)
+                )
+              }
+              className="w-full cursor-pointer"
+            />
+          </label>
+
+          <label className="block text-xs font-semibold text-slate-200">
+            <span className="mb-1 flex justify-between">
+              <span>Opacity</span>
+              <span>{item.opacity}%</span>
+            </span>
+
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={item.opacity}
+              onPointerDown={(event) => event.stopPropagation()}
+              onChange={(event) =>
+                changeImageAdjustment(
+                  item.id,
+                  "opacity",
+                  Number(event.target.value)
+                )
+              }
+              className="w-full cursor-pointer"
+            />
+          </label>
+
+          <button
+            type="button"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={() => resetImageAdjustments(item.id)}
+            className="cursor-pointer rounded-lg bg-slate-700 px-4 py-2 text-sm font-bold text-white md:col-span-2"
+          >
+            Reset Adjustments
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -410,6 +569,10 @@ export default function EditorPreview() {
       position: { x: 180, y: 120 },
       size: { width: 160, height: 160 },
       rotation: 0,
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      opacity: 100,
     };
 
     setItems((currentItems) => [
@@ -419,6 +582,7 @@ export default function EditorPreview() {
 
     setSelectedItemId(newImage.id);
     setEditingItemId(null);
+    setShowImageAdjustments(false);
 
     event.target.value = "";
   };
@@ -450,6 +614,7 @@ export default function EditorPreview() {
 
     setSelectedItemId(newText.id);
     setEditingItemId(null);
+    setShowImageAdjustments(false);
 
     setTimeout(() => {
       canvasRef.current?.scrollIntoView({
@@ -470,6 +635,7 @@ export default function EditorPreview() {
 
     setSelectedItemId(null);
     setEditingItemId(null);
+    setShowImageAdjustments(false);
   };
 
   const moveItem = (
@@ -726,8 +892,13 @@ export default function EditorPreview() {
                         setDraggingItemId(item.id);
                         setSelectedItemId(item.id);
                         setEditingItemId(null);
+                        setShowImageAdjustments(false);
                       }}
                       className="h-full w-full cursor-move select-none rounded-lg object-contain"
+                      style={{
+                        filter: `brightness(${item.brightness}%) contrast(${item.contrast}%) saturate(${item.saturation}%)`,
+                        opacity: item.opacity / 100,
+                      }}
                     />
 
                     {selectedItemId === item.id && (
