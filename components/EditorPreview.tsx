@@ -1104,7 +1104,7 @@ onTouchCancelCapture={() => {
                         }}
                         placeholder="Type here"
                        rows={Math.max(1, item.value.split("\n").length)}
-                        className="block min-h-[1.2em] resize-none overflow-auto whitespace-pre bg-transparent text-center font-bold outline-none touch-none"
+                        className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none"
                         style={{
                           fontSize: Math.max(
                             16,
@@ -1118,8 +1118,8 @@ onTouchCancelCapture={() => {
                           touchAction: "none",
                           WebkitUserSelect: "none",
                           userSelect: "none",
-                         width: "min(80vw, 320px)",
-maxWidth: "calc(100vw - 48px)",
+                         width: "min(76vw, 460px)",
+maxWidth: "100%",
                         }}
                       />
                     ) : (
@@ -1136,7 +1136,7 @@ maxWidth: "calc(100vw - 48px)",
 
                           setSelectedItemId(item.id);
                         }}
-                        className="cursor-move select-none whitespace-pre text-center font-bold touch-none"
+                        className="cursor-move select-none whitespace-pre-wrap break-words text-center font-bold touch-none"
                         style={{
                           fontSize: item.fontSize,
                           color: item.color,
@@ -1144,6 +1144,8 @@ maxWidth: "calc(100vw - 48px)",
                           textShadow:
                             "0 1px 4px rgba(0,0,0,0.35)",
                           lineHeight: 1.15,
+                          width: "min(76vw, 460px)",
+maxWidth: "100%",
                           touchAction: "none",
                           WebkitUserSelect: "none",
                           userSelect: "none",
