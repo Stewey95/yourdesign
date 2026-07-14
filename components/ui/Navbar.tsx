@@ -5,7 +5,7 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
        <div className="flex items-center">
   <Image
-    src="/genvilo-logo.png"
+    src="/genvilo-logo.svg"
     alt="Genvilo"
     width={170}
     height={70}
