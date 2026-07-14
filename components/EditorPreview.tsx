@@ -71,12 +71,14 @@ const getSnappedPosition = (
 
   const canvasCentreX = canvasBounds.width / 2;
   const canvasCentreY = canvasBounds.height / 2;
+  const activeSnapThreshold =
+  event.pointerType === "touch" ? 18 : SNAP_THRESHOLD;
 
   const snapToVerticalCentre =
-    Math.abs(rawX - canvasCentreX) <= SNAP_THRESHOLD;
+    Math.abs(rawX - canvasCentreX) <= activeSnapThreshold;
 
   const snapToHorizontalCentre =
-    Math.abs(rawY - canvasCentreY) <= SNAP_THRESHOLD;
+    Math.abs(rawY - canvasCentreY) <= activeSnapThreshold;
 
   setAlignmentGuides({
     vertical: snapToVerticalCentre,
@@ -149,6 +151,7 @@ const getSnappedPosition = (
     setSelectedItemId(null);
     setEditingItemId(null);
     setShowImageAdjustments(false);
+    hideAlignmentGuides();
   };
 
   const changeTextSize = (id: string, amount: number) => {
@@ -837,7 +840,14 @@ const getSnappedPosition = (
             ref={canvasRef}
             onTouchStartCapture={startCanvasPinch}
             onTouchMoveCapture={moveCanvasPinch}
-            onTouchEndCapture={endCanvasPinch}
+            onTouchEndCapture={() => {
+  endCanvasPinch();
+  stopDragging();
+}}
+onTouchCancelCapture={() => {
+  endCanvasPinch();
+  stopDragging();
+}}
             onPointerMove={moveItem}
             onPointerUp={stopDragging}
             onPointerDown={(event) => {
