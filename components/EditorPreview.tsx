@@ -1032,23 +1032,32 @@ onTouchCancelCapture={() => {
   if (!textarea) return;
 
   requestAnimationFrame(() => {
-    const textLength = textarea.value.length;
+  const textLength = textarea.value.length;
 
-    textarea.setSelectionRange(
-      textLength,
-      textLength
-    );
+  textarea.setSelectionRange(
+    textLength,
+    textLength
+  );
 
-    textarea.focus();
-  });
+  textarea.style.height = "auto";
+  textarea.style.height = `${textarea.scrollHeight}px`;
+  textarea.scrollTop = 0;
+
+  textarea.focus();
+});
 }}
                         value={item.value}
-                        onChange={(event) => {
-                          const value =
-                            event.target.value;
-                           
+                       onChange={(event) => {
+  const value =
+    event.target.value;
 
-                          setItems((currentItems) =>
+  const textarea = event.currentTarget;
+
+  textarea.style.height = "auto";
+  textarea.style.height = `${textarea.scrollHeight}px`;
+  textarea.scrollTop = 0;
+
+  setItems((currentItems) =>
                             currentItems.map(
                               (currentItem) =>
                                 currentItem.id === item.id
@@ -1103,7 +1112,7 @@ onTouchCancelCapture={() => {
                           setSelectedItemId(item.id);
                         }}
                         placeholder="Type here"
-                       rows={Math.max(1, item.value.split("\n").length)}
+                     rows={1}
                         className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none"
                         style={{
                           fontSize: Math.max(
