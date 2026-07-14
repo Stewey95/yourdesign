@@ -667,6 +667,11 @@ const getSnappedPosition = (
   };
 
   const stopDragging = () => {
+  hideAlignmentGuides();
+
+  requestAnimationFrame(() => {
+    hideAlignmentGuides();
+  });
     if (justPinchedRef.current) {
       pendingDragRef.current = null;
       setDraggingItemId(null);
@@ -850,6 +855,7 @@ onTouchCancelCapture={() => {
 }}
             onPointerMove={moveItem}
             onPointerUp={stopDragging}
+            onPointerCancel={stopDragging}
             onPointerDown={(event) => {
               if (event.pointerType === "mouse") {
                 clearSelection();
