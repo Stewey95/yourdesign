@@ -1089,7 +1089,7 @@ onTouchCancelCapture={() => {
                         }}
                         placeholder="Type here"
                         rows={1}
-                        className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none"
+                        className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre bg-transparent text-center font-bold outline-none touch-none"
                         style={{
                           fontSize: Math.max(
                             16,
@@ -1103,12 +1103,9 @@ onTouchCancelCapture={() => {
                           touchAction: "none",
                           WebkitUserSelect: "none",
                           userSelect: "none",
-                          width: `${Math.max(
-                            (
-                              item.value || "Type here"
-                            ).length + 1,
-                            9
-                          )}ch`,
+                          minWidth: "9ch",
+width: "max-content",
+maxWidth: "80vw",
                         }}
                       />
                     ) : (
