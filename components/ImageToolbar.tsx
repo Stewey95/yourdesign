@@ -68,7 +68,7 @@ export default function ImageToolbar({
       }}
     >
       <div className="relative min-w-0">
-        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10 md:justify-center md:pr-0">
+        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10">
           <button
             type="button"
             onPointerDown={(event) => {

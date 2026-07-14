@@ -1028,10 +1028,29 @@ onTouchCancelCapture={() => {
                     {editingItemId === item.id ? (
                       <textarea
                         autoFocus
+                        ref={(textarea) => {
+  if (!textarea) return;
+
+  requestAnimationFrame(() => {
+    const textLength = textarea.value.length;
+
+    textarea.setSelectionRange(
+      textLength,
+      textLength
+    );
+
+    textarea.scrollLeft = textarea.scrollWidth;
+  });
+}}
                         value={item.value}
                         onChange={(event) => {
                           const value =
                             event.target.value;
+                            const textarea = event.currentTarget;
+
+requestAnimationFrame(() => {
+  textarea.scrollLeft = textarea.scrollWidth;
+});
 
                           setItems((currentItems) =>
                             currentItems.map(
@@ -1089,7 +1108,7 @@ onTouchCancelCapture={() => {
                         }}
                         placeholder="Type here"
                         rows={1}
-                        className="min-h-[1.2em] w-auto resize-none overflow-visible whitespace-pre bg-transparent text-center font-bold outline-none touch-none"
+                        className="block min-h-[1.2em] resize-none overflow-x-auto overflow-y-hidden whitespace-pre bg-transparent text-center font-bold outline-none touch-none"
                         style={{
                           fontSize: Math.max(
                             16,
@@ -1103,9 +1122,8 @@ onTouchCancelCapture={() => {
                           touchAction: "none",
                           WebkitUserSelect: "none",
                           userSelect: "none",
-                          minWidth: "9ch",
-width: "max-content",
-maxWidth: "80vw",
+                         width: "min(80vw, 320px)",
+maxWidth: "calc(100vw - 48px)",
                         }}
                       />
                     ) : (
