@@ -48,8 +48,46 @@ export default function EditorPreview() {
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showImageAdjustments, setShowImageAdjustments] = useState(false);
+  const [alignmentGuides, setAlignmentGuides] = useState({
+  vertical: false,
+  horizontal: false,
+});
+
+const SNAP_THRESHOLD = 8;
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const hideAlignmentGuides = () => {
+  setAlignmentGuides({
+    vertical: false,
+    horizontal: false,
+  });
+};
+const getSnappedPosition = (
+  event: React.PointerEvent<HTMLDivElement>,
+  canvasBounds: DOMRect
+): Position => {
+  const rawX = event.clientX - canvasBounds.left;
+  const rawY = event.clientY - canvasBounds.top;
+
+  const canvasCentreX = canvasBounds.width / 2;
+  const canvasCentreY = canvasBounds.height / 2;
+
+  const snapToVerticalCentre =
+    Math.abs(rawX - canvasCentreX) <= SNAP_THRESHOLD;
+
+  const snapToHorizontalCentre =
+    Math.abs(rawY - canvasCentreY) <= SNAP_THRESHOLD;
+
+  setAlignmentGuides({
+    vertical: snapToVerticalCentre,
+    horizontal: snapToHorizontalCentre,
+  });
+
+  return {
+    x: snapToVerticalCentre ? canvasCentreX : rawX,
+    y: snapToHorizontalCentre ? canvasCentreY : rawY,
+  };
+};
   const justPinchedRef = useRef(false);
 
   const selectedTextItem = items.find(
@@ -589,18 +627,18 @@ export default function EditorPreview() {
         setEditingItemId(null);
 
         setItems((currentItems) =>
-          currentItems.map((item) =>
-            item.id === pending.itemId
-              ? {
-                  ...item,
-                  position: {
-                    x: event.clientX - canvas.left,
-                    y: event.clientY - canvas.top,
-                  },
-                }
-              : item
-          )
-        );
+  currentItems.map((item) =>
+    item.id === pending.itemId
+      ? {
+          ...item,
+          position: getSnappedPosition(
+            event,
+            canvas
+          ),
+        }
+      : item
+  )
+);
       }
 
       return;
@@ -615,10 +653,10 @@ export default function EditorPreview() {
         item.id === draggingItemId
           ? {
               ...item,
-              position: {
-                x: event.clientX - canvas.left,
-                y: event.clientY - canvas.top,
-              },
+              position: getSnappedPosition(
+                event,
+                canvas
+              ),
             }
           : item
       )
@@ -820,6 +858,23 @@ export default function EditorPreview() {
                 Your design canvas
               </p>
             )}
+            <div
+  aria-hidden="true"
+  className={`pointer-events-none absolute left-1/2 top-0 z-50 h-full w-px -translate-x-1/2 bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)] transition-opacity duration-150 ${
+    alignmentGuides.vertical
+      ? "opacity-100"
+      : "opacity-0"
+  }`}
+/>
+
+<div
+  aria-hidden="true"
+  className={`pointer-events-none absolute left-0 top-1/2 z-50 h-px w-full -translate-y-1/2 bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)] transition-opacity duration-150 ${
+    alignmentGuides.horizontal
+      ? "opacity-100"
+      : "opacity-0"
+  }`}
+/>
 
             {items.map((item) => (
               <div
