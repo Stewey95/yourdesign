@@ -1,10 +1,18 @@
+import Image from "next/image";
 export default function Navbar() {
   return (
     <header className="w-full border-b border-white/10 bg-slate-950 text-white">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <div className="text-2xl font-bold tracking-tight">
-          Genvilo
-        </div>
+       <div className="flex items-center">
+  <Image
+    src="/genvilo-logo.png"
+    alt="Genvilo"
+    width={170}
+    height={70}
+    priority
+    className="h-auto w-[130px] object-contain sm:w-[170px]"
+  />
+</div>
 
         <div className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
           <a href="#features" className="hover:text-white">Features</a>
