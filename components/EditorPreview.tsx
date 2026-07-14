@@ -204,7 +204,11 @@ const getSnappedPosition = (
   };
     const moveItemLayer = (
     id: string,
-    direction: "forward" | "backward"
+    direction:
+  | "forward"
+  | "backward"
+  | "front"
+  | "back"
   ) => {
     setItems((currentItems) => {
       const currentIndex = currentItems.findIndex(
@@ -214,6 +218,38 @@ const getSnappedPosition = (
       if (currentIndex === -1) {
         return currentItems;
       }
+      if (direction === "front") {
+  if (currentIndex === currentItems.length - 1) {
+    return currentItems;
+  }
+
+  const reorderedItems = [...currentItems];
+
+  const [selectedItem] = reorderedItems.splice(
+    currentIndex,
+    1
+  );
+
+  reorderedItems.push(selectedItem);
+
+  return reorderedItems;
+}
+if (direction === "back") {
+  if (currentIndex === 0) {
+    return currentItems;
+  }
+
+  const reorderedItems = [...currentItems];
+
+  const [selectedItem] = reorderedItems.splice(
+    currentIndex,
+    1
+  );
+
+  reorderedItems.unshift(selectedItem);
+
+  return reorderedItems;
+}
 
       const targetIndex =
         direction === "forward"
@@ -477,6 +513,39 @@ const getSnappedPosition = (
           >
             Forward
           </button>
+          <button
+  type="button"
+  disabled={!canSendBackward}
+  onPointerDown={(event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }}
+  onClick={() =>
+    moveItemLayer(item.id, "back")
+  }
+  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+  aria-label="Send text to back"
+  title="Send to Back"
+>
+  To Back
+</button>
+
+<button
+  type="button"
+  disabled={!canBringForward}
+  onPointerDown={(event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }}
+  onClick={() =>
+    moveItemLayer(item.id, "front")
+  }
+  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+  aria-label="Bring text to front"
+  title="Bring to Front"
+>
+  To Front
+</button>
 
           <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
             🎨
@@ -836,6 +905,12 @@ const getSnappedPosition = (
               onSendBackward={(id) =>
                 moveItemLayer(id, "backward")
               }
+              onBringToFront={(id) =>
+  moveItemLayer(id, "front")
+}
+onSendToBack={(id) =>
+  moveItemLayer(id, "back")
+}
               onAdjustmentChange={changeImageAdjustment}
               onResetAdjustments={resetImageAdjustments}
             />

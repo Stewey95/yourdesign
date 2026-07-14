@@ -24,6 +24,8 @@ type ImageToolbarProps = {
   onRotate: (id: string, amount: number) => void;
   onBringForward: (id: string) => void;
   onSendBackward: (id: string) => void;
+  onBringToFront: (id: string) => void;
+onSendToBack: (id: string) => void;
   onAdjustmentChange: (
     id: string,
     adjustment: ImageAdjustment,
@@ -41,6 +43,8 @@ export default function ImageToolbar({
   onRotate,
   onBringForward,
   onSendBackward,
+  onBringToFront,
+  onSendToBack,
   onAdjustmentChange,
   onResetAdjustments,
 }: ImageToolbarProps) {
@@ -120,6 +124,35 @@ export default function ImageToolbar({
           >
             Forward
           </button>
+          <button
+  type="button"
+  disabled={!canSendBackward}
+  onPointerDown={(event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }}
+  onClick={() => onSendToBack(item.id)}
+  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+  aria-label="Send image to back"
+  title="Send to Back"
+>
+  To Back
+</button>
+
+<button
+  type="button"
+  disabled={!canBringForward}
+  onPointerDown={(event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }}
+  onClick={() => onBringToFront(item.id)}
+  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+  aria-label="Bring image to front"
+  title="Bring to Front"
+>
+  To Front
+</button>
 
           <button
             type="button"
