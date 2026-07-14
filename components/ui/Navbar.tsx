@@ -10,7 +10,7 @@ export default function Navbar() {
     width={170}
     height={70}
     priority
-    className="h-auto w-[200px] object-contain sm:w-[260px]"
+    className="h-auto w-[220px] object-contain sm:w-[320px]"
   />
 </div>
 
