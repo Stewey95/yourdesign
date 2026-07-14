@@ -1099,18 +1099,13 @@ onTouchCancelCapture={() => {
                             setEditingItemId(null);
                           }, 0);
                         }}
-                        onPointerDown={(event) => {
-                          event.stopPropagation();
+                      onPointerDown={(event) => {
+  event.stopPropagation();
 
-                          pendingDragRef.current = {
-                            itemId: item.id,
-                            startX: event.clientX,
-                            startY: event.clientY,
-                            moved: false,
-                          };
-
-                          setSelectedItemId(item.id);
-                        }}
+  pendingDragRef.current = null;
+  setDraggingItemId(null);
+  setSelectedItemId(item.id);
+}}
                         placeholder="Type here"
                      rows={1}
                         className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none"
