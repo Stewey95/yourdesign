@@ -427,7 +427,7 @@ if (direction === "back") {
       }}
     >
       <div className="relative min-w-0">
-        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10 md:justify-center md:pr-0">
+        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10">
           <div className="hidden shrink-0 gap-2 md:flex">
             <button
               type="button"
@@ -979,6 +979,7 @@ onTouchCancelCapture={() => {
                 style={{
                   left: item.position.x,
                   top: item.position.y,
+                  width: item.type === "text" ? "max-content" : undefined,
                   transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
                   touchAction: "none",
                   WebkitUserSelect: "none",
@@ -1124,7 +1125,7 @@ onTouchCancelCapture={() => {
 
                           setSelectedItemId(item.id);
                         }}
-                        className="cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none"
+                        className="cursor-move select-none whitespace-pre text-center font-bold touch-none"
                         style={{
                           fontSize: item.fontSize,
                           color: item.color,
