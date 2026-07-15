@@ -5,13 +5,13 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
        <div className="flex items-center">
   <Image
-    src="/genvilo-logo.svg"
-    alt="Genvilo"
-    width={170}
-    height={70}
-    priority
-    className="h-auto w-[300px] object-contain sm:w-[460px]"
-  />
+  src="/brand/genvilo-icon-master.png"
+  alt="Genvilo"
+  width={1536}
+  height={1024}
+  priority
+  className="h-auto w-[300px] object-contain sm:w-[460px]"
+/>
 </div>
 
         <div className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
