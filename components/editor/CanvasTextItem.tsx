@@ -31,19 +31,7 @@ export default function CanvasTextItem({
   onPendingDragStart,
 }: CanvasTextItemProps) {
   return (
-    <div
-      className="absolute"
-      style={{
-        left: item.position.x,
-        top: item.position.y,
-        width: "max-content",
-        transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
-        touchAction: "none",
-        WebkitUserSelect: "none",
-        userSelect: "none",
-      }}
-    >
-      <div className="relative">
+    <div className="relative">
         {editing ? (
           <textarea
             autoFocus
@@ -163,7 +151,6 @@ maxWidth: "100%",
             {item.value || "Type here"}
           </div>
         )}
-      </div>
     </div>
   );
 }

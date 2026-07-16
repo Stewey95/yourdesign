@@ -3,8 +3,7 @@
 import { useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
 import AlignmentGuides from "./editor/AlignmentGuides";
-import CanvasImageItem from "./editor/CanvasImageItem";
-import CanvasTextItem from "./editor/CanvasTextItem";
+import CanvasItem from "./editor/CanvasItem";
 import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
 import TextToolbar from "./editor/TextToolbar";
@@ -766,7 +765,7 @@ onTouchCancelCapture={() => {
 
             {items.map((item) =>
               item.type === "image" ? (
-                <CanvasImageItem
+                <CanvasItem
                   key={item.id}
                   item={item}
                   selected={selectedItemId === item.id}
@@ -779,7 +778,7 @@ onTouchCancelCapture={() => {
                   onResizeStart={startImageResize}
                 />
               ) : (
-                <CanvasTextItem
+                <CanvasItem
                   key={item.id}
                   item={item}
                   editing={editingItemId === item.id}
