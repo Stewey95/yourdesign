@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Navbar() {
   return (
-    <header className="w-full border-b border-white/10 bg-slate-950 text-white">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-md">
       <nav className="relative mx-auto flex min-h-[112px] max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Genvilo logo and company name */}
         <Link href="/" className="flex items-center gap-2 sm:gap-3">
