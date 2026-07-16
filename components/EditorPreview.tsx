@@ -883,9 +883,17 @@ if (direction === "back") {
   return (
     <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
       <div className="mb-4 flex items-center justify-between">
-        <p className="font-semibold text-white">
-          Genvilo Editor
-        </p>
+        <div className="flex items-center gap-2">
+  <img
+    src="/brand/genvilo-icon-master.png"
+    alt="Genvilo"
+    className="h-9 w-9 object-contain"
+  />
+
+  <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-lg font-extrabold text-transparent">
+    Editor
+  </span>
+</div>
 
         <button className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-sm text-white">
           Export
