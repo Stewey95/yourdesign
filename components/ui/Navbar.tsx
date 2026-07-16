@@ -38,16 +38,9 @@ export default function Navbar() {
 
         {/* Account buttons */}
         <div className="flex items-center gap-3">
-          <button className="hidden rounded-lg px-4 py-2 text-sm text-slate-300 transition hover:text-white lg:block">
+          <button className="rounded-lg px-4 py-2 text-sm text-slate-300 transition hover:text-white">
             Log in
           </button>
-
-          <Link
-            href="/create"
-            className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 sm:px-4 sm:text-sm"
-          >
-            Start creating
-          </Link>
         </div>
       </nav>
     </header>
