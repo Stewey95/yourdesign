@@ -898,9 +898,20 @@ if (direction === "back") {
   </span>
 </div>
 
-        <button className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-sm text-white">
-          Export
-        </button>
+       <div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={deleteSelected}
+    disabled={!selectedItemId}
+    className="cursor-pointer rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+  >
+    Delete
+  </button>
+
+  <button className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-sm text-white">
+    Export
+  </button>
+</div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -984,19 +995,7 @@ if (direction === "back") {
   </div>
 )}
 
-         {activeToolbarPanel === "arrange" && (
-  <div className="mt-3 rounded-xl border border-white/10 bg-slate-800/60 p-3">
-    <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
-      Arrange
-    </p>
-  <button
-    onClick={deleteSelected}
-    className="w-full cursor-pointer rounded-lg bg-red-600 px-4 py-2 font-semibold text-white transition hover:bg-red-500"
-  >
-    Delete Selected
-  </button>
-  </div>
-)}
+        
         </div>
 
         <div className="min-w-0 md:col-span-3">
