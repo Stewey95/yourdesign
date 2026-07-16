@@ -2,45 +2,13 @@
 
 import { useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
-
-type Position = { x: number; y: number };
-type Size = { width: number; height: number };
-
-type DesignItem =
-  | {
-      id: string;
-      type: "image";
-      src: string;
-      position: Position;
-      size: Size;
-      rotation: number;
-      brightness: number;
-      contrast: number;
-      saturation: number;
-      opacity: number;
-    }
-  | {
-      id: string;
-      type: "text";
-      value: string;
-      position: Position;
-      fontSize: number;
-      color: string;
-      fontFamily: string;
-      rotation: number;
-    };
-
-const fontOptions = [
-  "Arial",
-  "Georgia",
-  "Verdana",
-  "Impact",
-  "Courier New",
-  "Trebuchet MS",
-  "Comic Sans MS",
-  "Brush Script MT",
-  "Times New Roman",
-];
+import EditorHeader from "./editor/EditorHeader";
+import TextToolbar from "./editor/TextToolbar";
+import { SNAP_THRESHOLD } from "./editor/editor.constants";
+import type {
+  DesignItem,
+  Position,
+} from "./editor/editor.types";
 
 export default function EditorPreview() {
   const [items, setItems] = useState<DesignItem[]>([]);
@@ -55,8 +23,6 @@ export default function EditorPreview() {
   vertical: false,
   horizontal: false,
 });
-
-const SNAP_THRESHOLD = 8;
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const hideAlignmentGuides = () => {
@@ -448,190 +414,6 @@ if (direction === "back") {
     pinchRef.current = null;
   };
 
-    const TextToolbar = ({
-    item,
-  }: {
-    item: Extract<DesignItem, { type: "text" }>;
-  }) => (
-    <div
-      data-text-toolbar={item.id}
-      onDragStart={(event) => event.preventDefault()}
-      onPointerMove={(event) => event.stopPropagation()}
-      className="mb-3 w-full min-w-0 select-none overflow-hidden rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none"
-      style={{
-        WebkitUserSelect: "none",
-        userSelect: "none",
-      }}
-    >
-      <div className="relative min-w-0">
-        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10">
-          <div className="hidden shrink-0 gap-2 md:flex">
-            <button
-              type="button"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-              }}
-              onClick={() => changeTextSize(item.id, -4)}
-              className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-            >
-              A-
-            </button>
-
-            <button
-              type="button"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-              }}
-              onClick={() => changeTextSize(item.id, 4)}
-              className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
-            >
-              A+
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-            onClick={() => rotateItem(item.id, -15)}
-            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-            aria-label="Rotate text left"
-          >
-            ↺
-          </button>
-
-          <button
-            type="button"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-            onClick={() => rotateItem(item.id, 15)}
-            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
-            aria-label="Rotate text right"
-          >
-            ↻
-          </button>
-
-          <button
-            type="button"
-            disabled={!canSendBackward}
-            onPointerDown={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-            onClick={() =>
-              moveItemLayer(item.id, "backward")
-            }
-            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Send text backward"
-            title="Send Backward"
-          >
-            Backward
-          </button>
-
-          <button
-            type="button"
-            disabled={!canBringForward}
-            onPointerDown={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-            onClick={() =>
-              moveItemLayer(item.id, "forward")
-            }
-            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Bring text forward"
-            title="Bring Forward"
-          >
-            Forward
-          </button>
-          <button
-  type="button"
-  disabled={!canSendBackward}
-  onPointerDown={(event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  }}
-  onClick={() =>
-    moveItemLayer(item.id, "back")
-  }
-  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-  aria-label="Send text to back"
-  title="Send to Back"
->
-  To Back
-</button>
-
-<button
-  type="button"
-  disabled={!canBringForward}
-  onPointerDown={(event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  }}
-  onClick={() =>
-    moveItemLayer(item.id, "front")
-  }
-  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-  aria-label="Bring text to front"
-  title="Bring to Front"
->
-  To Front
-</button>
-
-          <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
-            🎨
-
-            <input
-              type="color"
-              value={item.color}
-              onPointerDown={(event) =>
-                event.stopPropagation()
-              }
-              onChange={(event) =>
-                changeTextColor(item.id, event.target.value)
-              }
-              className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
-            />
-          </label>
-
-          <select
-            value={item.fontFamily}
-            onPointerDown={(event) =>
-              event.stopPropagation()
-            }
-            onChange={(event) =>
-              changeTextFont(item.id, event.target.value)
-            }
-            className="w-[110px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none md:w-[150px]"
-          >
-            {fontOptions.map((font) => (
-              <option key={font} value={font}>
-                {font}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-end bg-gradient-to-l from-slate-900 via-slate-900/90 to-transparent pr-2 md:hidden"
-        >
-          <span className="animate-pulse text-3xl font-light text-white/50">
-            ›
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-
-
-
   const handleImageUpload = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -885,34 +667,10 @@ if (direction === "back") {
 
   return (
     <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-  <img
-    src="/brand/genvilo-icon-master.png"
-    alt="Genvilo"
-    className="h-9 w-9 object-contain"
-  />
-
-  <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-lg font-extrabold text-transparent">
-    Editor
-  </span>
-</div>
-
-       <div className="flex items-center gap-2">
-  <button
-    type="button"
-    onClick={deleteSelected}
-    disabled={!selectedItemId}
-    className="cursor-pointer rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-  >
-    Delete
-  </button>
-
-  <button className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-sm text-white">
-    Export
-  </button>
-</div>
-      </div>
+      <EditorHeader
+        canDelete={Boolean(selectedItemId)}
+        onDelete={deleteSelected}
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl">
@@ -1002,7 +760,16 @@ if (direction === "back") {
           <div className="mb-3 min-h-[72px]"></div>
          <div className="mb-3 min-h-[72px]">
   {selectedTextItem && (
-    <TextToolbar item={selectedTextItem} />
+    <TextToolbar
+      item={selectedTextItem}
+      canSendBackward={canSendBackward}
+      canBringForward={canBringForward}
+      onChangeTextSize={changeTextSize}
+      onRotateItem={rotateItem}
+      onMoveItemLayer={moveItemLayer}
+      onChangeTextColor={changeTextColor}
+      onChangeTextFont={changeTextFont}
+    />
   )}
 
   {selectedImageItem && (

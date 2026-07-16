@@ -1,22 +1,12 @@
 "use client";
 
-type ImageItem = {
-  id: string;
-  type: "image";
-  brightness: number;
-  contrast: number;
-  saturation: number;
-  opacity: number;
-};
-
-type ImageAdjustment =
-  | "brightness"
-  | "contrast"
-  | "saturation"
-  | "opacity";
+import type {
+  ImageAdjustment,
+  ImageDesignItem,
+} from "./editor/editor.types";
 
 type ImageToolbarProps = {
-  item: ImageItem;
+  item: ImageDesignItem;
   showAdjustments: boolean;
   canBringForward: boolean;
   canSendBackward: boolean;
