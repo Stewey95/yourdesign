@@ -189,6 +189,40 @@ const getSnappedPosition = (
       )
     );
   };
+  const fitTextInsideCanvas = (
+  id: string,
+  textarea: HTMLTextAreaElement
+) => {
+  const canvas = canvasRef.current;
+
+  if (!canvas) return;
+
+  const maximumTextHeight =
+    canvas.clientHeight * 0.82;
+
+  if (textarea.scrollHeight <= maximumTextHeight) {
+    return;
+  }
+
+  setItems((currentItems) =>
+    currentItems.map((item) => {
+      if (item.id !== id || item.type !== "text") {
+        return item;
+      }
+
+      const scale =
+        maximumTextHeight / textarea.scrollHeight;
+
+      return {
+        ...item,
+        fontSize: Math.max(
+          12,
+          Math.floor(item.fontSize * scale)
+        ),
+      };
+    })
+  );
+};
 
   const rotateItem = (id: string, amount: number) => {
     setItems((currentItems) =>
@@ -1056,8 +1090,15 @@ onTouchCancelCapture={() => {
   textarea.style.height = "auto";
   textarea.style.height = `${textarea.scrollHeight}px`;
   textarea.scrollTop = 0;
+ fitTextInsideCanvas(item.id, textarea);
 
-  setItems((currentItems) =>
+requestAnimationFrame(() => {
+  textarea.style.height = "auto";
+  textarea.style.height = `${textarea.scrollHeight}px`;
+  textarea.scrollTop = 0;
+});
+
+setItems((currentItems) =>
                             currentItems.map(
                               (currentItem) =>
                                 currentItem.id === item.id
