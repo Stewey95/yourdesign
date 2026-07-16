@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
 import AlignmentGuides from "./editor/AlignmentGuides";
 import CanvasImageItem from "./editor/CanvasImageItem";
+import CanvasTextItem from "./editor/CanvasTextItem";
 import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
 import TextToolbar from "./editor/TextToolbar";
@@ -778,162 +779,46 @@ onTouchCancelCapture={() => {
                   onResizeStart={startImageResize}
                 />
               ) : (
-              <div
-                key={item.id}
-                className="absolute"
-                style={{
-                  left: item.position.x,
-                  top: item.position.y,
-                  width: "max-content",
-                  transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
-                  touchAction: "none",
-                  WebkitUserSelect: "none",
-                  userSelect: "none",
-                }}
-              >
-                  <div className="relative">
-                    {editingItemId === item.id ? (
-                      <textarea
-                        autoFocus
-                       ref={(textarea) => {
-  if (!textarea) return;
+                <CanvasTextItem
+                  key={item.id}
+                  item={item}
+                  editing={editingItemId === item.id}
+                  onRequestAutoFit={fitTextInsideCanvas}
+                  onValueChange={(id, value) => {
+                    setItems((currentItems) =>
+                      currentItems.map((currentItem) =>
+                        currentItem.id === id
+                          ? { ...currentItem, value }
+                          : currentItem
+                      )
+                    );
+                  }}
+                  onRemoveEmptyText={(id) => {
+                    setItems((currentItems) =>
+                      currentItems.filter(
+                        (currentItem) => currentItem.id !== id
+                      )
+                    );
+                  }}
+                  onFinishEditing={() =>
+                    setEditingItemId(null)
+                  }
+                  onEditingPointerDown={(id) => {
+                    pendingDragRef.current = null;
+                    setDraggingItemId(null);
+                    setSelectedItemId(id);
+                  }}
+                  onPendingDragStart={(id, startX, startY) => {
+                    pendingDragRef.current = {
+                      itemId: id,
+                      startX,
+                      startY,
+                      moved: false,
+                    };
 
-  requestAnimationFrame(() => {
-  const textLength = textarea.value.length;
-
-  textarea.setSelectionRange(
-    textLength,
-    textLength
-  );
-
-  textarea.style.height = "auto";
-  textarea.style.height = `${textarea.scrollHeight}px`;
-  textarea.scrollTop = 0;
-
-  textarea.focus();
-});
-}}
-                        value={item.value}
-                       onChange={(event) => {
-  const value =
-    event.target.value;
-
-  const textarea = event.currentTarget;
-
-  textarea.style.height = "auto";
-  textarea.style.height = `${textarea.scrollHeight}px`;
-  textarea.scrollTop = 0;
- fitTextInsideCanvas(item.id, textarea);
-
-requestAnimationFrame(() => {
-  textarea.style.height = "auto";
-  textarea.style.height = `${textarea.scrollHeight}px`;
-  textarea.scrollTop = 0;
-});
-
-setItems((currentItems) =>
-                            currentItems.map(
-                              (currentItem) =>
-                                currentItem.id === item.id
-                                  ? {
-                                      ...currentItem,
-                                      value,
-                                    }
-                                  : currentItem
-                            )
-                          );
-                        }}
-                        onBlur={() => {
-                          setTimeout(() => {
-                            const activeElement =
-                              document.activeElement;
-
-                            if (
-                              activeElement instanceof
-                                HTMLElement &&
-                              activeElement.closest(
-                                `[data-text-toolbar="${item.id}"]`
-                              )
-                            ) {
-                              return;
-                            }
-
-                            if (
-                              item.value.trim() === ""
-                            ) {
-                              setItems((currentItems) =>
-                                currentItems.filter(
-                                  (currentItem) =>
-                                    currentItem.id !==
-                                    item.id
-                                )
-                              );
-                            }
-
-                            setEditingItemId(null);
-                          }, 0);
-                        }}
-                      onPointerDown={(event) => {
-  event.stopPropagation();
-
-  pendingDragRef.current = null;
-  setDraggingItemId(null);
-  setSelectedItemId(item.id);
-}}
-                        placeholder="Type here"
-                     rows={1}
-                        className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none"
-                        style={{
-                          fontSize: Math.max(
-                            16,
-                            item.fontSize
-                          ),
-                          color: item.color,
-                          fontFamily: item.fontFamily,
-                          textShadow:
-                            "0 1px 4px rgba(0,0,0,0.35)",
-                          lineHeight: 1.15,
-                          touchAction: "none",
-                          WebkitUserSelect: "none",
-                          userSelect: "none",
-                         width: "min(76vw, 460px)",
-maxWidth: "100%",
-                        }}
-                      />
-                    ) : (
-                      <div
-                        onPointerDown={(event) => {
-                          event.stopPropagation();
-
-                          pendingDragRef.current = {
-                            itemId: item.id,
-                            startX: event.clientX,
-                            startY: event.clientY,
-                            moved: false,
-                          };
-
-                          setSelectedItemId(item.id);
-                        }}
-                        className="cursor-move select-none whitespace-pre-wrap break-words text-center font-bold touch-none"
-                        style={{
-                          fontSize: item.fontSize,
-                          color: item.color,
-                          fontFamily: item.fontFamily,
-                          textShadow:
-                            "0 1px 4px rgba(0,0,0,0.35)",
-                          lineHeight: 1.15,
-                          width: "min(76vw, 460px)",
-maxWidth: "100%",
-                          touchAction: "none",
-                          WebkitUserSelect: "none",
-                          userSelect: "none",
-                        }}
-                      >
-                        {item.value || "Type here"}
-                      </div>
-                    )}
-                  </div>
-              </div>
+                    setSelectedItemId(id);
+                  }}
+                />
               )
             )}
           </div>
