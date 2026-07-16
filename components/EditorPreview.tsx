@@ -999,34 +999,37 @@ if (direction === "back") {
         </div>
 
         <div className="min-w-0 md:col-span-3">
-          {selectedTextItem && (
-            <TextToolbar item={selectedTextItem} />
-          )}
+          <div className="mb-3 min-h-[72px]"></div>
+         <div className="mb-3 min-h-[72px]">
+  {selectedTextItem && (
+    <TextToolbar item={selectedTextItem} />
+  )}
 
-                   {selectedImageItem && (
-            <ImageToolbar
-              item={selectedImageItem}
-              showAdjustments={showImageAdjustments}
-              canBringForward={canBringForward}
-              canSendBackward={canSendBackward}
-              onToggleAdjustments={toggleImageAdjustments}
-              onRotate={rotateItem}
-              onBringForward={(id) =>
-                moveItemLayer(id, "forward")
-              }
-              onSendBackward={(id) =>
-                moveItemLayer(id, "backward")
-              }
-              onBringToFront={(id) =>
-  moveItemLayer(id, "front")
-}
-onSendToBack={(id) =>
-  moveItemLayer(id, "back")
-}
-              onAdjustmentChange={changeImageAdjustment}
-              onResetAdjustments={resetImageAdjustments}
-            />
-          )}
+  {selectedImageItem && (
+    <ImageToolbar
+      item={selectedImageItem}
+      showAdjustments={showImageAdjustments}
+      canBringForward={canBringForward}
+      canSendBackward={canSendBackward}
+      onToggleAdjustments={toggleImageAdjustments}
+      onRotate={rotateItem}
+      onBringForward={(id) =>
+        moveItemLayer(id, "forward")
+      }
+      onSendBackward={(id) =>
+        moveItemLayer(id, "backward")
+      }
+      onBringToFront={(id) =>
+        moveItemLayer(id, "front")
+      }
+      onSendToBack={(id) =>
+        moveItemLayer(id, "back")
+      }
+      onAdjustmentChange={changeImageAdjustment}
+      onResetAdjustments={resetImageAdjustments}
+    />
+  )}
+</div>
 
           <div
             ref={canvasRef}
