@@ -141,11 +141,11 @@ export default function TextToolbar({
             onClick={() =>
               onMoveItemLayer(item.id, "backward")
             }
-            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Send text backward"
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Send Backward"
             title="Send Backward"
           >
-            Backward
+            ⬇️
           </button>
 
           <button
@@ -158,11 +158,11 @@ export default function TextToolbar({
             onClick={() =>
               onMoveItemLayer(item.id, "forward")
             }
-            className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Bring text forward"
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Bring Forward"
             title="Bring Forward"
           >
-            Forward
+            ⬆️
           </button>
           <button
   type="button"
@@ -174,11 +174,11 @@ export default function TextToolbar({
   onClick={() =>
     onMoveItemLayer(item.id, "back")
   }
-  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-  aria-label="Send text to back"
+  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+  aria-label="Send to Back"
   title="Send to Back"
 >
-  To Back
+  ⏬
 </button>
 
 <button
@@ -191,11 +191,11 @@ export default function TextToolbar({
   onClick={() =>
     onMoveItemLayer(item.id, "front")
   }
-  className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-  aria-label="Bring text to front"
+  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+  aria-label="Bring to Front"
   title="Bring to Front"
 >
-  To Front
+  ⏫
 </button>
 
           <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
