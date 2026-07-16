@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
+import AlignmentGuides from "./editor/AlignmentGuides";
 import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
 import TextToolbar from "./editor/TextToolbar";
@@ -756,23 +757,10 @@ onTouchCancelCapture={() => {
                 Your design canvas
               </p>
             )}
-            <div
-  aria-hidden="true"
-  className={`pointer-events-none absolute left-1/2 top-0 z-50 h-full w-px -translate-x-1/2 bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)] transition-opacity duration-150 ${
-    alignmentGuides.vertical
-      ? "opacity-100"
-      : "opacity-0"
-  }`}
-/>
-
-<div
-  aria-hidden="true"
-  className={`pointer-events-none absolute left-0 top-1/2 z-50 h-px w-full -translate-y-1/2 bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)] transition-opacity duration-150 ${
-    alignmentGuides.horizontal
-      ? "opacity-100"
-      : "opacity-0"
-  }`}
-/>
+            <AlignmentGuides
+              vertical={alignmentGuides.vertical}
+              horizontal={alignmentGuides.horizontal}
+            />
 
             {items.map((item) => (
               <div
