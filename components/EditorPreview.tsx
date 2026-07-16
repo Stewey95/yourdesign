@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
 import AlignmentGuides from "./editor/AlignmentGuides";
+import CanvasImageItem from "./editor/CanvasImageItem";
 import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
 import TextToolbar from "./editor/TextToolbar";
@@ -762,63 +763,34 @@ onTouchCancelCapture={() => {
               horizontal={alignmentGuides.horizontal}
             />
 
-            {items.map((item) => (
+            {items.map((item) =>
+              item.type === "image" ? (
+                <CanvasImageItem
+                  key={item.id}
+                  item={item}
+                  selected={selectedItemId === item.id}
+                  onPointerDown={(id) => {
+                    setDraggingItemId(id);
+                    setSelectedItemId(id);
+                    setEditingItemId(null);
+                    setShowImageAdjustments(false);
+                  }}
+                  onResizeStart={startImageResize}
+                />
+              ) : (
               <div
                 key={item.id}
-                className={`absolute ${
-                  selectedItemId === item.id &&
-                  item.type === "image"
-                    ? "ring-2 ring-blue-500"
-                    : ""
-                }`}
+                className="absolute"
                 style={{
                   left: item.position.x,
                   top: item.position.y,
-                  width: item.type === "text" ? "max-content" : undefined,
+                  width: "max-content",
                   transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
                   touchAction: "none",
                   WebkitUserSelect: "none",
                   userSelect: "none",
                 }}
               >
-                {item.type === "image" && (
-                  <div
-                    style={{
-                      width: item.size.width,
-                      height: item.size.height,
-                    }}
-                  >
-                    <img
-                      src={item.src}
-                      alt="Uploaded design"
-                      draggable={false}
-                      onPointerDown={(event) => {
-                        event.stopPropagation();
-
-                        setDraggingItemId(item.id);
-                        setSelectedItemId(item.id);
-                        setEditingItemId(null);
-                        setShowImageAdjustments(false);
-                      }}
-                      className="h-full w-full cursor-move select-none rounded-lg object-contain"
-                      style={{
-                        filter: `brightness(${item.brightness}%) contrast(${item.contrast}%) saturate(${item.saturation}%)`,
-                        opacity: item.opacity / 100,
-                      }}
-                    />
-
-                    {selectedItemId === item.id && (
-                      <div
-                        onPointerDown={(event) =>
-                          startImageResize(event, item)
-                        }
-                        className="absolute bottom-0 right-0 hidden h-5 w-5 cursor-se-resize rounded-full bg-blue-500 md:block"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {item.type === "text" && (
                   <div className="relative">
                     {editingItemId === item.id ? (
                       <textarea
@@ -961,9 +933,9 @@ maxWidth: "100%",
                       </div>
                     )}
                   </div>
-                )}
               </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       </div>
