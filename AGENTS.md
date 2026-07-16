@@ -217,3 +217,4 @@ Small improvements are encouraged when they:
 - improve visual polish
 
 Over hundreds of iterations, these small improvements create an exceptional product.
+
