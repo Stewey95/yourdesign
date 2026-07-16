@@ -1,12 +1,34 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
+  const pathname = usePathname();
+
+  const handleLogoClick = (
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) => {
+    if (pathname === "/") {
+      event.preventDefault();
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-md">
       <nav className="relative mx-auto flex min-h-[112px] max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Genvilo logo and company name */}
-        <Link href="/" className="flex items-center gap-2 sm:gap-3">
+        <Link
+          href="/"
+          onClick={handleLogoClick}
+          className="flex items-center gap-2 sm:gap-3"
+        >
           <Image
             src="/brand/genvilo-icon-master.png"
             alt="Genvilo"
