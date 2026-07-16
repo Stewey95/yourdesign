@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect } from "react";
 import Navbar from "../components/ui/Navbar";
 import FeatureCard from "../components/FeatureCard";
@@ -15,9 +16,22 @@ export default function Home() {
       <Navbar />
 
       <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center">
-        <h1 className="mb-6 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-7xl">
-          Create Without Limits
-        </h1>
+  <div className="relative mb-8">
+    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400/30 via-blue-500/30 to-purple-500/30 blur-3xl" />
+
+    <Image
+      src="/brand/genvilo-icon-master.png"
+      alt="Genvilo"
+      width={1536}
+      height={1024}
+      priority
+      className="relative h-auto w-[120px] object-contain sm:w-[150px]"
+    />
+  </div>
+
+  <h1 className="mb-6 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-7xl">
+    Create Without Limits
+  </h1>
 
         <p className="mb-10 max-w-2xl text-lg leading-relaxed text-slate-300">
           Design, customise and export beautiful creations from one powerful,
