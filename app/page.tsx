@@ -16,8 +16,8 @@ export default function Home() {
       <Navbar />
 
       <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center">
-  <div className="relative mb-8">
-    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400/30 via-blue-500/30 to-purple-500/30 blur-3xl" />
+  <div className="relative mb-10">
+   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400/20 via-blue-500/20 to-purple-500/20 blur-2xl" />
 
     <Image
       src="/brand/genvilo-icon-master.png"
