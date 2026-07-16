@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { fontOptions } from "./editor.constants";
 import type { TextDesignItem } from "./editor.types";
 
@@ -27,6 +28,40 @@ export default function TextToolbar({
   onChangeTextColor,
   onChangeTextFont,
 }: TextToolbarProps) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(
+    null
+  );
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+
+  const updateScrollArrows = () => {
+    const scrollContainer = scrollContainerRef.current;
+
+    if (!scrollContainer) return;
+
+    const maximumScrollLeft =
+      scrollContainer.scrollWidth -
+      scrollContainer.clientWidth;
+
+    setShowLeftArrow(scrollContainer.scrollLeft > 0);
+    setShowRightArrow(
+      scrollContainer.scrollLeft < maximumScrollLeft - 1
+    );
+  };
+
+  useEffect(() => {
+    updateScrollArrows();
+
+    window.addEventListener("resize", updateScrollArrows);
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        updateScrollArrows
+      );
+    };
+  }, []);
+
   return (
     <div
       data-text-toolbar={item.id}
@@ -39,7 +74,11 @@ export default function TextToolbar({
       }}
     >
       <div className="relative min-w-0">
-        <div className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10">
+        <div
+          ref={scrollContainerRef}
+          onScroll={updateScrollArrows}
+          className="flex min-w-0 items-center justify-start gap-2 overflow-x-auto pr-10"
+        >
           <div className="hidden shrink-0 gap-2 md:flex">
             <button
               type="button"
@@ -193,14 +232,27 @@ export default function TextToolbar({
           </select>
         </div>
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-end bg-gradient-to-l from-slate-900 via-slate-900/90 to-transparent pr-2 md:hidden"
-        >
-          <span className="animate-pulse text-3xl font-light text-white/50">
-            ›
-          </span>
-        </div>
+        {showLeftArrow && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex w-12 items-center justify-start bg-gradient-to-r from-slate-900 via-slate-900/90 to-transparent pl-2 md:hidden"
+          >
+            <span className="animate-pulse text-3xl font-light text-white/50">
+              ‹
+            </span>
+          </div>
+        )}
+
+        {showRightArrow && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-end bg-gradient-to-l from-slate-900 via-slate-900/90 to-transparent pr-2 md:hidden"
+          >
+            <span className="animate-pulse text-3xl font-light text-white/50">
+              ›
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
