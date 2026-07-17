@@ -1,19 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
 import EditorCanvas from "./editor/EditorCanvas";
 import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
 import TextToolbar from "./editor/TextToolbar";
 import { SNAP_THRESHOLD } from "./editor/editor.constants";
+import useEditorHistory from "./editor/useEditorHistory";
 import type {
   DesignItem,
   Position,
 } from "./editor/editor.types";
 
 export default function EditorPreview() {
-  const [items, setItems] = useState<DesignItem[]>([]);
+  const {
+    present: items,
+    canUndo,
+    canRedo,
+    commit: commitItems,
+    updateTransaction: updateItems,
+    beginTransaction: beginHistoryTransaction,
+    commitTransaction: commitHistoryTransaction,
+    isTransactionActive,
+    undo: undoHistory,
+    redo: redoHistory,
+  } = useEditorHistory<DesignItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -98,6 +110,79 @@ const getSnappedPosition = (
     startFontSize?: number;
   } | null>(null);
 
+  const reconcileAfterHistoryNavigation = useCallback(() => {
+    pendingDragRef.current = null;
+    pinchRef.current = null;
+    justPinchedRef.current = false;
+    setSelectedItemId(null);
+    setDraggingItemId(null);
+    setEditingItemId(null);
+    setShowImageAdjustments(false);
+    setAlignmentGuides({
+      vertical: false,
+      horizontal: false,
+    });
+  }, []);
+
+  const performUndo = () => {
+    if (!canUndo) return;
+
+    undoHistory();
+    reconcileAfterHistoryNavigation();
+  };
+
+  const performRedo = () => {
+    if (!canRedo) return;
+
+    redoHistory();
+    reconcileAfterHistoryNavigation();
+  };
+
+  useEffect(() => {
+    const handleHistoryShortcut = (event: KeyboardEvent) => {
+      const target = event.target;
+
+      if (
+        target instanceof HTMLElement &&
+        (target.matches("input, textarea, select") ||
+          target.isContentEditable ||
+          Boolean(target.closest("[contenteditable='true']")))
+      ) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      const usesCommandModifier = event.metaKey || event.ctrlKey;
+      const requestsUndo =
+        usesCommandModifier && key === "z" && !event.shiftKey;
+      const requestsRedo =
+        (usesCommandModifier && key === "z" && event.shiftKey) ||
+        (event.ctrlKey && key === "y");
+
+      if (requestsUndo && canUndo) {
+        event.preventDefault();
+        undoHistory();
+        reconcileAfterHistoryNavigation();
+      } else if (requestsRedo && canRedo) {
+        event.preventDefault();
+        redoHistory();
+        reconcileAfterHistoryNavigation();
+      }
+    };
+
+    window.addEventListener("keydown", handleHistoryShortcut);
+
+    return () => {
+      window.removeEventListener("keydown", handleHistoryShortcut);
+    };
+  }, [
+    canRedo,
+    canUndo,
+    reconcileAfterHistoryNavigation,
+    redoHistory,
+    undoHistory,
+  ]);
+
   const getTouchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
@@ -107,7 +192,7 @@ const getSnappedPosition = (
 
   const clearSelection = () => {
     if (selectedItemId) {
-      setItems((currentItems) =>
+      commitItems((currentItems) =>
         currentItems.filter(
           (item) =>
             !(
@@ -126,7 +211,7 @@ const getSnappedPosition = (
   };
 
   const changeTextSize = (id: string, amount: number) => {
-    setItems((currentItems) =>
+    commitItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id && item.type === "text"
           ? {
@@ -142,7 +227,7 @@ const getSnappedPosition = (
   };
 
   const changeTextColor = (id: string, color: string) => {
-    setItems((currentItems) =>
+    commitItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id && item.type === "text"
           ? { ...item, color }
@@ -152,7 +237,7 @@ const getSnappedPosition = (
   };
 
   const changeTextFont = (id: string, fontFamily: string) => {
-    setItems((currentItems) =>
+    commitItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id && item.type === "text"
           ? { ...item, fontFamily }
@@ -175,7 +260,8 @@ const getSnappedPosition = (
     return;
   }
 
-  setItems((currentItems) =>
+  beginHistoryTransaction();
+  updateItems((currentItems) =>
     currentItems.map((item) => {
       if (item.id !== id || item.type !== "text") {
         return item;
@@ -196,7 +282,7 @@ const getSnappedPosition = (
 };
 
   const rotateItem = (id: string, amount: number) => {
-    setItems((currentItems) =>
+    commitItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id
           ? {
@@ -215,7 +301,7 @@ const getSnappedPosition = (
   | "front"
   | "back"
   ) => {
-    setItems((currentItems) => {
+    commitItems((currentItems) => {
       const currentIndex = currentItems.findIndex(
         (item) => item.id === id
       );
@@ -287,7 +373,22 @@ if (direction === "back") {
     adjustment: "brightness" | "contrast" | "saturation" | "opacity",
     value: number
   ) => {
-    setItems((currentItems) =>
+    if (isTransactionActive()) {
+      updateItems((currentItems) =>
+        currentItems.map((item) =>
+          item.id === id && item.type === "image"
+            ? {
+                ...item,
+                [adjustment]: value,
+              }
+            : item
+        )
+      );
+
+      return;
+    }
+
+    commitItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id && item.type === "image"
           ? {
@@ -300,7 +401,7 @@ if (direction === "back") {
   };
 
   const resetImageAdjustments = (id: string) => {
-    setItems((currentItems) =>
+    commitItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id && item.type === "image"
           ? {
@@ -328,6 +429,9 @@ if (direction === "back") {
 
     event.preventDefault();
     event.stopPropagation();
+
+    commitHistoryTransaction();
+    beginHistoryTransaction();
 
     pinchRef.current = {
       itemId: selectedItem.id,
@@ -368,7 +472,7 @@ if (direction === "back") {
     const scale =
       newDistance / pinchRef.current.startDistance;
 
-    setItems((currentItems) =>
+    updateItems((currentItems) =>
       currentItems.map((item) => {
         if (item.id !== pinchRef.current?.itemId) {
           return item;
@@ -406,6 +510,7 @@ if (direction === "back") {
 
   const endCanvasPinch = () => {
     if (pinchRef.current) {
+      commitHistoryTransaction();
       justPinchedRef.current = true;
 
       setTimeout(() => {
@@ -436,7 +541,7 @@ if (direction === "back") {
       opacity: 100,
     };
 
-    setItems((currentItems) => [
+    commitItems((currentItems) => [
       ...currentItems,
       newImage,
     ]);
@@ -468,7 +573,7 @@ if (direction === "back") {
       rotation: 0,
     };
 
-    setItems((currentItems) => [
+    commitItems((currentItems) => [
       ...currentItems,
       newText,
     ]);
@@ -488,7 +593,7 @@ if (direction === "back") {
   const deleteSelected = () => {
     if (!selectedItemId) return;
 
-    setItems((currentItems) =>
+    commitItems((currentItems) =>
       currentItems.filter(
         (item) => item.id !== selectedItemId
       )
@@ -519,7 +624,7 @@ if (direction === "back") {
         setDraggingItemId(pending.itemId);
         setEditingItemId(null);
 
-        setItems((currentItems) =>
+        updateItems((currentItems) =>
   currentItems.map((item) =>
     item.id === pending.itemId
       ? {
@@ -541,7 +646,7 @@ if (direction === "back") {
 
     setEditingItemId(null);
 
-    setItems((currentItems) =>
+    updateItems((currentItems) =>
       currentItems.map((item) =>
         item.id === draggingItemId
           ? {
@@ -569,6 +674,8 @@ if (direction === "back") {
       return;
     }
 
+    commitHistoryTransaction();
+
     if (
       pendingDragRef.current &&
       !pendingDragRef.current.moved
@@ -591,6 +698,8 @@ if (direction === "back") {
     item: Extract<DesignItem, { type: "image" }>
   ) => {
     event.stopPropagation();
+    commitHistoryTransaction();
+    beginHistoryTransaction();
 
     const startX = event.clientX;
     const startY = event.clientY;
@@ -603,7 +712,7 @@ if (direction === "back") {
         moveEvent.clientY - startY
       );
 
-      setItems((currentItems) =>
+      updateItems((currentItems) =>
         currentItems.map((currentItem) =>
           currentItem.id === item.id &&
           currentItem.type === "image"
@@ -626,6 +735,8 @@ if (direction === "back") {
     };
 
     const stopResize = () => {
+      commitHistoryTransaction();
+
       window.removeEventListener(
         "pointermove",
         resize
@@ -669,7 +780,12 @@ if (direction === "back") {
 
   return (
     <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
-      <EditorHeader />
+      <EditorHeader
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={performUndo}
+        onRedo={performRedo}
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         <EditorSidebar
@@ -718,6 +834,11 @@ if (direction === "back") {
                   onSendToBack={(id) =>
                     moveItemLayer(id, "back")
                   }
+                  onAdjustmentStart={() => {
+                    commitHistoryTransaction();
+                    beginHistoryTransaction();
+                  }}
+                  onAdjustmentEnd={commitHistoryTransaction}
                   onAdjustmentChange={changeImageAdjustment}
                   onResetAdjustments={resetImageAdjustments}
                 />
@@ -748,6 +869,8 @@ if (direction === "back") {
             }
           }}
           onImagePointerDown={(id) => {
+            commitHistoryTransaction();
+            beginHistoryTransaction();
             setDraggingItemId(id);
             setSelectedItemId(id);
             setEditingItemId(null);
@@ -756,7 +879,8 @@ if (direction === "back") {
           onImageResizeStart={startImageResize}
           onRequestAutoFit={fitTextInsideCanvas}
           onTextValueChange={(id, value) => {
-            setItems((currentItems) =>
+            beginHistoryTransaction();
+            updateItems((currentItems) =>
               currentItems.map((currentItem) =>
                 currentItem.id === id
                   ? { ...currentItem, value }
@@ -765,19 +889,24 @@ if (direction === "back") {
             );
           }}
           onRemoveEmptyText={(id) => {
-            setItems((currentItems) =>
+            commitItems((currentItems) =>
               currentItems.filter(
                 (currentItem) => currentItem.id !== id
               )
             );
           }}
-          onFinishEditing={() => setEditingItemId(null)}
+          onFinishEditing={() => {
+            commitHistoryTransaction();
+            setEditingItemId(null);
+          }}
           onEditingPointerDown={(id) => {
             pendingDragRef.current = null;
             setDraggingItemId(null);
             setSelectedItemId(id);
           }}
           onPendingDragStart={(id, startX, startY) => {
+            commitHistoryTransaction();
+            beginHistoryTransaction();
             pendingDragRef.current = {
               itemId: id,
               startX,

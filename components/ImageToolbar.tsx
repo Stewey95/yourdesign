@@ -15,7 +15,9 @@ type ImageToolbarProps = {
   onBringForward: (id: string) => void;
   onSendBackward: (id: string) => void;
   onBringToFront: (id: string) => void;
-onSendToBack: (id: string) => void;
+  onSendToBack: (id: string) => void;
+  onAdjustmentStart: () => void;
+  onAdjustmentEnd: () => void;
   onAdjustmentChange: (
     id: string,
     adjustment: ImageAdjustment,
@@ -35,6 +37,8 @@ export default function ImageToolbar({
   onSendBackward,
   onBringToFront,
   onSendToBack,
+  onAdjustmentStart,
+  onAdjustmentEnd,
   onAdjustmentChange,
   onResetAdjustments,
 }: ImageToolbarProps) {
@@ -176,6 +180,8 @@ export default function ImageToolbar({
             value={item.brightness}
             min={0}
             max={200}
+            onAdjustmentStart={onAdjustmentStart}
+            onAdjustmentEnd={onAdjustmentEnd}
             onChange={(value) =>
               onAdjustmentChange(
                 item.id,
@@ -190,6 +196,8 @@ export default function ImageToolbar({
             value={item.contrast}
             min={0}
             max={200}
+            onAdjustmentStart={onAdjustmentStart}
+            onAdjustmentEnd={onAdjustmentEnd}
             onChange={(value) =>
               onAdjustmentChange(
                 item.id,
@@ -204,6 +212,8 @@ export default function ImageToolbar({
             value={item.saturation}
             min={0}
             max={200}
+            onAdjustmentStart={onAdjustmentStart}
+            onAdjustmentEnd={onAdjustmentEnd}
             onChange={(value) =>
               onAdjustmentChange(
                 item.id,
@@ -218,6 +228,8 @@ export default function ImageToolbar({
             value={item.opacity}
             min={0}
             max={100}
+            onAdjustmentStart={onAdjustmentStart}
+            onAdjustmentEnd={onAdjustmentEnd}
             onChange={(value) =>
               onAdjustmentChange(
                 item.id,
@@ -249,6 +261,8 @@ type AdjustmentSliderProps = {
   value: number;
   min: number;
   max: number;
+  onAdjustmentStart: () => void;
+  onAdjustmentEnd: () => void;
   onChange: (value: number) => void;
 };
 
@@ -257,6 +271,8 @@ function AdjustmentSlider({
   value,
   min,
   max,
+  onAdjustmentStart,
+  onAdjustmentEnd,
   onChange,
 }: AdjustmentSliderProps) {
   return (
@@ -274,15 +290,18 @@ function AdjustmentSlider({
         value={value}
         onPointerDown={(event) => {
           event.stopPropagation();
+          onAdjustmentStart();
         }}
         onPointerMove={(event) => {
           event.stopPropagation();
         }}
         onPointerUp={(event) => {
           event.stopPropagation();
+          onAdjustmentEnd();
         }}
         onPointerCancel={(event) => {
           event.stopPropagation();
+          onAdjustmentEnd();
         }}
         onChange={(event) =>
           onChange(Number(event.target.value))
