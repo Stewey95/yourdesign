@@ -74,7 +74,20 @@ export default function CanvasTextItem({
   ];
 
   return (
-    <div className="relative">
+    <div className="relative md:inline-grid md:max-w-full">
+        <span
+          aria-hidden="true"
+          className="invisible hidden min-h-[1.2em] w-fit max-w-[min(76vw,460px)] whitespace-pre-wrap break-words text-center font-bold md:block"
+          style={{
+            fontSize: item.fontSize,
+            fontFamily: item.fontFamily,
+            textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+            lineHeight: 1.15,
+          }}
+        >
+          {item.value || "Type here"}
+        </span>
+
         {editing ? (
           <textarea
             autoFocus
@@ -147,7 +160,7 @@ onValueChange(item.id, value);
 }}
             placeholder="Type here"
          rows={1}
-            className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none"
+            className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none md:absolute md:inset-0 md:h-full md:!w-full md:!max-w-full"
             style={{
               fontSize: item.fontSize,
               color: item.color,
@@ -173,7 +186,7 @@ maxWidth: "100%",
                 event.clientY
               );
             }}
-            className="cursor-move select-none whitespace-pre-wrap break-words text-center font-bold touch-none"
+            className="cursor-move select-none whitespace-pre-wrap break-words text-center font-bold touch-none md:absolute md:inset-0 md:!w-full md:!max-w-full"
             style={{
               fontSize: item.fontSize,
               color: item.color,
