@@ -102,18 +102,20 @@ export default function useEditorHistory<T>(initialState: T) {
       replaceFuture([current, ...futureRef.current]);
       replacePresent(transactionStart);
 
-      return;
+      return transactionStart;
     }
 
     transactionStartRef.current = null;
 
     const previous = pastRef.current.at(-1);
 
-    if (previous === undefined) return;
+    if (previous === undefined) return undefined;
 
     replacePast(pastRef.current.slice(0, -1));
     replaceFuture([presentRef.current, ...futureRef.current]);
     replacePresent(previous);
+
+    return previous;
   }, [replaceFuture, replacePast, replacePresent]);
 
   const redo = useCallback(() => {
@@ -121,11 +123,13 @@ export default function useEditorHistory<T>(initialState: T) {
 
     const next = futureRef.current[0];
 
-    if (next === undefined) return;
+    if (next === undefined) return undefined;
 
     replacePast([...pastRef.current, presentRef.current]);
     replaceFuture(futureRef.current.slice(1));
     replacePresent(next);
+
+    return next;
   }, [commitTransaction, replaceFuture, replacePast, replacePresent]);
 
   const isTransactionActive = useCallback(

@@ -128,36 +128,49 @@ const getSnappedPosition = (
     moved: boolean;
   } | null>(null);
 
-  const reconcileAfterHistoryNavigation = useCallback(() => {
+  const reconcileAfterHistoryNavigation = useCallback((restoredItems: DesignItem[]) => {
     pendingDragRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
     justPinchedRef.current = false;
-    setSelectedItemId(null);
     setDraggingItemId(null);
     setEditingItemId(null);
-    setShowMobileContextToolbar(false);
     setShowImageAdjustments(false);
     setAlignmentGuides({
       vertical: false,
       horizontal: false,
     });
-  }, []);
 
-  const performUndo = () => {
+    const selectedItemSurvives =
+      selectedItemId !== null &&
+      restoredItems.some((item) => item.id === selectedItemId);
+
+    if (!selectedItemSurvives) {
+      setSelectedItemId(null);
+      setShowMobileContextToolbar(false);
+    }
+  }, [selectedItemId]);
+
+  const performUndo = useCallback(() => {
     if (!canUndo) return;
 
-    undoHistory();
-    reconcileAfterHistoryNavigation();
-  };
+    const restoredItems = undoHistory();
 
-  const performRedo = () => {
+    if (restoredItems) {
+      reconcileAfterHistoryNavigation(restoredItems);
+    }
+  }, [canUndo, reconcileAfterHistoryNavigation, undoHistory]);
+
+  const performRedo = useCallback(() => {
     if (!canRedo) return;
 
-    redoHistory();
-    reconcileAfterHistoryNavigation();
-  };
+    const restoredItems = redoHistory();
+
+    if (restoredItems) {
+      reconcileAfterHistoryNavigation(restoredItems);
+    }
+  }, [canRedo, reconcileAfterHistoryNavigation, redoHistory]);
 
   useEffect(() => {
     const handleHistoryShortcut = (event: KeyboardEvent) => {
@@ -182,12 +195,10 @@ const getSnappedPosition = (
 
       if (requestsUndo && canUndo) {
         event.preventDefault();
-        undoHistory();
-        reconcileAfterHistoryNavigation();
+        performUndo();
       } else if (requestsRedo && canRedo) {
         event.preventDefault();
-        redoHistory();
-        reconcileAfterHistoryNavigation();
+        performRedo();
       }
     };
 
@@ -199,9 +210,8 @@ const getSnappedPosition = (
   }, [
     canRedo,
     canUndo,
-    reconcileAfterHistoryNavigation,
-    redoHistory,
-    undoHistory,
+    performRedo,
+    performUndo,
   ]);
 
   const getTouchDistance = (touches: React.TouchList) => {
