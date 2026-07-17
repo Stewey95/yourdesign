@@ -14,7 +14,10 @@ export default function EditorHeader({
   onRedo,
 }: EditorHeaderProps) {
   return (
-    <div className="mb-4 flex items-center justify-between">
+    <div
+      data-editor-retain-selection
+      className="mb-4 flex items-center justify-between"
+    >
       <div className="flex items-center gap-2">
   <img
     src="/brand/genvilo-icon-master.png"

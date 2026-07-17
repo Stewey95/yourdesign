@@ -35,7 +35,10 @@ export default function EditorSidebar({
   onDelete,
 }: EditorSidebarProps) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl">
+    <div
+      data-editor-retain-selection
+      className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl"
+    >
     <div className="mb-4 space-y-2">
 {[
   { id: "media", icon: "🖼️", label: "Media" },

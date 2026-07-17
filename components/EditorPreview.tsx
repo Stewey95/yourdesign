@@ -119,10 +119,18 @@ const getSnappedPosition = (
     moved: boolean;
   } | null>(null);
 
+  const pageInteractionRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
+
   const reconcileAfterHistoryNavigation = useCallback(() => {
     pendingDragRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
+    pageInteractionRef.current = null;
     justPinchedRef.current = false;
     setSelectedItemId(null);
     setDraggingItemId(null);
@@ -200,7 +208,7 @@ const getSnappedPosition = (
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     if (selectedItemId) {
       commitItems((currentItems) =>
         currentItems.filter(
@@ -217,8 +225,113 @@ const getSnappedPosition = (
     setSelectedItemId(null);
     setEditingItemId(null);
     setShowImageAdjustments(false);
-    hideAlignmentGuides();
-  };
+    setAlignmentGuides({
+      vertical: false,
+      horizontal: false,
+    });
+  }, [commitItems, selectedItemId]);
+
+  useEffect(() => {
+    const isMobileViewport = () =>
+      window.matchMedia("(max-width: 767px)").matches;
+
+    const retainsSelection = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return true;
+
+      if (canvasRef.current?.contains(target)) return true;
+
+      return Boolean(
+        target.closest(
+          "button, a, input, textarea, select, [contenteditable='true'], [data-editor-retain-selection]"
+        )
+      );
+    };
+
+    const startPageInteraction = (event: PointerEvent) => {
+      if (
+        !selectedItemId ||
+        !isMobileViewport() ||
+        !event.isPrimary ||
+        retainsSelection(event.target)
+      ) {
+        pageInteractionRef.current = null;
+        return;
+      }
+
+      pageInteractionRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false,
+      };
+    };
+
+    const trackPageInteraction = (event: PointerEvent) => {
+      const interaction = pageInteractionRef.current;
+
+      if (!interaction || interaction.pointerId !== event.pointerId) {
+        return;
+      }
+
+      const horizontalDistance = Math.abs(
+        event.clientX - interaction.startX
+      );
+      const verticalDistance = Math.abs(
+        event.clientY - interaction.startY
+      );
+
+      if (horizontalDistance > 5 || verticalDistance > 5) {
+        interaction.moved = true;
+      }
+
+      const scrollingElement = document.scrollingElement;
+      const pageCanScroll = Boolean(
+        scrollingElement &&
+          scrollingElement.scrollHeight > scrollingElement.clientHeight
+      );
+
+      if (
+        pageCanScroll &&
+        verticalDistance > 8 &&
+        verticalDistance > horizontalDistance
+      ) {
+        pageInteractionRef.current = null;
+        clearSelection();
+      }
+    };
+
+    const finishPageInteraction = (event: PointerEvent) => {
+      const interaction = pageInteractionRef.current;
+
+      pageInteractionRef.current = null;
+
+      if (
+        interaction &&
+        interaction.pointerId === event.pointerId &&
+        !interaction.moved &&
+        event.isPrimary &&
+        !retainsSelection(event.target)
+      ) {
+        clearSelection();
+      }
+    };
+
+    const cancelPageInteraction = () => {
+      pageInteractionRef.current = null;
+    };
+
+    document.addEventListener("pointerdown", startPageInteraction);
+    document.addEventListener("pointermove", trackPageInteraction);
+    document.addEventListener("pointerup", finishPageInteraction);
+    document.addEventListener("pointercancel", cancelPageInteraction);
+
+    return () => {
+      document.removeEventListener("pointerdown", startPageInteraction);
+      document.removeEventListener("pointermove", trackPageInteraction);
+      document.removeEventListener("pointerup", finishPageInteraction);
+      document.removeEventListener("pointercancel", cancelPageInteraction);
+    };
+  }, [clearSelection, selectedItemId]);
 
   const startCanvasTap = (
     event: React.PointerEvent<HTMLDivElement>

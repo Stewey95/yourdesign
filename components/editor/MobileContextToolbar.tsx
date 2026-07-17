@@ -110,6 +110,7 @@ export default function MobileContextToolbar({
 
   return (
     <div
+      data-editor-retain-selection
       data-text-toolbar={item.type === "text" ? item.id : undefined}
       data-image-toolbar={item.type === "image" ? item.id : undefined}
       onDragStart={(event) => event.preventDefault()}
