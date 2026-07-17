@@ -1049,7 +1049,7 @@ if (direction === "back") {
     <>
       <div
         ref={editorShellRef}
-        className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-16 md:flex md:flex-col md:p-6"
+        className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:flex md:flex-col md:p-4"
         style={{ height: desktopEditorHeight }}
       >
       <EditorHeader
@@ -1059,7 +1059,7 @@ if (direction === "back") {
         onRedo={performRedo}
       />
 
-      <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)]">
+      <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] md:gap-2">
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}

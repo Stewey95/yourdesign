@@ -16,7 +16,7 @@ export default function EditorHeader({
   return (
     <div
       data-editor-retain-selection
-      className="mb-4 flex items-center justify-between"
+      className="mb-4 flex items-center justify-between md:mb-2"
     >
       <div className="flex items-center gap-2">
   <img
