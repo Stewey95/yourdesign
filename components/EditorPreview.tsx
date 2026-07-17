@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
 import EditorCanvas from "./editor/EditorCanvas";
 import EditorHeader from "./editor/EditorHeader";
+import EditorInspector from "./editor/EditorInspector";
 import EditorSidebar from "./editor/EditorSidebar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
 import TextToolbar from "./editor/TextToolbar";
@@ -1059,7 +1060,7 @@ if (direction === "back") {
         onRedo={performRedo}
       />
 
-      <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] md:gap-2">
+      <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[190px_minmax(0,1fr)_180px] md:gap-2">
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}
@@ -1197,6 +1198,17 @@ if (direction === "back") {
             setSelectedItemId(id);
             setShowMobileContextToolbar(true);
           }}
+        />
+
+        <EditorInspector
+          item={selectedItem}
+          onChangeTextSize={changeTextSize}
+          onChangeTextColor={changeTextColor}
+          onChangeTextFont={changeTextFont}
+          onRotate={rotateItem}
+          onAdjustmentStart={startImageAdjustment}
+          onAdjustmentEnd={commitHistoryTransaction}
+          onAdjustmentChange={changeImageAdjustment}
         />
       </div>
 

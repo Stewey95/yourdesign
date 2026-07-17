@@ -93,7 +93,7 @@ export default function Home() {
 
       <section
         id="editor"
-        className="mx-auto flex max-w-7xl justify-center px-3 pb-24 md:px-6"
+        className="mx-auto flex max-w-[1600px] justify-center px-3 pb-24 md:px-6"
       >
         <EditorPreview />
       </section>

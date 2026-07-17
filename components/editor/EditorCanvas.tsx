@@ -124,7 +124,7 @@ export default function EditorCanvas({
 
   return (
     <div className="order-first min-w-0 md:order-none md:grid md:h-full md:min-h-0 md:grid-rows-[auto_minmax(0,1fr)]">
-      <div className="mb-2 hidden min-h-[60px] md:block">
+      <div className="mb-1 hidden min-h-[52px] md:block">
         {toolbar}
       </div>
 
