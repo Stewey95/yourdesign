@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from "react";
 import AlignmentGuides from "./AlignmentGuides";
+import CanvasViewModeControl from "./CanvasViewModeControl";
 import CanvasItem from "./CanvasItem";
 import {
   LOGICAL_CANVAS_HEIGHT,
@@ -18,13 +19,13 @@ import type {
   DesignItem,
   ImageDesignItem,
 } from "./editor.types";
-
-const DESKTOP_OVERFLOW_TOLERANCE = 1.03;
-const MINIMUM_FITTED_DESKTOP_HEIGHT = 320;
+import type { CanvasViewMode } from "./CanvasViewModeControl";
 
 type EditorCanvasProps = {
   canvasRef: RefObject<HTMLDivElement | null>;
   toolbar: ReactNode;
+  viewMode: CanvasViewMode;
+  onViewModeChange: (mode: CanvasViewMode) => void;
   items: DesignItem[];
   selectedItemId: string | null;
   editingItemId: string | null;
@@ -61,6 +62,8 @@ type EditorCanvasProps = {
 export default function EditorCanvas({
   canvasRef,
   toolbar,
+  viewMode,
+  onViewModeChange,
   items,
   selectedItemId,
   editingItemId,
@@ -113,23 +116,9 @@ export default function EditorCanvas({
     const widthScale = usableWidth / LOGICAL_CANVAS_WIDTH;
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
     const heightScale = usableHeight / LOGICAL_CANVAS_HEIGHT;
-    const useShortWindowScrollFallback =
-      isDesktop &&
-      usableHeight < MINIMUM_FITTED_DESKTOP_HEIGHT &&
-      widthScale > heightScale * DESKTOP_OVERFLOW_TOLERANCE;
-    const widthFirstHeight =
-      LOGICAL_CANVAS_HEIGHT * widthScale;
-    const overflowHeight = Math.max(
-      0,
-      widthFirstHeight - usableHeight
-    );
-    const minimumFitCorrection =
-      overflowHeight / LOGICAL_CANVAS_HEIGHT;
-    const fittedWidthFirstScale =
-      widthScale - minimumFitCorrection;
     const nextScale =
-      isDesktop && heightScale > 0 && !useShortWindowScrollFallback
-        ? fittedWidthFirstScale
+      isDesktop && viewMode === "fit" && heightScale > 0
+        ? Math.min(widthScale, heightScale)
         : widthScale;
 
     setIsDesktopLayout(isDesktop);
@@ -139,7 +128,7 @@ export default function EditorCanvas({
         ? nextScale
         : currentScale
     );
-  }, []);
+  }, [viewMode]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;
@@ -159,15 +148,24 @@ export default function EditorCanvas({
 
   return (
     <div className="order-first min-w-0 md:order-none md:flex md:h-full md:min-h-0 md:flex-col">
-      {toolbar && (
-        <div className="mb-1 hidden md:block">
-          {toolbar}
-        </div>
-      )}
+      <div
+        data-editor-retain-selection
+        className="mb-1 hidden h-10 items-center justify-between gap-2 md:flex"
+      >
+        <div>{toolbar}</div>
+        <CanvasViewModeControl
+          mode={viewMode}
+          onChange={onViewModeChange}
+        />
+      </div>
 
       <div
         ref={workspaceRef}
-        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2 md:pb-2"
+        className={`relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:px-2 md:pb-2 ${
+          viewMode === "fill"
+            ? "md:overflow-y-auto"
+            : "md:overflow-y-hidden"
+        }`}
         style={{
           height: isDesktopLayout
             ? undefined

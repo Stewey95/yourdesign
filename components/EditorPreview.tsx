@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import EditorCanvas from "./editor/EditorCanvas";
+import type { CanvasViewMode } from "./editor/CanvasViewModeControl";
 import EditorHeader from "./editor/EditorHeader";
 import EditorInspector from "./editor/EditorInspector";
 import EditorSidebar from "./editor/EditorSidebar";
@@ -43,6 +44,8 @@ export default function EditorPreview() {
   const [showImageAdjustments, setShowImageAdjustments] = useState(false);
   const [showMobileContextToolbar, setShowMobileContextToolbar] =
     useState(false);
+  const [canvasViewMode, setCanvasViewMode] =
+    useState<CanvasViewMode>("fit");
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
   "media" | "text" | "arrange" | "effects" | null
 >(null);
@@ -143,6 +146,8 @@ const getSnappedPosition = (
     startY: number;
     moved: boolean;
   } | null>(null);
+
+  const activeResizeCleanupRef = useRef<(() => void) | null>(null);
 
   const reconcileAfterHistoryNavigation = useCallback((restoredItems: DesignItem[]) => {
     pendingDragRef.current = null;
@@ -1008,6 +1013,8 @@ if (direction === "back") {
         "pointerup",
         stopResize
       );
+
+      activeResizeCleanupRef.current = null;
     };
 
     window.addEventListener(
@@ -1019,6 +1026,23 @@ if (direction === "back") {
       "pointerup",
       stopResize
     );
+
+    activeResizeCleanupRef.current = stopResize;
+  };
+
+  const changeCanvasViewMode = (mode: CanvasViewMode) => {
+    if (mode === canvasViewMode) return;
+
+    activeResizeCleanupRef.current?.();
+    commitHistoryTransaction();
+    pendingDragRef.current = null;
+    pinchRef.current = null;
+    canvasTapRef.current = null;
+    justPinchedRef.current = false;
+    setDraggingItemId(null);
+    setEditingItemId(null);
+    hideAlignmentGuides();
+    setCanvasViewMode(mode);
   };
   const toggleImageAdjustments = () => {
   setShowImageAdjustments((currentValue) => {
@@ -1075,6 +1099,8 @@ if (direction === "back") {
 
         <EditorCanvas
           canvasRef={canvasRef}
+          viewMode={canvasViewMode}
+          onViewModeChange={changeCanvasViewMode}
           toolbar={selectedItem ? (
             <LayerToolbar
               itemId={selectedItem.id}
