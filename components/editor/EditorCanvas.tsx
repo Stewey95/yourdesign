@@ -19,6 +19,9 @@ import type {
   ImageDesignItem,
 } from "./editor.types";
 
+const DESKTOP_OVERFLOW_TOLERANCE = 1.03;
+const MINIMUM_FITTED_DESKTOP_HEIGHT = 320;
+
 type EditorCanvasProps = {
   canvasRef: RefObject<HTMLDivElement | null>;
   toolbar: ReactNode;
@@ -110,10 +113,12 @@ export default function EditorCanvas({
     const widthScale = usableWidth / LOGICAL_CANVAS_WIDTH;
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
     const heightScale = usableHeight / LOGICAL_CANVAS_HEIGHT;
-    const canFitWithSmallCorrection =
-      heightScale > 0 && widthScale <= heightScale * 1.12;
+    const useShortWindowScrollFallback =
+      isDesktop &&
+      usableHeight < MINIMUM_FITTED_DESKTOP_HEIGHT &&
+      widthScale > heightScale * DESKTOP_OVERFLOW_TOLERANCE;
     const nextScale =
-      isDesktop && canFitWithSmallCorrection
+      isDesktop && heightScale > 0 && !useShortWindowScrollFallback
         ? Math.min(widthScale, heightScale)
         : widthScale;
 
@@ -152,7 +157,7 @@ export default function EditorCanvas({
 
       <div
         ref={workspaceRef}
-        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2 md:pb-2"
+        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2 md:pb-3"
         style={{
           height: isDesktopLayout
             ? undefined
