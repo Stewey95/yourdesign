@@ -2,8 +2,7 @@
 
 import { useRef, useState } from "react";
 import ImageToolbar from "./ImageToolbar";
-import AlignmentGuides from "./editor/AlignmentGuides";
-import CanvasItem from "./editor/CanvasItem";
+import EditorCanvas from "./editor/EditorCanvas";
 import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
 import TextToolbar from "./editor/TextToolbar";
@@ -682,145 +681,113 @@ if (direction === "back") {
           onDelete={deleteSelected}
         />
 
-        <div className="min-w-0 md:col-span-3">
-          <div className="mb-3 min-h-[72px]"></div>
-         <div className="mb-3 min-h-[72px]">
-  {selectedTextItem && (
-    <TextToolbar
-      item={selectedTextItem}
-      canSendBackward={canSendBackward}
-      canBringForward={canBringForward}
-      onChangeTextSize={changeTextSize}
-      onRotateItem={rotateItem}
-      onMoveItemLayer={moveItemLayer}
-      onChangeTextColor={changeTextColor}
-      onChangeTextFont={changeTextFont}
-    />
-  )}
-
-  {selectedImageItem && (
-    <ImageToolbar
-      item={selectedImageItem}
-      showAdjustments={showImageAdjustments}
-      canBringForward={canBringForward}
-      canSendBackward={canSendBackward}
-      onToggleAdjustments={toggleImageAdjustments}
-      onRotate={rotateItem}
-      onBringForward={(id) =>
-        moveItemLayer(id, "forward")
-      }
-      onSendBackward={(id) =>
-        moveItemLayer(id, "backward")
-      }
-      onBringToFront={(id) =>
-        moveItemLayer(id, "front")
-      }
-      onSendToBack={(id) =>
-        moveItemLayer(id, "back")
-      }
-      onAdjustmentChange={changeImageAdjustment}
-      onResetAdjustments={resetImageAdjustments}
-    />
-  )}
-</div>
-
-          <div
-            ref={canvasRef}
-            onTouchStartCapture={startCanvasPinch}
-            onTouchMoveCapture={moveCanvasPinch}
-            onTouchEndCapture={() => {
-  endCanvasPinch();
-  stopDragging();
-}}
-onTouchCancelCapture={() => {
-  endCanvasPinch();
-  stopDragging();
-}}
-            onPointerMove={moveItem}
-            onPointerUp={stopDragging}
-            onPointerCancel={stopDragging}
-            onPointerDown={(event) => {
-              if (event.pointerType === "mouse") {
-                clearSelection();
-              }
-            }}
-            className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
-            style={{
-              touchAction: "none",
-              WebkitUserSelect: "none",
-              userSelect: "none",
-              overscrollBehavior: "contain",
-            }}
-          >
-            {items.length === 0 && (
-              <p className="flex h-full items-center justify-center">
-                Your design canvas
-              </p>
-            )}
-            <AlignmentGuides
-              vertical={alignmentGuides.vertical}
-              horizontal={alignmentGuides.horizontal}
-            />
-
-            {items.map((item) =>
-              item.type === "image" ? (
-                <CanvasItem
-                  key={item.id}
-                  item={item}
-                  selected={selectedItemId === item.id}
-                  onPointerDown={(id) => {
-                    setDraggingItemId(id);
-                    setSelectedItemId(id);
-                    setEditingItemId(null);
-                    setShowImageAdjustments(false);
-                  }}
-                  onResizeStart={startImageResize}
+        <EditorCanvas
+          canvasRef={canvasRef}
+          toolbar={(
+            <>
+              {selectedTextItem && (
+                <TextToolbar
+                  item={selectedTextItem}
+                  canSendBackward={canSendBackward}
+                  canBringForward={canBringForward}
+                  onChangeTextSize={changeTextSize}
+                  onRotateItem={rotateItem}
+                  onMoveItemLayer={moveItemLayer}
+                  onChangeTextColor={changeTextColor}
+                  onChangeTextFont={changeTextFont}
                 />
-              ) : (
-                <CanvasItem
-                  key={item.id}
-                  item={item}
-                  editing={editingItemId === item.id}
-                  onRequestAutoFit={fitTextInsideCanvas}
-                  onValueChange={(id, value) => {
-                    setItems((currentItems) =>
-                      currentItems.map((currentItem) =>
-                        currentItem.id === id
-                          ? { ...currentItem, value }
-                          : currentItem
-                      )
-                    );
-                  }}
-                  onRemoveEmptyText={(id) => {
-                    setItems((currentItems) =>
-                      currentItems.filter(
-                        (currentItem) => currentItem.id !== id
-                      )
-                    );
-                  }}
-                  onFinishEditing={() =>
-                    setEditingItemId(null)
+              )}
+
+              {selectedImageItem && (
+                <ImageToolbar
+                  item={selectedImageItem}
+                  showAdjustments={showImageAdjustments}
+                  canBringForward={canBringForward}
+                  canSendBackward={canSendBackward}
+                  onToggleAdjustments={toggleImageAdjustments}
+                  onRotate={rotateItem}
+                  onBringForward={(id) =>
+                    moveItemLayer(id, "forward")
                   }
-                  onEditingPointerDown={(id) => {
-                    pendingDragRef.current = null;
-                    setDraggingItemId(null);
-                    setSelectedItemId(id);
-                  }}
-                  onPendingDragStart={(id, startX, startY) => {
-                    pendingDragRef.current = {
-                      itemId: id,
-                      startX,
-                      startY,
-                      moved: false,
-                    };
-
-                    setSelectedItemId(id);
-                  }}
+                  onSendBackward={(id) =>
+                    moveItemLayer(id, "backward")
+                  }
+                  onBringToFront={(id) =>
+                    moveItemLayer(id, "front")
+                  }
+                  onSendToBack={(id) =>
+                    moveItemLayer(id, "back")
+                  }
+                  onAdjustmentChange={changeImageAdjustment}
+                  onResetAdjustments={resetImageAdjustments}
                 />
+              )}
+            </>
+          )}
+          items={items}
+          selectedItemId={selectedItemId}
+          editingItemId={editingItemId}
+          verticalGuide={alignmentGuides.vertical}
+          horizontalGuide={alignmentGuides.horizontal}
+          onTouchStartCapture={startCanvasPinch}
+          onTouchMoveCapture={moveCanvasPinch}
+          onTouchEndCapture={() => {
+            endCanvasPinch();
+            stopDragging();
+          }}
+          onTouchCancelCapture={() => {
+            endCanvasPinch();
+            stopDragging();
+          }}
+          onPointerMove={moveItem}
+          onPointerUp={stopDragging}
+          onPointerCancel={stopDragging}
+          onPointerDown={(event) => {
+            if (event.pointerType === "mouse") {
+              clearSelection();
+            }
+          }}
+          onImagePointerDown={(id) => {
+            setDraggingItemId(id);
+            setSelectedItemId(id);
+            setEditingItemId(null);
+            setShowImageAdjustments(false);
+          }}
+          onImageResizeStart={startImageResize}
+          onRequestAutoFit={fitTextInsideCanvas}
+          onTextValueChange={(id, value) => {
+            setItems((currentItems) =>
+              currentItems.map((currentItem) =>
+                currentItem.id === id
+                  ? { ...currentItem, value }
+                  : currentItem
               )
-            )}
-          </div>
-        </div>
+            );
+          }}
+          onRemoveEmptyText={(id) => {
+            setItems((currentItems) =>
+              currentItems.filter(
+                (currentItem) => currentItem.id !== id
+              )
+            );
+          }}
+          onFinishEditing={() => setEditingItemId(null)}
+          onEditingPointerDown={(id) => {
+            pendingDragRef.current = null;
+            setDraggingItemId(null);
+            setSelectedItemId(id);
+          }}
+          onPendingDragStart={(id, startX, startY) => {
+            pendingDragRef.current = {
+              itemId: id,
+              startX,
+              startY,
+              moved: false,
+            };
+
+            setSelectedItemId(id);
+          }}
+        />
       </div>
     </div>
   );
