@@ -14,6 +14,10 @@ type EditorSidebarProps = {
     event: React.ChangeEvent<HTMLInputElement>
   ) => void;
   onAddText: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
   canDelete: boolean;
   onDelete: () => void;
 };
@@ -23,6 +27,10 @@ export default function EditorSidebar({
   onToolbarPanelChange,
   onImageUpload,
   onAddText,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
   canDelete,
   onDelete,
 }: EditorSidebarProps) {
@@ -107,12 +115,34 @@ export default function EditorSidebar({
 </div>
 )}
 
-      <div className="mt-4">
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onUndo}
+          disabled={!canUndo}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Undo"
+          title="Undo"
+        >
+          ↶
+        </button>
+
+        <button
+          type="button"
+          onClick={onRedo}
+          disabled={!canRedo}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Redo"
+          title="Redo"
+        >
+          ↷
+        </button>
+
         <button
           type="button"
           onClick={onDelete}
           disabled={!canDelete}
-          className="cursor-pointer rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+          className="ml-auto cursor-pointer rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Delete
         </button>

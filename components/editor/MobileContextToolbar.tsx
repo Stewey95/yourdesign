@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fontOptions } from "./editor.constants";
 import type {
   DesignItem,
@@ -17,6 +18,10 @@ type MobileContextToolbarProps = {
   onRotate: (id: string, amount: number) => void;
   onMoveBackward: (id: string) => void;
   onMoveForward: (id: string) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
   onDelete: () => void;
   onToggleImageAdjustments: () => void;
   onAdjustmentStart: () => void;
@@ -47,6 +52,10 @@ export default function MobileContextToolbar({
   onRotate,
   onMoveBackward,
   onMoveForward,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
   onDelete,
   onToggleImageAdjustments,
   onAdjustmentStart,
@@ -54,6 +63,51 @@ export default function MobileContextToolbar({
   onAdjustmentChange,
   onResetImageAdjustments,
 }: MobileContextToolbarProps) {
+  const controlsRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollControls = useCallback(() => {
+    const controls = controlsRef.current;
+
+    if (!controls) return;
+
+    const maximumScrollLeft =
+      controls.scrollWidth - controls.clientWidth;
+
+    setCanScrollLeft(controls.scrollLeft > 1);
+    setCanScrollRight(
+      controls.scrollLeft < maximumScrollLeft - 1
+    );
+  }, []);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(updateScrollControls);
+
+    window.addEventListener("resize", updateScrollControls);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updateScrollControls);
+    };
+  }, [
+    item.id,
+    item.type,
+    showImageAdjustments,
+    updateScrollControls,
+  ]);
+
+  const scrollControls = (direction: -1 | 1) => {
+    const controls = controlsRef.current;
+
+    if (!controls) return;
+
+    controls.scrollBy({
+      left: controls.clientWidth * 0.75 * direction,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div
       data-text-toolbar={item.type === "text" ? item.id : undefined}
@@ -133,7 +187,25 @@ export default function MobileContextToolbar({
       )}
 
       <div className="relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 px-3 py-2 shadow-2xl backdrop-blur-xl">
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          type="button"
+          disabled={!canScrollLeft}
+          onPointerDown={protectButtonPointer}
+          onClick={() => scrollControls(-1)}
+          className={`absolute inset-y-2 left-2 z-10 flex w-8 items-center justify-center rounded-full bg-slate-800/95 text-xl font-bold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-0 ${
+            canScrollLeft ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+          aria-label="Scroll toolbar left"
+          title="Previous controls"
+        >
+          ‹
+        </button>
+
+        <div
+          ref={controlsRef}
+          onScroll={updateScrollControls}
+          className="flex min-w-0 items-center gap-2 overflow-x-auto px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {item.type === "text" && (
             <>
               <button
@@ -264,6 +336,30 @@ export default function MobileContextToolbar({
 
           <button
             type="button"
+            disabled={!canUndo}
+            onPointerDown={protectButtonPointer}
+            onClick={onUndo}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Undo"
+            title="Undo"
+          >
+            ↶
+          </button>
+
+          <button
+            type="button"
+            disabled={!canRedo}
+            onPointerDown={protectButtonPointer}
+            onClick={onRedo}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Redo"
+            title="Redo"
+          >
+            ↷
+          </button>
+
+          <button
+            type="button"
             onPointerDown={protectButtonPointer}
             onClick={onDelete}
             className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white transition hover:bg-red-500"
@@ -273,6 +369,20 @@ export default function MobileContextToolbar({
             🗑
           </button>
         </div>
+
+        <button
+          type="button"
+          disabled={!canScrollRight}
+          onPointerDown={protectButtonPointer}
+          onClick={() => scrollControls(1)}
+          className={`absolute inset-y-2 right-2 z-10 flex w-8 items-center justify-center rounded-full bg-slate-800/95 text-xl font-bold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-0 ${
+            canScrollRight ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+          aria-label="Scroll toolbar right"
+          title="Next controls"
+        >
+          ›
+        </button>
       </div>
     </div>
   );

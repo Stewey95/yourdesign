@@ -112,9 +112,17 @@ const getSnappedPosition = (
     startFontSize?: number;
   } | null>(null);
 
+  const canvasTapRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
+
   const reconcileAfterHistoryNavigation = useCallback(() => {
     pendingDragRef.current = null;
     pinchRef.current = null;
+    canvasTapRef.current = null;
     justPinchedRef.current = false;
     setSelectedItemId(null);
     setDraggingItemId(null);
@@ -210,6 +218,68 @@ const getSnappedPosition = (
     setEditingItemId(null);
     setShowImageAdjustments(false);
     hideAlignmentGuides();
+  };
+
+  const startCanvasTap = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (
+      !event.isPrimary ||
+      event.target !== event.currentTarget
+    ) {
+      canvasTapRef.current = null;
+      return;
+    }
+
+    canvasTapRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+    };
+  };
+
+  const trackCanvasTap = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    const canvasTap = canvasTapRef.current;
+
+    if (!canvasTap || canvasTap.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (
+      Math.abs(event.clientX - canvasTap.startX) > 5 ||
+      Math.abs(event.clientY - canvasTap.startY) > 5
+    ) {
+      canvasTap.moved = true;
+    }
+  };
+
+  const finishCanvasTap = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    const canvasTap = canvasTapRef.current;
+
+    canvasTapRef.current = null;
+
+    if (
+      canvasTap &&
+      canvasTap.pointerId === event.pointerId &&
+      !canvasTap.moved &&
+      event.isPrimary &&
+      event.target === event.currentTarget &&
+      !pinchRef.current
+    ) {
+      clearSelection();
+    }
+
+    stopDragging();
+  };
+
+  const cancelCanvasTap = () => {
+    canvasTapRef.current = null;
+    stopDragging();
   };
 
   const changeTextSize = (id: string, amount: number) => {
@@ -801,6 +871,10 @@ if (direction === "back") {
           onToolbarPanelChange={setActiveToolbarPanel}
           onImageUpload={handleImageUpload}
           onAddText={addText}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={performUndo}
+          onRedo={performRedo}
           canDelete={Boolean(selectedItemId)}
           onDelete={deleteSelected}
         />
@@ -865,14 +939,13 @@ if (direction === "back") {
             endCanvasPinch();
             stopDragging();
           }}
-          onPointerMove={moveItem}
-          onPointerUp={stopDragging}
-          onPointerCancel={stopDragging}
-          onPointerDown={(event) => {
-            if (event.pointerType === "mouse") {
-              clearSelection();
-            }
+          onPointerMove={(event) => {
+            trackCanvasTap(event);
+            moveItem(event);
           }}
+          onPointerUp={finishCanvasTap}
+          onPointerCancel={cancelCanvasTap}
+          onPointerDown={startCanvasTap}
           onImagePointerDown={(id) => {
             commitHistoryTransaction();
             beginHistoryTransaction();
@@ -948,6 +1021,10 @@ if (direction === "back") {
           onMoveForward={(id) =>
             moveItemLayer(id, "forward")
           }
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={performUndo}
+          onRedo={performRedo}
           onDelete={deleteSelected}
           onToggleImageAdjustments={toggleImageAdjustments}
           onAdjustmentStart={startImageAdjustment}
