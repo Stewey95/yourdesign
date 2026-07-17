@@ -252,17 +252,13 @@ const getSnappedPosition = (
       setDesktopEditorHeight(Math.max(480, availableHeight));
     };
 
-    const intersectionObserver = new IntersectionObserver(
-      updateEditorHeight,
-      { threshold: [0, 0.25, 0.5, 0.75, 1] }
+    const initialMeasurementFrame = requestAnimationFrame(
+      updateEditorHeight
     );
-
-    intersectionObserver.observe(editorShell);
-    updateEditorHeight();
     window.addEventListener("resize", updateEditorHeight);
 
     return () => {
-      intersectionObserver.disconnect();
+      cancelAnimationFrame(initialMeasurementFrame);
       window.removeEventListener("resize", updateEditorHeight);
     };
   }, []);

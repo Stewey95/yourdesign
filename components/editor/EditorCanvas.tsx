@@ -87,6 +87,11 @@ export default function EditorCanvas({
   onPendingDragStart,
 }: EditorCanvasProps) {
   const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const measurementFrameRef = useRef<number | null>(null);
+  const lastValidMeasurementRef = useRef<{
+    width: number;
+    height: number;
+  } | null>(null);
   const [displayScale, setDisplayScale] = useState(1);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
 
@@ -111,10 +116,21 @@ export default function EditorCanvas({
       workspace.clientHeight - verticalPadding
     );
 
-    if (usableWidth === 0) return;
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+
+    if (
+      usableWidth <= 0 ||
+      (isDesktop && usableHeight <= 0)
+    ) {
+      return;
+    }
+
+    lastValidMeasurementRef.current = {
+      width: usableWidth,
+      height: usableHeight,
+    };
 
     const widthScale = usableWidth / LOGICAL_CANVAS_WIDTH;
-    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
     const heightScale = usableHeight / LOGICAL_CANVAS_HEIGHT;
     const nextScale =
       isDesktop && viewMode === "fit" && heightScale > 0
@@ -135,14 +151,32 @@ export default function EditorCanvas({
 
     if (!workspace) return;
 
-    const resizeObserver = new ResizeObserver(updateDisplayScale);
+    const scheduleDisplayScaleUpdate = () => {
+      if (measurementFrameRef.current !== null) {
+        cancelAnimationFrame(measurementFrameRef.current);
+      }
+
+      measurementFrameRef.current = requestAnimationFrame(() => {
+        measurementFrameRef.current = null;
+        updateDisplayScale();
+      });
+    };
+
+    const resizeObserver = new ResizeObserver(
+      scheduleDisplayScaleUpdate
+    );
     resizeObserver.observe(workspace);
-    updateDisplayScale();
-    window.addEventListener("resize", updateDisplayScale);
+    scheduleDisplayScaleUpdate();
+    window.addEventListener("resize", scheduleDisplayScaleUpdate);
 
     return () => {
       resizeObserver.disconnect();
-      window.removeEventListener("resize", updateDisplayScale);
+      window.removeEventListener("resize", scheduleDisplayScaleUpdate);
+
+      if (measurementFrameRef.current !== null) {
+        cancelAnimationFrame(measurementFrameRef.current);
+        measurementFrameRef.current = null;
+      }
     };
   }, [updateDisplayScale]);
 
