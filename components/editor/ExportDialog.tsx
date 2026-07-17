@@ -310,15 +310,15 @@ export default function ExportDialog({
                     setTransparentBackground((current) => !current);
                     setExportStatus(null);
                   }}
-                  className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition ${
+                  className={`relative h-6 w-11 shrink-0 cursor-pointer overflow-hidden rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
                     transparentBackground ? "bg-blue-500" : "bg-slate-700"
                   }`}
                 >
                   <span
-                    className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
                       transparentBackground
                         ? "translate-x-5"
-                        : "translate-x-1"
+                        : "translate-x-0"
                     }`}
                   />
                   <span className="sr-only">Toggle transparent background</span>
@@ -449,17 +449,24 @@ export default function ExportDialog({
             </ul>
           </details>
 
-          {exportStatus && (
+        </div>
+
+        {exportStatus && (
+          <div className="shrink-0 border-t border-white/10 bg-slate-900/95 px-5 pt-3 md:px-6">
             <p
               role="status"
               className="rounded-xl border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-200"
             >
               {exportStatus}
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
-        <footer className="shrink-0 border-t border-white/10 bg-slate-900/95 px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 md:flex md:items-center md:justify-between md:gap-4 md:px-6 md:pb-4">
+        <footer
+          className={`shrink-0 bg-slate-900/95 px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 md:flex md:items-center md:justify-between md:gap-4 md:px-6 md:pb-4 ${
+            exportStatus ? "" : "border-t border-white/10"
+          }`}
+        >
           <p className="mb-3 text-xs text-slate-400 md:mb-0">
             Ready as {filename.trim() || "your-design"}.{format}
           </p>
