@@ -5,6 +5,7 @@ import ImageToolbar from "./ImageToolbar";
 import EditorCanvas from "./editor/EditorCanvas";
 import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
+import MobileContextToolbar from "./editor/MobileContextToolbar";
 import TextToolbar from "./editor/TextToolbar";
 import { SNAP_THRESHOLD } from "./editor/editor.constants";
 import useEditorHistory from "./editor/useEditorHistory";
@@ -84,6 +85,7 @@ const getSnappedPosition = (
     (item): item is Extract<DesignItem, { type: "image" }> =>
       item.id === selectedItemId && item.type === "image"
   );
+  const selectedItem = selectedTextItem ?? selectedImageItem;
     const selectedItemIndex = items.findIndex(
     (item) => item.id === selectedItemId
   );
@@ -778,8 +780,14 @@ if (direction === "back") {
   });
 };
 
+  const startImageAdjustment = () => {
+    commitHistoryTransaction();
+    beginHistoryTransaction();
+  };
+
   return (
-    <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
+    <>
+      <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
       <EditorHeader
         canUndo={canUndo}
         canRedo={canRedo}
@@ -800,7 +808,7 @@ if (direction === "back") {
         <EditorCanvas
           canvasRef={canvasRef}
           toolbar={(
-            <>
+            <div className="hidden md:block">
               {selectedTextItem && (
                 <TextToolbar
                   item={selectedTextItem}
@@ -834,16 +842,13 @@ if (direction === "back") {
                   onSendToBack={(id) =>
                     moveItemLayer(id, "back")
                   }
-                  onAdjustmentStart={() => {
-                    commitHistoryTransaction();
-                    beginHistoryTransaction();
-                  }}
+                  onAdjustmentStart={startImageAdjustment}
                   onAdjustmentEnd={commitHistoryTransaction}
                   onAdjustmentChange={changeImageAdjustment}
                   onResetAdjustments={resetImageAdjustments}
                 />
               )}
-            </>
+            </div>
           )}
           items={items}
           selectedItemId={selectedItemId}
@@ -918,6 +923,39 @@ if (direction === "back") {
           }}
         />
       </div>
-    </div>
+
+      {selectedItem && (
+        <div
+          aria-hidden="true"
+          className="h-[calc(env(safe-area-inset-bottom)+4.75rem)] md:hidden"
+        />
+      )}
+      </div>
+
+      {selectedItem && (
+        <MobileContextToolbar
+          item={selectedItem}
+          canSendBackward={canSendBackward}
+          canBringForward={canBringForward}
+          showImageAdjustments={showImageAdjustments}
+          onChangeTextSize={changeTextSize}
+          onChangeTextColor={changeTextColor}
+          onChangeTextFont={changeTextFont}
+          onRotate={rotateItem}
+          onMoveBackward={(id) =>
+            moveItemLayer(id, "backward")
+          }
+          onMoveForward={(id) =>
+            moveItemLayer(id, "forward")
+          }
+          onDelete={deleteSelected}
+          onToggleImageAdjustments={toggleImageAdjustments}
+          onAdjustmentStart={startImageAdjustment}
+          onAdjustmentEnd={commitHistoryTransaction}
+          onAdjustmentChange={changeImageAdjustment}
+          onResetImageAdjustments={resetImageAdjustments}
+        />
+      )}
+    </>
   );
 }

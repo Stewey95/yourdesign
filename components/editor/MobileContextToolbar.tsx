@@ -1,0 +1,333 @@
+"use client";
+
+import { fontOptions } from "./editor.constants";
+import type {
+  DesignItem,
+  ImageAdjustment,
+} from "./editor.types";
+
+type MobileContextToolbarProps = {
+  item: DesignItem;
+  canSendBackward: boolean;
+  canBringForward: boolean;
+  showImageAdjustments: boolean;
+  onChangeTextSize: (id: string, amount: number) => void;
+  onChangeTextColor: (id: string, color: string) => void;
+  onChangeTextFont: (id: string, fontFamily: string) => void;
+  onRotate: (id: string, amount: number) => void;
+  onMoveBackward: (id: string) => void;
+  onMoveForward: (id: string) => void;
+  onDelete: () => void;
+  onToggleImageAdjustments: () => void;
+  onAdjustmentStart: () => void;
+  onAdjustmentEnd: () => void;
+  onAdjustmentChange: (
+    id: string,
+    adjustment: ImageAdjustment,
+    value: number
+  ) => void;
+  onResetImageAdjustments: (id: string) => void;
+};
+
+const protectButtonPointer = (
+  event: React.PointerEvent<HTMLButtonElement>
+) => {
+  event.preventDefault();
+  event.stopPropagation();
+};
+
+export default function MobileContextToolbar({
+  item,
+  canSendBackward,
+  canBringForward,
+  showImageAdjustments,
+  onChangeTextSize,
+  onChangeTextColor,
+  onChangeTextFont,
+  onRotate,
+  onMoveBackward,
+  onMoveForward,
+  onDelete,
+  onToggleImageAdjustments,
+  onAdjustmentStart,
+  onAdjustmentEnd,
+  onAdjustmentChange,
+  onResetImageAdjustments,
+}: MobileContextToolbarProps) {
+  return (
+    <div
+      data-text-toolbar={item.type === "text" ? item.id : undefined}
+      data-image-toolbar={item.type === "image" ? item.id : undefined}
+      onDragStart={(event) => event.preventDefault()}
+      onPointerDown={(event) => event.stopPropagation()}
+      onPointerMove={(event) => event.stopPropagation()}
+      onPointerUp={(event) => event.stopPropagation()}
+      className="fixed inset-x-3 z-40 mx-auto flex max-w-xl flex-col gap-2 md:hidden"
+      style={{
+        bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
+        WebkitUserSelect: "none",
+        userSelect: "none",
+      }}
+    >
+      {item.type === "image" && showImageAdjustments && (
+        <div className="max-h-[44vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-white shadow-2xl backdrop-blur-xl">
+          <div className="grid grid-cols-2 gap-3">
+            <MobileAdjustmentSlider
+              label="Brightness"
+              value={item.brightness}
+              min={0}
+              max={200}
+              onAdjustmentStart={onAdjustmentStart}
+              onAdjustmentEnd={onAdjustmentEnd}
+              onChange={(value) =>
+                onAdjustmentChange(item.id, "brightness", value)
+              }
+            />
+
+            <MobileAdjustmentSlider
+              label="Contrast"
+              value={item.contrast}
+              min={0}
+              max={200}
+              onAdjustmentStart={onAdjustmentStart}
+              onAdjustmentEnd={onAdjustmentEnd}
+              onChange={(value) =>
+                onAdjustmentChange(item.id, "contrast", value)
+              }
+            />
+
+            <MobileAdjustmentSlider
+              label="Saturation"
+              value={item.saturation}
+              min={0}
+              max={200}
+              onAdjustmentStart={onAdjustmentStart}
+              onAdjustmentEnd={onAdjustmentEnd}
+              onChange={(value) =>
+                onAdjustmentChange(item.id, "saturation", value)
+              }
+            />
+
+            <MobileAdjustmentSlider
+              label="Opacity"
+              value={item.opacity}
+              min={0}
+              max={100}
+              onAdjustmentStart={onAdjustmentStart}
+              onAdjustmentEnd={onAdjustmentEnd}
+              onChange={(value) =>
+                onAdjustmentChange(item.id, "opacity", value)
+              }
+            />
+          </div>
+
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={() => onResetImageAdjustments(item.id)}
+            className="mt-3 w-full cursor-pointer rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-600"
+          >
+            Reset Adjustments
+          </button>
+        </div>
+      )}
+
+      <div className="relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 px-3 py-2 shadow-2xl backdrop-blur-xl">
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {item.type === "text" && (
+            <>
+              <button
+                type="button"
+                onPointerDown={protectButtonPointer}
+                onClick={() => onChangeTextSize(item.id, -4)}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white"
+                aria-label="Decrease font size"
+                title="Decrease font size"
+              >
+                A−
+              </button>
+
+              <button
+                type="button"
+                onPointerDown={protectButtonPointer}
+                onClick={() => onChangeTextSize(item.id, 4)}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white"
+                aria-label="Increase font size"
+                title="Increase font size"
+              >
+                A+
+              </button>
+
+              <label
+                className="flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full bg-slate-700 px-2 text-sm font-bold text-white"
+                title="Text colour"
+              >
+                🎨
+                <span className="sr-only">Text colour</span>
+                <input
+                  type="color"
+                  value={item.color}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onChange={(event) =>
+                    onChangeTextColor(item.id, event.target.value)
+                  }
+                  className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"
+                  aria-label="Text colour"
+                />
+              </label>
+
+              <select
+                value={item.fontFamily}
+                onPointerDown={(event) => event.stopPropagation()}
+                onChange={(event) =>
+                  onChangeTextFont(item.id, event.target.value)
+                }
+                className="h-9 w-[116px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 text-sm font-bold text-white outline-none"
+                aria-label="Font family"
+                title="Font family"
+              >
+                {fontOptions.map((font) => (
+                  <option key={font} value={font}>
+                    {font}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={() => onRotate(item.id, -15)}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-xl font-bold text-white"
+            aria-label="Rotate left"
+            title="Rotate left"
+          >
+            ↺
+          </button>
+
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={() => onRotate(item.id, 15)}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-xl font-bold text-white"
+            aria-label="Rotate right"
+            title="Rotate right"
+          >
+            ↻
+          </button>
+
+          {item.type === "image" && (
+            <button
+              type="button"
+              onPointerDown={protectButtonPointer}
+              onClick={onToggleImageAdjustments}
+              className="h-9 shrink-0 cursor-pointer rounded-full bg-blue-600 px-3 text-xs font-bold text-white"
+              aria-label={
+                showImageAdjustments
+                  ? "Hide image adjustments"
+                  : "Show image adjustments"
+              }
+              title={
+                showImageAdjustments
+                  ? "Hide Adjustments"
+                  : "Adjust Image"
+              }
+            >
+              {showImageAdjustments ? "Done" : "Adjust"}
+            </button>
+          )}
+
+          <button
+            type="button"
+            disabled={!canSendBackward}
+            onPointerDown={protectButtonPointer}
+            onClick={() => onMoveBackward(item.id)}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Send Backward"
+            title="Send Backward"
+          >
+            ⬇️
+          </button>
+
+          <button
+            type="button"
+            disabled={!canBringForward}
+            onPointerDown={protectButtonPointer}
+            onClick={() => onMoveForward(item.id)}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Bring Forward"
+            title="Bring Forward"
+          >
+            ⬆️
+          </button>
+
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={onDelete}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white transition hover:bg-red-500"
+            aria-label="Delete selected item"
+            title="Delete selected item"
+          >
+            🗑
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type MobileAdjustmentSliderProps = {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onAdjustmentStart: () => void;
+  onAdjustmentEnd: () => void;
+  onChange: (value: number) => void;
+};
+
+function MobileAdjustmentSlider({
+  label,
+  value,
+  min,
+  max,
+  onAdjustmentStart,
+  onAdjustmentEnd,
+  onChange,
+}: MobileAdjustmentSliderProps) {
+  return (
+    <label className="block min-w-0 text-xs font-semibold text-slate-200">
+      <span className="mb-1 flex items-center justify-between gap-2">
+        <span>{label}</span>
+        <span>{Math.round(value)}%</span>
+      </span>
+
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={1}
+        value={value}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onAdjustmentStart();
+        }}
+        onPointerMove={(event) => event.stopPropagation()}
+        onPointerUp={(event) => {
+          event.stopPropagation();
+          onAdjustmentEnd();
+        }}
+        onPointerCancel={(event) => {
+          event.stopPropagation();
+          onAdjustmentEnd();
+        }}
+        onChange={(event) =>
+          onChange(Number(event.target.value))
+        }
+        className="block w-full min-w-0 cursor-pointer"
+      />
+    </label>
+  );
+}
