@@ -1,8 +1,19 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import AlignmentGuides from "./AlignmentGuides";
 import CanvasItem from "./CanvasItem";
+import {
+  LOGICAL_CANVAS_HEIGHT,
+  LOGICAL_CANVAS_WIDTH,
+} from "./editor.constants";
 import type {
   DesignItem,
   ImageDesignItem,
@@ -69,64 +80,115 @@ export default function EditorCanvas({
   onEditingPointerDown,
   onPendingDragStart,
 }: EditorCanvasProps) {
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const [displayScale, setDisplayScale] = useState(1);
+
+  const updateDisplayScale = useCallback(() => {
+    const workspace = workspaceRef.current;
+
+    if (!workspace) return;
+
+    const widthScale =
+      workspace.clientWidth / LOGICAL_CANVAS_WIDTH;
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    const heightScale = isDesktop
+      ? (window.innerHeight * 0.62) / LOGICAL_CANVAS_HEIGHT
+      : Number.POSITIVE_INFINITY;
+    const nextScale = Math.min(widthScale, heightScale);
+
+    setDisplayScale((currentScale) =>
+      Math.abs(currentScale - nextScale) > 0.001
+        ? nextScale
+        : currentScale
+    );
+  }, []);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+
+    if (!workspace) return;
+
+    const resizeObserver = new ResizeObserver(updateDisplayScale);
+    resizeObserver.observe(workspace);
+    updateDisplayScale();
+    window.addEventListener("resize", updateDisplayScale);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateDisplayScale);
+    };
+  }, [updateDisplayScale]);
+
   return (
-    <div className="min-w-0 md:col-span-3">
-      <div className="mb-3 min-h-[72px]"></div>
-     <div className="mb-3 min-h-[72px]">
+    <div className="order-first min-w-0 md:order-none">
+      <div className="mb-3 hidden min-h-[72px] md:block"></div>
+     <div className="mb-3 hidden min-h-[72px] md:block">
       {toolbar}
     </div>
 
       <div
-        ref={canvasRef}
-        onTouchStartCapture={onTouchStartCapture}
-        onTouchMoveCapture={onTouchMoveCapture}
-        onTouchEndCapture={onTouchEndCapture}
-        onTouchCancelCapture={onTouchCancelCapture}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-        onPointerDown={onPointerDown}
-        className="relative h-64 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+        ref={workspaceRef}
+        className="relative w-full overflow-hidden"
         style={{
-          touchAction: "none",
-          WebkitUserSelect: "none",
-          userSelect: "none",
-          overscrollBehavior: "contain",
+          height: LOGICAL_CANVAS_HEIGHT * displayScale,
         }}
       >
-        {items.length === 0 && (
-          <p className="flex h-full items-center justify-center">
-            Your design canvas
-          </p>
-        )}
-        <AlignmentGuides
-          vertical={verticalGuide}
-          horizontal={horizontalGuide}
-        />
+        <div
+          ref={canvasRef}
+          onTouchStartCapture={onTouchStartCapture}
+          onTouchMoveCapture={onTouchMoveCapture}
+          onTouchEndCapture={onTouchEndCapture}
+          onTouchCancelCapture={onTouchCancelCapture}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+          onPointerDown={onPointerDown}
+          className="absolute left-1/2 top-0 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+          style={{
+            width: LOGICAL_CANVAS_WIDTH,
+            height: LOGICAL_CANVAS_HEIGHT,
+            transform: `translateX(-50%) scale(${displayScale})`,
+            transformOrigin: "top center",
+            touchAction: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+            overscrollBehavior: "contain",
+          }}
+        >
+          {items.length === 0 && (
+            <p className="flex h-full items-center justify-center">
+              Your design canvas
+            </p>
+          )}
+          <AlignmentGuides
+            vertical={verticalGuide}
+            horizontal={horizontalGuide}
+          />
 
-        {items.map((item) =>
-          item.type === "image" ? (
-            <CanvasItem
-              key={item.id}
-              item={item}
-              selected={selectedItemId === item.id}
-              onPointerDown={onImagePointerDown}
-              onResizeStart={onImageResizeStart}
-            />
-          ) : (
-            <CanvasItem
-              key={item.id}
-              item={item}
-              editing={editingItemId === item.id}
-              onRequestAutoFit={onRequestAutoFit}
-              onValueChange={onTextValueChange}
-              onRemoveEmptyText={onRemoveEmptyText}
-              onFinishEditing={onFinishEditing}
-              onEditingPointerDown={onEditingPointerDown}
-              onPendingDragStart={onPendingDragStart}
-            />
-          )
-        )}
+          {items.map((item) =>
+            item.type === "image" ? (
+              <CanvasItem
+                key={item.id}
+                item={item}
+                selected={selectedItemId === item.id}
+                onPointerDown={onImagePointerDown}
+                onResizeStart={onImageResizeStart}
+              />
+            ) : (
+              <CanvasItem
+                key={item.id}
+                item={item}
+                editing={editingItemId === item.id}
+                onRequestAutoFit={onRequestAutoFit}
+                onValueChange={onTextValueChange}
+                onRemoveEmptyText={onRemoveEmptyText}
+                onFinishEditing={onFinishEditing}
+                onEditingPointerDown={onEditingPointerDown}
+                onPendingDragStart={onPendingDragStart}
+              />
+            )
+          )}
+        </div>
       </div>
     </div>
   );

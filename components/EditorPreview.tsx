@@ -7,7 +7,11 @@ import EditorHeader from "./editor/EditorHeader";
 import EditorSidebar from "./editor/EditorSidebar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
 import TextToolbar from "./editor/TextToolbar";
-import { SNAP_THRESHOLD } from "./editor/editor.constants";
+import {
+  LOGICAL_CANVAS_HEIGHT,
+  LOGICAL_CANVAS_WIDTH,
+  SNAP_THRESHOLD,
+} from "./editor/editor.constants";
 import useEditorHistory from "./editor/useEditorHistory";
 import type {
   DesignItem,
@@ -52,13 +56,15 @@ const getSnappedPosition = (
   event: React.PointerEvent<HTMLDivElement>,
   canvasBounds: DOMRect
 ): Position => {
-  const rawX = event.clientX - canvasBounds.left;
-  const rawY = event.clientY - canvasBounds.top;
+  const scaleX = canvasBounds.width / LOGICAL_CANVAS_WIDTH;
+  const scaleY = canvasBounds.height / LOGICAL_CANVAS_HEIGHT;
+  const rawX = (event.clientX - canvasBounds.left) / scaleX;
+  const rawY = (event.clientY - canvasBounds.top) / scaleY;
 
-  const canvasCentreX = canvasBounds.width / 2;
-  const canvasCentreY = canvasBounds.height / 2;
+  const canvasCentreX = LOGICAL_CANVAS_WIDTH / 2;
+  const canvasCentreY = LOGICAL_CANVAS_HEIGHT / 2;
   const activeSnapThreshold =
-  event.pointerType === "touch" ? 18 : SNAP_THRESHOLD;
+  (event.pointerType === "touch" ? 18 : SNAP_THRESHOLD) / scaleX;
 
   const snapToVerticalCentre =
     Math.abs(rawX - canvasCentreX) <= activeSnapThreshold;
@@ -757,8 +763,8 @@ if (direction === "back") {
   const addText = () => {
     const canvas = canvasRef.current;
 
-    const canvasWidth = canvas?.clientWidth || 360;
-    const canvasHeight = canvas?.clientHeight || 256;
+    const canvasWidth = canvas?.clientWidth || LOGICAL_CANVAS_WIDTH;
+    const canvasHeight = canvas?.clientHeight || LOGICAL_CANVAS_HEIGHT;
 
     const newText: DesignItem = {
       id: crypto.randomUUID(),
@@ -908,12 +914,16 @@ if (direction === "back") {
     const startY = event.clientY;
     const startWidth = item.size.width;
     const startHeight = item.size.height;
+    const canvasBounds = canvasRef.current?.getBoundingClientRect();
+    const displayScale = canvasBounds
+      ? canvasBounds.width / LOGICAL_CANVAS_WIDTH
+      : 1;
 
     const resize = (moveEvent: PointerEvent) => {
       const change = Math.max(
         moveEvent.clientX - startX,
         moveEvent.clientY - startY
-      );
+      ) / displayScale;
 
       updateItems((currentItems) =>
         currentItems.map((currentItem) =>
@@ -988,7 +998,7 @@ if (direction === "back") {
 
   return (
     <>
-      <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
+      <div className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-16 md:p-6">
       <EditorHeader
         canUndo={canUndo}
         canRedo={canRedo}
@@ -996,7 +1006,7 @@ if (direction === "back") {
         onRedo={performRedo}
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)]">
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}

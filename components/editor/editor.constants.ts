@@ -11,3 +11,6 @@ export const fontOptions = [
 ];
 
 export const SNAP_THRESHOLD = 8;
+
+export const LOGICAL_CANVAS_WIDTH = 360;
+export const LOGICAL_CANVAS_HEIGHT = 256;
