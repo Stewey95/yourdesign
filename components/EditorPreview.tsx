@@ -7,6 +7,7 @@ import type { CanvasViewMode } from "./editor/CanvasViewModeControl";
 import EditorHeader from "./editor/EditorHeader";
 import EditorInspector from "./editor/EditorInspector";
 import EditorSidebar from "./editor/EditorSidebar";
+import ExportDialog from "./editor/ExportDialog";
 import LayerToolbar from "./editor/LayerToolbar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
 import {
@@ -47,6 +48,7 @@ export default function EditorPreview() {
     useState(false);
   const [canvasViewMode, setCanvasViewMode] =
     useState<CanvasViewMode>("fit");
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
   "media" | "text" | "arrange" | "effects" | null
 >(null);
@@ -1123,6 +1125,7 @@ if (direction === "back") {
         canRedo={canRedo}
         onUndo={performUndo}
         onRedo={performRedo}
+        onExport={() => setShowExportDialog(true)}
       />
 
       <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[190px_minmax(0,1fr)_180px] md:gap-2">
@@ -1283,6 +1286,11 @@ if (direction === "back") {
           onResetImageAdjustments={resetImageAdjustments}
         />
       )}
+
+      <ExportDialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+      />
     </>
   );
 }

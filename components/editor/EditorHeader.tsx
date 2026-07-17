@@ -5,6 +5,7 @@ type EditorHeaderProps = {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  onExport: () => void;
 };
 
 export default function EditorHeader({
@@ -12,6 +13,7 @@ export default function EditorHeader({
   canRedo,
   onUndo,
   onRedo,
+  onExport,
 }: EditorHeaderProps) {
   return (
     <div
@@ -53,7 +55,11 @@ export default function EditorHeader({
     ↷
   </button>
 
-  <button className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-sm text-white">
+  <button
+    type="button"
+    onClick={onExport}
+    className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-sm text-white"
+  >
     Export
   </button>
 </div>
