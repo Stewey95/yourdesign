@@ -1049,7 +1049,7 @@ if (direction === "back") {
     <>
       <div
         ref={editorShellRef}
-        className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
+        className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-2 md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
         style={{ height: desktopEditorHeight }}
       >
       <EditorHeader
