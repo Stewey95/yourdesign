@@ -2,6 +2,7 @@
 
 import CanvasImageItem from "./CanvasImageItem";
 import CanvasTextItem from "./CanvasTextItem";
+import type { TextResizeCorner } from "./CanvasTextItem";
 import type {
   ImageDesignItem,
   TextDesignItem,
@@ -20,7 +21,9 @@ type ImageCanvasItemProps = {
 
 type TextCanvasItemProps = {
   item: TextDesignItem;
+  selected: boolean;
   editing: boolean;
+  displayScale: number;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -34,6 +37,11 @@ type TextCanvasItemProps = {
     startX: number,
     startY: number
   ) => void;
+  onResizeStart: (
+    event: React.PointerEvent<HTMLDivElement>,
+    item: TextDesignItem,
+    corner: TextResizeCorner
+  ) => void;
 };
 
 type CanvasItemProps =
@@ -42,10 +50,7 @@ type CanvasItemProps =
 
 export default function CanvasItem(props: CanvasItemProps) {
   const { item } = props;
-  const selected =
-    item.type === "image" &&
-    "selected" in props &&
-    props.selected;
+  const selected = "selected" in props && props.selected;
 
   return (
     <div
@@ -64,7 +69,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         userSelect: "none",
       }}
     >
-      {item.type === "image" && "selected" in props ? (
+      {item.type === "image" && "onPointerDown" in props ? (
         <CanvasImageItem
           item={item}
           selected={props.selected}
@@ -75,13 +80,16 @@ export default function CanvasItem(props: CanvasItemProps) {
       ) : item.type === "text" && "editing" in props ? (
         <CanvasTextItem
           item={item}
+          selected={props.selected}
           editing={props.editing}
+          displayScale={props.displayScale}
           onRequestAutoFit={props.onRequestAutoFit}
           onValueChange={props.onValueChange}
           onRemoveEmptyText={props.onRemoveEmptyText}
           onFinishEditing={props.onFinishEditing}
           onEditingPointerDown={props.onEditingPointerDown}
           onPendingDragStart={props.onPendingDragStart}
+          onResizeStart={props.onResizeStart}
         />
       ) : null}
     </div>

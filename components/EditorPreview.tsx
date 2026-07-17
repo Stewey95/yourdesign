@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import EditorCanvas from "./editor/EditorCanvas";
+import type { TextResizeCorner } from "./editor/CanvasTextItem";
 import type { CanvasViewMode } from "./editor/CanvasViewModeControl";
 import EditorHeader from "./editor/EditorHeader";
 import EditorInspector from "./editor/EditorInspector";
@@ -956,14 +957,35 @@ if (direction === "back") {
     setDraggingItemId(null);
   };
 
-  const startImageResize = (
+  const startDesktopResize = (
     event: React.PointerEvent<HTMLDivElement>,
-    item: Extract<DesignItem, { type: "image" }>
+    onResize: (event: PointerEvent) => void
   ) => {
     event.stopPropagation();
     commitHistoryTransaction();
     beginHistoryTransaction();
 
+    const stopResize = () => {
+      commitHistoryTransaction();
+
+      window.removeEventListener("pointermove", onResize);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+
+      activeResizeCleanupRef.current = null;
+    };
+
+    window.addEventListener("pointermove", onResize);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
+
+    activeResizeCleanupRef.current = stopResize;
+  };
+
+  const startImageResize = (
+    event: React.PointerEvent<HTMLDivElement>,
+    item: Extract<DesignItem, { type: "image" }>
+  ) => {
     const startX = event.clientX;
     const startY = event.clientY;
     const startWidth = item.size.width;
@@ -1000,33 +1022,54 @@ if (direction === "back") {
       );
     };
 
-    const stopResize = () => {
-      commitHistoryTransaction();
+    startDesktopResize(event, resize);
+  };
 
-      window.removeEventListener(
-        "pointermove",
-        resize
+  const startTextResize = (
+    event: React.PointerEvent<HTMLDivElement>,
+    item: Extract<DesignItem, { type: "text" }>,
+    corner: TextResizeCorner
+  ) => {
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startFontSize = item.fontSize;
+    const horizontalDirection = corner.endsWith("right") ? 1 : -1;
+    const verticalDirection = corner.startsWith("bottom") ? 1 : -1;
+    const canvasBounds = canvasRef.current?.getBoundingClientRect();
+    const displayScale = canvasBounds
+      ? canvasBounds.width / LOGICAL_CANVAS_WIDTH
+      : 1;
+
+    const resize = (moveEvent: PointerEvent) => {
+      const horizontalChange =
+        (moveEvent.clientX - startX) * horizontalDirection;
+      const verticalChange =
+        (moveEvent.clientY - startY) * verticalDirection;
+      const proportionalChange =
+        (horizontalChange + verticalChange) / 2 / displayScale;
+      const requestedScale = Math.max(
+        Number.EPSILON,
+        1 + proportionalChange / startFontSize
+      );
+      const nextFontSize = clampFontSize(
+        startFontSize * requestedScale
       );
 
-      window.removeEventListener(
-        "pointerup",
-        stopResize
+      updateItems((currentItems) =>
+        currentItems.map((currentItem) =>
+          currentItem.id === item.id && currentItem.type === "text"
+            ? {
+                ...currentItem,
+                fontSize: nextFontSize,
+              }
+            : currentItem
+        )
       );
-
-      activeResizeCleanupRef.current = null;
     };
 
-    window.addEventListener(
-      "pointermove",
-      resize
-    );
-
-    window.addEventListener(
-      "pointerup",
-      stopResize
-    );
-
-    activeResizeCleanupRef.current = stopResize;
+    startDesktopResize(event, resize);
   };
 
   const changeCanvasViewMode = (mode: CanvasViewMode) => {
@@ -1141,6 +1184,7 @@ if (direction === "back") {
             setShowImageAdjustments(false);
           }}
           onImageResizeStart={startImageResize}
+          onTextResizeStart={startTextResize}
           onRequestAutoFit={fitTextInsideCanvas}
           onTextValueChange={(id, value) => {
             beginHistoryTransaction();

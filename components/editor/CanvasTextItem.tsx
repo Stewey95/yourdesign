@@ -2,9 +2,17 @@
 
 import type { TextDesignItem } from "./editor.types";
 
+export type TextResizeCorner =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
+
 type CanvasTextItemProps = {
   item: TextDesignItem;
+  selected: boolean;
   editing: boolean;
+  displayScale: number;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -18,18 +26,53 @@ type CanvasTextItemProps = {
     startX: number,
     startY: number
   ) => void;
+  onResizeStart: (
+    event: React.PointerEvent<HTMLDivElement>,
+    item: TextDesignItem,
+    corner: TextResizeCorner
+  ) => void;
 };
 
 export default function CanvasTextItem({
   item,
+  selected,
   editing,
+  displayScale,
   onRequestAutoFit,
   onValueChange,
   onRemoveEmptyText,
   onFinishEditing,
   onEditingPointerDown,
   onPendingDragStart,
+  onResizeStart,
 }: CanvasTextItemProps) {
+  const resizeHandles: Array<{
+    corner: TextResizeCorner;
+    className: string;
+    style: React.CSSProperties;
+  }> = [
+    {
+      corner: "top-left",
+      className: "cursor-nwse-resize",
+      style: { left: 0, top: 0 },
+    },
+    {
+      corner: "top-right",
+      className: "cursor-nesw-resize",
+      style: { left: "100%", top: 0 },
+    },
+    {
+      corner: "bottom-left",
+      className: "cursor-nesw-resize",
+      style: { left: 0, top: "100%" },
+    },
+    {
+      corner: "bottom-right",
+      className: "cursor-nwse-resize",
+      style: { left: "100%", top: "100%" },
+    },
+  ];
+
   return (
     <div className="relative">
         {editing ? (
@@ -148,6 +191,33 @@ maxWidth: "100%",
             {item.value || "Type here"}
           </div>
         )}
+
+        {selected && resizeHandles.map((handle) => (
+          <div
+            key={handle.corner}
+            onPointerDown={(event) =>
+              onResizeStart(event, item, handle.corner)
+            }
+            className={`absolute hidden items-center justify-center md:flex ${handle.className}`}
+            style={{
+              ...handle.style,
+              width: 20 / displayScale,
+              height: 20 / displayScale,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="block bg-blue-500"
+              style={{
+                width: 4 / displayScale,
+                height: 4 / displayScale,
+                outline: `${1 / displayScale}px solid white`,
+                borderRadius: 1 / displayScale,
+              }}
+            />
+          </div>
+        ))}
     </div>
   );
 }

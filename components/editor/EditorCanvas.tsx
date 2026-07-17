@@ -11,6 +11,7 @@ import {
 import AlignmentGuides from "./AlignmentGuides";
 import CanvasViewModeControl from "./CanvasViewModeControl";
 import CanvasItem from "./CanvasItem";
+import type { TextResizeCorner } from "./CanvasTextItem";
 import {
   LOGICAL_CANVAS_HEIGHT,
   LOGICAL_CANVAS_WIDTH,
@@ -18,6 +19,7 @@ import {
 import type {
   DesignItem,
   ImageDesignItem,
+  TextDesignItem,
 } from "./editor.types";
 import type { CanvasViewMode } from "./CanvasViewModeControl";
 
@@ -43,6 +45,11 @@ type EditorCanvasProps = {
   onImageResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: ImageDesignItem
+  ) => void;
+  onTextResizeStart: (
+    event: React.PointerEvent<HTMLDivElement>,
+    item: TextDesignItem,
+    corner: TextResizeCorner
   ) => void;
   onRequestAutoFit: (
     id: string,
@@ -79,6 +86,7 @@ export default function EditorCanvas({
   onPointerDown,
   onImagePointerDown,
   onImageResizeStart,
+  onTextResizeStart,
   onRequestAutoFit,
   onTextValueChange,
   onRemoveEmptyText,
@@ -259,13 +267,16 @@ export default function EditorCanvas({
                 <CanvasItem
                   key={item.id}
                   item={item}
+                  selected={selectedItemId === item.id}
                   editing={editingItemId === item.id}
+                  displayScale={displayScale}
                   onRequestAutoFit={onRequestAutoFit}
                   onValueChange={onTextValueChange}
                   onRemoveEmptyText={onRemoveEmptyText}
                   onFinishEditing={onFinishEditing}
                   onEditingPointerDown={onEditingPointerDown}
                   onPendingDragStart={onPendingDragStart}
+                  onResizeStart={onTextResizeStart}
                 />
               )
             )}
