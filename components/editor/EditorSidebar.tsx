@@ -37,8 +37,9 @@ export default function EditorSidebar({
   return (
     <div
       data-editor-retain-selection
-      className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl"
+      className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
     >
+    <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
     <div className="mb-4 space-y-2">
 {[
   { id: "media", icon: "🖼️", label: "Media" },
@@ -104,7 +105,7 @@ export default function EditorSidebar({
 </div>
 )}
 
-       {activeToolbarPanel === "text" && (
+      {activeToolbarPanel === "text" && (
 <div className="mt-3 rounded-xl border border-white/10 bg-slate-800/60 p-3">
   <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
     Text
@@ -117,8 +118,9 @@ export default function EditorSidebar({
 </button>
 </div>
 )}
+    </div>
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-4 flex shrink-0 items-center gap-2">
         <button
           type="button"
           onClick={onUndo}

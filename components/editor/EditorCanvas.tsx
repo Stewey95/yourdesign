@@ -82,6 +82,7 @@ export default function EditorCanvas({
 }: EditorCanvasProps) {
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const [displayScale, setDisplayScale] = useState(1);
+  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
 
   const updateDisplayScale = useCallback(() => {
     const workspace = workspaceRef.current;
@@ -91,14 +92,12 @@ export default function EditorCanvas({
     const widthScale =
       workspace.clientWidth / LOGICAL_CANVAS_WIDTH;
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-    const availableDesktopHeight = Math.max(
-      LOGICAL_CANVAS_HEIGHT,
-      window.innerHeight - 220
-    );
-    const heightScale = isDesktop
-      ? availableDesktopHeight / LOGICAL_CANVAS_HEIGHT
+    const heightScale = isDesktop && workspace.clientHeight > 0
+      ? workspace.clientHeight / LOGICAL_CANVAS_HEIGHT
       : Number.POSITIVE_INFINITY;
     const nextScale = Math.min(widthScale, heightScale);
+
+    setIsDesktopLayout(isDesktop);
 
     setDisplayScale((currentScale) =>
       Math.abs(currentScale - nextScale) > 0.001
@@ -124,16 +123,18 @@ export default function EditorCanvas({
   }, [updateDisplayScale]);
 
   return (
-    <div className="order-first min-w-0 md:order-none">
+    <div className="order-first min-w-0 md:order-none md:grid md:h-full md:min-h-0 md:grid-rows-[auto_minmax(0,1fr)]">
       <div className="mb-3 hidden min-h-[72px] md:block">
         {toolbar}
       </div>
 
       <div
         ref={workspaceRef}
-        className="relative w-full overflow-hidden"
+        className="relative w-full overflow-hidden md:h-full md:min-h-0"
         style={{
-          height: LOGICAL_CANVAS_HEIGHT * displayScale,
+          height: isDesktopLayout
+            ? undefined
+            : LOGICAL_CANVAS_HEIGHT * displayScale,
         }}
       >
         <div

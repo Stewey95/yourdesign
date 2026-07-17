@@ -50,7 +50,11 @@ export default function EditorPreview() {
   vertical: false,
   horizontal: false,
 });
+  const [desktopEditorHeight, setDesktopEditorHeight] = useState<
+    number | undefined
+  >(undefined);
 
+  const editorShellRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const hideAlignmentGuides = () => {
   setAlignmentGuides({
@@ -225,6 +229,38 @@ const getSnappedPosition = (
     performRedo,
     performUndo,
   ]);
+
+  useEffect(() => {
+    const editorShell = editorShellRef.current;
+
+    if (!editorShell) return;
+
+    const updateEditorHeight = () => {
+      if (!window.matchMedia("(min-width: 768px)").matches) {
+        setDesktopEditorHeight(undefined);
+        return;
+      }
+
+      const availableHeight =
+        window.innerHeight - editorShell.getBoundingClientRect().top - 16;
+
+      setDesktopEditorHeight(Math.max(480, availableHeight));
+    };
+
+    const intersectionObserver = new IntersectionObserver(
+      updateEditorHeight,
+      { threshold: [0, 0.25, 0.5, 0.75, 1] }
+    );
+
+    intersectionObserver.observe(editorShell);
+    updateEditorHeight();
+    window.addEventListener("resize", updateEditorHeight);
+
+    return () => {
+      intersectionObserver.disconnect();
+      window.removeEventListener("resize", updateEditorHeight);
+    };
+  }, []);
 
   const getTouchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -1011,7 +1047,11 @@ if (direction === "back") {
 
   return (
     <>
-      <div className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-16 md:p-6">
+      <div
+        ref={editorShellRef}
+        className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-16 md:flex md:flex-col md:p-6"
+        style={{ height: desktopEditorHeight }}
+      >
       <EditorHeader
         canUndo={canUndo}
         canRedo={canRedo}
@@ -1019,7 +1059,7 @@ if (direction === "back") {
         onRedo={performRedo}
       />
 
-      <div className="grid gap-4 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)]">
+      <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)]">
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}
