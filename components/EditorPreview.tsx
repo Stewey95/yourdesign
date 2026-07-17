@@ -670,10 +670,7 @@ if (direction === "back") {
 
   return (
     <div className="mx-auto mt-16 w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl">
-      <EditorHeader
-        canDelete={Boolean(selectedItemId)}
-        onDelete={deleteSelected}
-      />
+      <EditorHeader />
 
       <div className="grid gap-4 md:grid-cols-4">
         <EditorSidebar
@@ -681,6 +678,8 @@ if (direction === "back") {
           onToolbarPanelChange={setActiveToolbarPanel}
           onImageUpload={handleImageUpload}
           onAddText={addText}
+          canDelete={Boolean(selectedItemId)}
+          onDelete={deleteSelected}
         />
 
         <div className="min-w-0 md:col-span-3">

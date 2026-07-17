@@ -14,6 +14,8 @@ type EditorSidebarProps = {
     event: React.ChangeEvent<HTMLInputElement>
   ) => void;
   onAddText: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
 };
 
 export default function EditorSidebar({
@@ -21,6 +23,8 @@ export default function EditorSidebar({
   onToolbarPanelChange,
   onImageUpload,
   onAddText,
+  canDelete,
+  onDelete,
 }: EditorSidebarProps) {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl">
@@ -102,6 +106,17 @@ export default function EditorSidebar({
 </button>
 </div>
 )}
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={!canDelete}
+          className="cursor-pointer rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Delete
+        </button>
+      </div>
 
       
     </div>
