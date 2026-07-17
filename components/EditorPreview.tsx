@@ -237,6 +237,7 @@ const getSnappedPosition = (
 
   useEffect(() => {
     const editorShell = editorShellRef.current;
+    const minimumDesktopEditorHeight = 600;
 
     if (!editorShell) return;
 
@@ -249,7 +250,9 @@ const getSnappedPosition = (
       const availableHeight =
         window.innerHeight - editorShell.getBoundingClientRect().top - 16;
 
-      setDesktopEditorHeight(Math.max(480, availableHeight));
+      setDesktopEditorHeight(
+        Math.max(minimumDesktopEditorHeight, availableHeight)
+      );
     };
 
     const initialMeasurementFrame = requestAnimationFrame(
