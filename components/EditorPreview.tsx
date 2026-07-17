@@ -31,6 +31,8 @@ export default function EditorPreview() {
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showImageAdjustments, setShowImageAdjustments] = useState(false);
+  const [showMobileContextToolbar, setShowMobileContextToolbar] =
+    useState(false);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
   "media" | "text" | "arrange" | "effects" | null
 >(null);
@@ -135,6 +137,7 @@ const getSnappedPosition = (
     setSelectedItemId(null);
     setDraggingItemId(null);
     setEditingItemId(null);
+    setShowMobileContextToolbar(false);
     setShowImageAdjustments(false);
     setAlignmentGuides({
       vertical: false,
@@ -224,6 +227,7 @@ const getSnappedPosition = (
 
     setSelectedItemId(null);
     setEditingItemId(null);
+    setShowMobileContextToolbar(false);
     setShowImageAdjustments(false);
     setAlignmentGuides({
       vertical: false,
@@ -296,7 +300,8 @@ const getSnappedPosition = (
         verticalDistance > horizontalDistance
       ) {
         pageInteractionRef.current = null;
-        clearSelection();
+        setShowMobileContextToolbar(false);
+        setShowImageAdjustments(false);
       }
     };
 
@@ -733,6 +738,7 @@ if (direction === "back") {
 
     setSelectedItemId(newImage.id);
     setEditingItemId(null);
+    setShowMobileContextToolbar(true);
     setShowImageAdjustments(false);
 
     event.target.value = "";
@@ -765,6 +771,7 @@ if (direction === "back") {
 
     setSelectedItemId(newText.id);
     setEditingItemId(null);
+    setShowMobileContextToolbar(true);
     setShowImageAdjustments(false);
 
     setTimeout(() => {
@@ -786,6 +793,7 @@ if (direction === "back") {
 
     setSelectedItemId(null);
     setEditingItemId(null);
+    setShowMobileContextToolbar(false);
     setShowImageAdjustments(false);
   };
 
@@ -1065,6 +1073,7 @@ if (direction === "back") {
             setDraggingItemId(id);
             setSelectedItemId(id);
             setEditingItemId(null);
+            setShowMobileContextToolbar(true);
             setShowImageAdjustments(false);
           }}
           onImageResizeStart={startImageResize}
@@ -1085,6 +1094,12 @@ if (direction === "back") {
                 (currentItem) => currentItem.id !== id
               )
             );
+
+            if (selectedItemId === id) {
+              setSelectedItemId(null);
+              setShowMobileContextToolbar(false);
+              setShowImageAdjustments(false);
+            }
           }}
           onFinishEditing={() => {
             commitHistoryTransaction();
@@ -1094,6 +1109,7 @@ if (direction === "back") {
             pendingDragRef.current = null;
             setDraggingItemId(null);
             setSelectedItemId(id);
+            setShowMobileContextToolbar(true);
           }}
           onPendingDragStart={(id, startX, startY) => {
             commitHistoryTransaction();
@@ -1106,11 +1122,12 @@ if (direction === "back") {
             };
 
             setSelectedItemId(id);
+            setShowMobileContextToolbar(true);
           }}
         />
       </div>
 
-      {selectedItem && (
+      {selectedItem && showMobileContextToolbar && (
         <div
           aria-hidden="true"
           className="h-[calc(env(safe-area-inset-bottom)+4.75rem)] md:hidden"
@@ -1118,7 +1135,7 @@ if (direction === "back") {
       )}
       </div>
 
-      {selectedItem && (
+      {selectedItem && showMobileContextToolbar && (
         <MobileContextToolbar
           item={selectedItem}
           canSendBackward={canSendBackward}
