@@ -106,10 +106,7 @@ onValueChange(item.id, value);
          rows={1}
             className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none"
             style={{
-              fontSize: Math.max(
-                16,
-                item.fontSize
-              ),
+              fontSize: item.fontSize,
               color: item.color,
               fontFamily: item.fontFamily,
               textShadow:

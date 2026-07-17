@@ -8,6 +8,12 @@ import EditorSidebar from "./editor/EditorSidebar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
 import TextToolbar from "./editor/TextToolbar";
 import {
+  clampFontSize,
+  DEFAULT_IMAGE_MAX_HEIGHT,
+  DEFAULT_IMAGE_MAX_WIDTH,
+  DEFAULT_TEXT_FONT_SIZE,
+  getBoundedImageSize,
+  getInitialImageSize,
   LOGICAL_CANVAS_HEIGHT,
   LOGICAL_CANVAS_WIDTH,
   SNAP_THRESHOLD,
@@ -422,10 +428,7 @@ const getSnappedPosition = (
         item.id === id && item.type === "text"
           ? {
               ...item,
-              fontSize: Math.max(
-                12,
-                Math.min(140, item.fontSize + amount)
-              ),
+              fontSize: clampFontSize(item.fontSize + amount),
             }
           : item
       )
@@ -478,8 +481,7 @@ const getSnappedPosition = (
 
       return {
         ...item,
-        fontSize: Math.max(
-          12,
+        fontSize: clampFontSize(
           Math.floor(item.fontSize * scale)
         ),
       };
@@ -685,29 +687,24 @@ if (direction === "back") {
         }
 
         if (item.type === "image") {
+          const width =
+            (pinchRef.current.startWidth || DEFAULT_IMAGE_MAX_WIDTH) *
+            scale;
+          const height =
+            (pinchRef.current.startHeight || DEFAULT_IMAGE_MAX_HEIGHT) *
+            scale;
+
           return {
             ...item,
-            size: {
-              width: Math.max(
-                60,
-                (pinchRef.current.startWidth || 160) * scale
-              ),
-              height: Math.max(
-                60,
-                (pinchRef.current.startHeight || 160) * scale
-              ),
-            },
+            size: getBoundedImageSize(width, height),
           };
         }
 
         return {
           ...item,
-          fontSize: Math.max(
-            12,
-            Math.min(
-              140,
-              (pinchRef.current.startFontSize || 32) * scale
-            )
+          fontSize: clampFontSize(
+            (pinchRef.current.startFontSize || DEFAULT_TEXT_FONT_SIZE) *
+              scale
           ),
         };
       })
@@ -734,28 +731,45 @@ if (direction === "back") {
 
     if (!file) return;
 
-    const newImage: DesignItem = {
-      id: crypto.randomUUID(),
-      type: "image",
-      src: URL.createObjectURL(file),
-      position: { x: 180, y: 120 },
-      size: { width: 160, height: 160 },
-      rotation: 0,
-      brightness: 100,
-      contrast: 100,
-      saturation: 100,
-      opacity: 100,
+    const imageUrl = URL.createObjectURL(file);
+    const uploadedImage = new Image();
+
+    uploadedImage.onload = () => {
+      const newImage: DesignItem = {
+        id: crypto.randomUUID(),
+        type: "image",
+        src: imageUrl,
+        position: {
+          x: LOGICAL_CANVAS_WIDTH / 2,
+          y: LOGICAL_CANVAS_HEIGHT / 2,
+        },
+        size: getInitialImageSize(
+          uploadedImage.naturalWidth,
+          uploadedImage.naturalHeight
+        ),
+        rotation: 0,
+        brightness: 100,
+        contrast: 100,
+        saturation: 100,
+        opacity: 100,
+      };
+
+      commitItems((currentItems) => [
+        ...currentItems,
+        newImage,
+      ]);
+
+      setSelectedItemId(newImage.id);
+      setEditingItemId(null);
+      setShowMobileContextToolbar(true);
+      setShowImageAdjustments(false);
     };
 
-    commitItems((currentItems) => [
-      ...currentItems,
-      newImage,
-    ]);
+    uploadedImage.onerror = () => {
+      URL.revokeObjectURL(imageUrl);
+    };
 
-    setSelectedItemId(newImage.id);
-    setEditingItemId(null);
-    setShowMobileContextToolbar(true);
-    setShowImageAdjustments(false);
+    uploadedImage.src = imageUrl;
 
     event.target.value = "";
   };
@@ -774,7 +788,7 @@ if (direction === "back") {
         x: canvasWidth / 2,
         y: canvasHeight / 2,
       },
-      fontSize: 32,
+      fontSize: DEFAULT_TEXT_FONT_SIZE,
       color: "#0f172a",
       fontFamily: "Arial",
       rotation: 0,
@@ -924,6 +938,14 @@ if (direction === "back") {
         moveEvent.clientX - startX,
         moveEvent.clientY - startY
       ) / displayScale;
+      const requestedScale = Math.max(
+        Number.EPSILON,
+        1 + change / Math.max(startWidth, startHeight)
+      );
+      const nextSize = getBoundedImageSize(
+        startWidth * requestedScale,
+        startHeight * requestedScale
+      );
 
       updateItems((currentItems) =>
         currentItems.map((currentItem) =>
@@ -931,16 +953,7 @@ if (direction === "back") {
           currentItem.type === "image"
             ? {
                 ...currentItem,
-                size: {
-                  width: Math.max(
-                    60,
-                    startWidth + change
-                  ),
-                  height: Math.max(
-                    60,
-                    startHeight + change
-                  ),
-                },
+                size: nextSize,
               }
             : currentItem
         )
