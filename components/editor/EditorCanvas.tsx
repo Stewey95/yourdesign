@@ -117,9 +117,19 @@ export default function EditorCanvas({
       isDesktop &&
       usableHeight < MINIMUM_FITTED_DESKTOP_HEIGHT &&
       widthScale > heightScale * DESKTOP_OVERFLOW_TOLERANCE;
+    const widthFirstHeight =
+      LOGICAL_CANVAS_HEIGHT * widthScale;
+    const overflowHeight = Math.max(
+      0,
+      widthFirstHeight - usableHeight
+    );
+    const minimumFitCorrection =
+      overflowHeight / LOGICAL_CANVAS_HEIGHT;
+    const fittedWidthFirstScale =
+      widthScale - minimumFitCorrection;
     const nextScale =
       isDesktop && heightScale > 0 && !useShortWindowScrollFallback
-        ? Math.min(widthScale, heightScale)
+        ? fittedWidthFirstScale
         : widthScale;
 
     setIsDesktopLayout(isDesktop);
@@ -157,7 +167,7 @@ export default function EditorCanvas({
 
       <div
         ref={workspaceRef}
-        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2 md:pb-3"
+        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2 md:pb-2"
         style={{
           height: isDesktopLayout
             ? undefined
