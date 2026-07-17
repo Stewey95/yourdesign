@@ -23,6 +23,7 @@ export const IMAGE_MAX_SIZE = 5000;
 export const DEFAULT_TEXT_FONT_SIZE = 20;
 export const TEXT_MIN_FONT_SIZE = 2;
 export const TEXT_MAX_FONT_SIZE = 1000;
+export const TEXT_FONT_SIZE_STEP = 2;
 
 export const clampFontSize = (fontSize: number) =>
   Math.max(

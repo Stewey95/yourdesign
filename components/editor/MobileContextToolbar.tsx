@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fontOptions } from "./editor.constants";
+import {
+  fontOptions,
+  TEXT_FONT_SIZE_STEP,
+} from "./editor.constants";
 import type {
   DesignItem,
   ImageAdjustment,
@@ -212,7 +215,9 @@ export default function MobileContextToolbar({
               <button
                 type="button"
                 onPointerDown={protectButtonPointer}
-                onClick={() => onChangeTextSize(item.id, -4)}
+                onClick={() =>
+                  onChangeTextSize(item.id, -TEXT_FONT_SIZE_STEP)
+                }
                 className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white"
                 aria-label="Decrease font size"
                 title="Decrease font size"
@@ -223,7 +228,9 @@ export default function MobileContextToolbar({
               <button
                 type="button"
                 onPointerDown={protectButtonPointer}
-                onClick={() => onChangeTextSize(item.id, 4)}
+                onClick={() =>
+                  onChangeTextSize(item.id, TEXT_FONT_SIZE_STEP)
+                }
                 className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white"
                 aria-label="Increase font size"
                 title="Increase font size"

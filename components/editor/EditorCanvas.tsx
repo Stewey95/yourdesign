@@ -93,16 +93,29 @@ export default function EditorCanvas({
     const horizontalPadding =
       Number.parseFloat(workspaceStyle.paddingLeft) +
       Number.parseFloat(workspaceStyle.paddingRight);
+    const verticalPadding =
+      Number.parseFloat(workspaceStyle.paddingTop) +
+      Number.parseFloat(workspaceStyle.paddingBottom);
     const usableWidth = Math.max(
       0,
       workspace.clientWidth - horizontalPadding
+    );
+    const usableHeight = Math.max(
+      0,
+      workspace.clientHeight - verticalPadding
     );
 
     if (usableWidth === 0) return;
 
     const widthScale = usableWidth / LOGICAL_CANVAS_WIDTH;
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-    const nextScale = widthScale;
+    const heightScale = usableHeight / LOGICAL_CANVAS_HEIGHT;
+    const canFitWithSmallCorrection =
+      heightScale > 0 && widthScale <= heightScale * 1.12;
+    const nextScale =
+      isDesktop && canFitWithSmallCorrection
+        ? Math.min(widthScale, heightScale)
+        : widthScale;
 
     setIsDesktopLayout(isDesktop);
 
@@ -139,7 +152,7 @@ export default function EditorCanvas({
 
       <div
         ref={workspaceRef}
-        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2"
+        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2 md:pb-2"
         style={{
           height: isDesktopLayout
             ? undefined

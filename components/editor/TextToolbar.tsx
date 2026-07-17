@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fontOptions } from "./editor.constants";
+import {
+  fontOptions,
+  TEXT_FONT_SIZE_STEP,
+} from "./editor.constants";
 import type { TextDesignItem } from "./editor.types";
 
 type TextToolbarProps = {
@@ -86,7 +89,9 @@ export default function TextToolbar({
                 event.preventDefault();
                 event.stopPropagation();
               }}
-              onClick={() => onChangeTextSize(item.id, -4)}
+              onClick={() =>
+                onChangeTextSize(item.id, -TEXT_FONT_SIZE_STEP)
+              }
               className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
             >
               A-
@@ -98,7 +103,9 @@ export default function TextToolbar({
                 event.preventDefault();
                 event.stopPropagation();
               }}
-              onClick={() => onChangeTextSize(item.id, 4)}
+              onClick={() =>
+                onChangeTextSize(item.id, TEXT_FONT_SIZE_STEP)
+              }
               className="cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white"
             >
               A+

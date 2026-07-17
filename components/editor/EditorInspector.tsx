@@ -1,6 +1,9 @@
 "use client";
 
-import { fontOptions } from "./editor.constants";
+import {
+  fontOptions,
+  TEXT_FONT_SIZE_STEP,
+} from "./editor.constants";
 import type {
   DesignItem,
   ImageAdjustment,
@@ -70,7 +73,9 @@ export default function EditorInspector({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => onChangeTextSize(item.id, -4)}
+                onClick={() =>
+                  onChangeTextSize(item.id, -TEXT_FONT_SIZE_STEP)
+                }
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 font-bold text-white transition hover:bg-slate-700"
                 aria-label="Decrease font size"
                 title="Decrease font size"
@@ -82,7 +87,9 @@ export default function EditorInspector({
               </span>
               <button
                 type="button"
-                onClick={() => onChangeTextSize(item.id, 4)}
+                onClick={() =>
+                  onChangeTextSize(item.id, TEXT_FONT_SIZE_STEP)
+                }
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 font-bold text-white transition hover:bg-slate-700"
                 aria-label="Increase font size"
                 title="Increase font size"
