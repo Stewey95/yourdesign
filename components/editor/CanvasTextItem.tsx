@@ -72,6 +72,9 @@ export default function CanvasTextItem({
       style: { left: "100%", top: "100%" },
     },
   ];
+  const measurementValue = item.value.endsWith("\n")
+    ? `${item.value}\u200b`
+    : item.value || "Type here";
 
   return (
     <div className="relative md:inline-grid md:max-w-full">
@@ -85,7 +88,7 @@ export default function CanvasTextItem({
             lineHeight: 1.15,
           }}
         >
-          {item.value || "Type here"}
+          {measurementValue}
         </span>
 
         {editing ? (
