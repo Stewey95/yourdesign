@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 type ToolbarPanel =
   | "media"
   | "text"
@@ -34,6 +36,39 @@ export default function EditorSidebar({
   canDelete,
   onDelete,
 }: EditorSidebarProps) {
+  const mediaPanelRef = useRef<HTMLDivElement | null>(null);
+  const textPanelRef = useRef<HTMLDivElement | null>(null);
+
+  const openToolbarPanel = (
+    panel: Exclude<ToolbarPanel, null>,
+    isActive: boolean
+  ) => {
+    onToolbarPanelChange(isActive ? null : panel);
+
+    if (
+      isActive ||
+      (panel !== "media" && panel !== "text") ||
+      window.matchMedia("(min-width: 768px)").matches
+    ) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const panelElement =
+          panel === "media"
+            ? mediaPanelRef.current
+            : textPanelRef.current;
+
+        panelElement?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+          inline: "nearest",
+        });
+      });
+    });
+  };
+
   return (
     <div
       data-editor-retain-selection
@@ -54,14 +89,9 @@ export default function EditorSidebar({
       key={tool.id}
       type="button"
       onClick={() =>
-        onToolbarPanelChange(
+        openToolbarPanel(
+          tool.id as Exclude<ToolbarPanel, null>,
           isActive
-            ? null
-            : (tool.id as
-                | "media"
-                | "text"
-                | "arrange"
-                | "effects")
         )
       }
       className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-left font-semibold transition ${
@@ -88,7 +118,10 @@ export default function EditorSidebar({
 })}
 </div>
        {activeToolbarPanel === "media" && (
-<div className="mt-3 rounded-xl border border-white/10 bg-slate-800/60 p-3">
+<div
+  ref={mediaPanelRef}
+  className="mt-3 scroll-mt-[120px] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+>
   <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
     Media
   </p>
@@ -106,7 +139,10 @@ export default function EditorSidebar({
 )}
 
       {activeToolbarPanel === "text" && (
-<div className="mt-3 rounded-xl border border-white/10 bg-slate-800/60 p-3">
+<div
+  ref={textPanelRef}
+  className="mt-3 scroll-mt-[120px] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+>
   <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
     Text
   </p>
