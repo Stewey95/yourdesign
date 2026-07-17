@@ -217,6 +217,7 @@ export default function EditorCanvas({
                   key={item.id}
                   item={item}
                   selected={selectedItemId === item.id}
+                  displayScale={displayScale}
                   onPointerDown={onImagePointerDown}
                   onResizeStart={onImageResizeStart}
                 />

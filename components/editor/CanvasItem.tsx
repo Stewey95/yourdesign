@@ -10,6 +10,7 @@ import type {
 type ImageCanvasItemProps = {
   item: ImageDesignItem;
   selected: boolean;
+  displayScale: number;
   onPointerDown: (id: string) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
@@ -67,6 +68,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasImageItem
           item={item}
           selected={props.selected}
+          displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
         />
