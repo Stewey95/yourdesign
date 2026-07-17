@@ -91,8 +91,12 @@ export default function EditorCanvas({
     const widthScale =
       workspace.clientWidth / LOGICAL_CANVAS_WIDTH;
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    const availableDesktopHeight = Math.max(
+      LOGICAL_CANVAS_HEIGHT,
+      window.innerHeight - 220
+    );
     const heightScale = isDesktop
-      ? (window.innerHeight * 0.62) / LOGICAL_CANVAS_HEIGHT
+      ? availableDesktopHeight / LOGICAL_CANVAS_HEIGHT
       : Number.POSITIVE_INFINITY;
     const nextScale = Math.min(widthScale, heightScale);
 
@@ -121,10 +125,9 @@ export default function EditorCanvas({
 
   return (
     <div className="order-first min-w-0 md:order-none">
-      <div className="mb-3 hidden min-h-[72px] md:block"></div>
-     <div className="mb-3 hidden min-h-[72px] md:block">
-      {toolbar}
-    </div>
+      <div className="mb-3 hidden min-h-[72px] md:block">
+        {toolbar}
+      </div>
 
       <div
         ref={workspaceRef}
