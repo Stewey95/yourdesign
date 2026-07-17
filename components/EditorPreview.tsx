@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import ImageToolbar from "./ImageToolbar";
 import EditorCanvas from "./editor/EditorCanvas";
 import EditorHeader from "./editor/EditorHeader";
 import EditorInspector from "./editor/EditorInspector";
 import EditorSidebar from "./editor/EditorSidebar";
+import LayerToolbar from "./editor/LayerToolbar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
-import TextToolbar from "./editor/TextToolbar";
 import {
   clampFontSize,
   DEFAULT_IMAGE_MAX_HEIGHT,
@@ -1076,49 +1075,15 @@ if (direction === "back") {
 
         <EditorCanvas
           canvasRef={canvasRef}
-          toolbar={(
-            <div className="hidden md:block">
-              {selectedTextItem && (
-                <TextToolbar
-                  item={selectedTextItem}
-                  canSendBackward={canSendBackward}
-                  canBringForward={canBringForward}
-                  onChangeTextSize={changeTextSize}
-                  onRotateItem={rotateItem}
-                  onMoveItemLayer={moveItemLayer}
-                  onChangeTextColor={changeTextColor}
-                  onChangeTextFont={changeTextFont}
-                />
-              )}
-
-              {selectedImageItem && (
-                <ImageToolbar
-                  item={selectedImageItem}
-                  showAdjustments={showImageAdjustments}
-                  canBringForward={canBringForward}
-                  canSendBackward={canSendBackward}
-                  onToggleAdjustments={toggleImageAdjustments}
-                  onRotate={rotateItem}
-                  onBringForward={(id) =>
-                    moveItemLayer(id, "forward")
-                  }
-                  onSendBackward={(id) =>
-                    moveItemLayer(id, "backward")
-                  }
-                  onBringToFront={(id) =>
-                    moveItemLayer(id, "front")
-                  }
-                  onSendToBack={(id) =>
-                    moveItemLayer(id, "back")
-                  }
-                  onAdjustmentStart={startImageAdjustment}
-                  onAdjustmentEnd={commitHistoryTransaction}
-                  onAdjustmentChange={changeImageAdjustment}
-                  onResetAdjustments={resetImageAdjustments}
-                />
-              )}
-            </div>
-          )}
+          toolbar={selectedItem ? (
+            <LayerToolbar
+              itemId={selectedItem.id}
+              itemType={selectedItem.type}
+              canSendBackward={canSendBackward}
+              canBringForward={canBringForward}
+              onMoveItemLayer={moveItemLayer}
+            />
+          ) : null}
           items={items}
           selectedItemId={selectedItemId}
           editingItemId={editingItemId}
@@ -1209,6 +1174,7 @@ if (direction === "back") {
           onAdjustmentStart={startImageAdjustment}
           onAdjustmentEnd={commitHistoryTransaction}
           onAdjustmentChange={changeImageAdjustment}
+          onResetImageAdjustments={resetImageAdjustments}
         />
       </div>
 

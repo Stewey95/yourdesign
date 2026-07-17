@@ -14,6 +14,7 @@ type EditorInspectorProps = {
   onRotate: (id: string, amount: number) => void;
   onAdjustmentStart: () => void;
   onAdjustmentEnd: () => void;
+  onResetImageAdjustments: (id: string) => void;
   onAdjustmentChange: (
     id: string,
     adjustment: ImageAdjustment,
@@ -29,6 +30,7 @@ export default function EditorInspector({
   onRotate,
   onAdjustmentStart,
   onAdjustmentEnd,
+  onResetImageAdjustments,
   onAdjustmentChange,
 }: EditorInspectorProps) {
   return (
@@ -156,6 +158,14 @@ export default function EditorInspector({
             itemId={item.id}
             onRotate={onRotate}
           />
+
+          <button
+            type="button"
+            onClick={() => onResetImageAdjustments(item.id)}
+            className="w-full rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-700"
+          >
+            Reset Adjustments
+          </button>
         </div>
       )}
     </aside>
