@@ -56,7 +56,9 @@ export default function CanvasItem(props: CanvasItemProps) {
     <div
       className={`absolute ${
         selected
-          ? "ring-2 ring-blue-500"
+          ? item.type === "text"
+            ? "md:ring-2 md:ring-blue-500"
+            : "ring-2 ring-blue-500"
           : ""
       }`}
       style={{
