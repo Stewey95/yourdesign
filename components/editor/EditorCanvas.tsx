@@ -89,13 +89,20 @@ export default function EditorCanvas({
 
     if (!workspace) return;
 
-    const widthScale =
-      workspace.clientWidth / LOGICAL_CANVAS_WIDTH;
+    const workspaceStyle = window.getComputedStyle(workspace);
+    const horizontalPadding =
+      Number.parseFloat(workspaceStyle.paddingLeft) +
+      Number.parseFloat(workspaceStyle.paddingRight);
+    const usableWidth = Math.max(
+      0,
+      workspace.clientWidth - horizontalPadding
+    );
+
+    if (usableWidth === 0) return;
+
+    const widthScale = usableWidth / LOGICAL_CANVAS_WIDTH;
     const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-    const heightScale = isDesktop && workspace.clientHeight > 0
-      ? workspace.clientHeight / LOGICAL_CANVAS_HEIGHT
-      : Number.POSITIVE_INFINITY;
-    const nextScale = Math.min(widthScale, heightScale);
+    const nextScale = widthScale;
 
     setIsDesktopLayout(isDesktop);
 
@@ -123,7 +130,7 @@ export default function EditorCanvas({
   }, [updateDisplayScale]);
 
   return (
-    <div className="order-first min-w-0 md:order-none md:grid md:h-full md:min-h-0 md:grid-rows-[auto_minmax(0,1fr)]">
+    <div className="order-first min-w-0 md:order-none md:flex md:h-full md:min-h-0 md:flex-col">
       {toolbar && (
         <div className="mb-1 hidden md:block">
           {toolbar}
@@ -132,7 +139,7 @@ export default function EditorCanvas({
 
       <div
         ref={workspaceRef}
-        className="relative w-full overflow-hidden md:h-full md:min-h-0"
+        className="relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:overflow-y-auto md:px-2"
         style={{
           height: isDesktopLayout
             ? undefined
@@ -140,60 +147,68 @@ export default function EditorCanvas({
         }}
       >
         <div
-          ref={canvasRef}
-          onTouchStartCapture={onTouchStartCapture}
-          onTouchMoveCapture={onTouchMoveCapture}
-          onTouchEndCapture={onTouchEndCapture}
-          onTouchCancelCapture={onTouchCancelCapture}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-          onPointerDown={onPointerDown}
-          className="absolute left-1/2 top-0 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+          className="relative mx-auto"
           style={{
-            width: LOGICAL_CANVAS_WIDTH,
-            height: LOGICAL_CANVAS_HEIGHT,
-            transform: `translateX(-50%) scale(${displayScale})`,
-            transformOrigin: "top center",
-            touchAction: "none",
-            WebkitUserSelect: "none",
-            userSelect: "none",
-            overscrollBehavior: "contain",
+            width: LOGICAL_CANVAS_WIDTH * displayScale,
+            height: LOGICAL_CANVAS_HEIGHT * displayScale,
           }}
         >
-          {items.length === 0 && (
-            <p className="flex h-full items-center justify-center">
-              Your design canvas
-            </p>
-          )}
-          <AlignmentGuides
-            vertical={verticalGuide}
-            horizontal={horizontalGuide}
-          />
+          <div
+            ref={canvasRef}
+            onTouchStartCapture={onTouchStartCapture}
+            onTouchMoveCapture={onTouchMoveCapture}
+            onTouchEndCapture={onTouchEndCapture}
+            onTouchCancelCapture={onTouchCancelCapture}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onPointerDown={onPointerDown}
+            className="absolute left-0 top-0 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+            style={{
+              width: LOGICAL_CANVAS_WIDTH,
+              height: LOGICAL_CANVAS_HEIGHT,
+              transform: `scale(${displayScale})`,
+              transformOrigin: "top left",
+              touchAction: "none",
+              WebkitUserSelect: "none",
+              userSelect: "none",
+              overscrollBehavior: "contain",
+            }}
+          >
+            {items.length === 0 && (
+              <p className="flex h-full items-center justify-center">
+                Your design canvas
+              </p>
+            )}
+            <AlignmentGuides
+              vertical={verticalGuide}
+              horizontal={horizontalGuide}
+            />
 
-          {items.map((item) =>
-            item.type === "image" ? (
-              <CanvasItem
-                key={item.id}
-                item={item}
-                selected={selectedItemId === item.id}
-                onPointerDown={onImagePointerDown}
-                onResizeStart={onImageResizeStart}
-              />
-            ) : (
-              <CanvasItem
-                key={item.id}
-                item={item}
-                editing={editingItemId === item.id}
-                onRequestAutoFit={onRequestAutoFit}
-                onValueChange={onTextValueChange}
-                onRemoveEmptyText={onRemoveEmptyText}
-                onFinishEditing={onFinishEditing}
-                onEditingPointerDown={onEditingPointerDown}
-                onPendingDragStart={onPendingDragStart}
-              />
-            )
-          )}
+            {items.map((item) =>
+              item.type === "image" ? (
+                <CanvasItem
+                  key={item.id}
+                  item={item}
+                  selected={selectedItemId === item.id}
+                  onPointerDown={onImagePointerDown}
+                  onResizeStart={onImageResizeStart}
+                />
+              ) : (
+                <CanvasItem
+                  key={item.id}
+                  item={item}
+                  editing={editingItemId === item.id}
+                  onRequestAutoFit={onRequestAutoFit}
+                  onValueChange={onTextValueChange}
+                  onRemoveEmptyText={onRemoveEmptyText}
+                  onFinishEditing={onFinishEditing}
+                  onEditingPointerDown={onEditingPointerDown}
+                  onPendingDragStart={onPendingDragStart}
+                />
+              )
+            )}
+          </div>
         </div>
       </div>
     </div>
