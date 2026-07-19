@@ -72,10 +72,11 @@ export default function EditorSidebar({
   return (
     <div
       data-editor-retain-selection
+      data-editor-keep-zoom-hud-open
       className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
     >
     <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
-    <div className="mb-4 space-y-2">
+    <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-4 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-2 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
 {[
   { id: "media", icon: "🖼️", label: "Media" },
   { id: "text", icon: "T", label: "Text" },
@@ -94,20 +95,20 @@ export default function EditorSidebar({
           isActive
         )
       }
-      className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-left font-semibold transition ${
+      className={`flex min-w-0 w-full cursor-pointer flex-col items-center gap-1 rounded-xl border px-1 py-2 text-center text-xs font-semibold transition md:flex-row md:gap-3 md:px-3 md:py-3 md:text-left md:text-sm ${
         isActive
           ? "border-blue-400/60 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 text-white shadow-[0_0_18px_rgba(59,130,246,0.25)]"
           : "border-white/10 bg-slate-800 text-slate-300 hover:border-white/20 hover:bg-slate-700"
       }`}
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 text-lg">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 text-base md:h-9 md:w-9 md:text-lg">
         {tool.icon}
       </span>
 
-      <span className="flex-1">{tool.label}</span>
+      <span className="min-w-0 truncate md:flex-1">{tool.label}</span>
 
       <span
-        className={`text-lg transition-transform ${
+        className={`hidden text-lg transition-transform md:inline ${
           isActive ? "rotate-90" : ""
         }`}
       >
@@ -120,7 +121,7 @@ export default function EditorSidebar({
        {activeToolbarPanel === "media" && (
 <div
   ref={mediaPanelRef}
-  className="mt-3 scroll-mt-[120px] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+  className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
 >
   <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
     Media
@@ -141,7 +142,7 @@ export default function EditorSidebar({
       {activeToolbarPanel === "text" && (
 <div
   ref={textPanelRef}
-  className="mt-3 scroll-mt-[120px] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+  className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
 >
   <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
     Text

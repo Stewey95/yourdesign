@@ -35,7 +35,11 @@ export default function MobileCanvasZoomHud({
 
       if (
         target instanceof Node &&
-        !containerRef.current?.contains(target)
+        !containerRef.current?.contains(target) &&
+        !(
+          target instanceof Element &&
+          target.closest("[data-editor-keep-zoom-hud-open]")
+        )
       ) {
         setExpanded(false);
       }

@@ -1018,7 +1018,7 @@ export default function EditorCanvas({
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}
         onTouchCancelCapture={cancelTouchGesture}
-        className={`relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:px-2 md:pb-2 ${
+        className={`relative w-full touch-pan-y overflow-hidden md:min-h-0 md:flex-1 md:touch-auto md:overflow-x-hidden md:px-2 md:pb-2 ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
             : "md:overflow-y-hidden"
@@ -1068,7 +1068,7 @@ export default function EditorCanvas({
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerCancel}
               onPointerDown={onPointerDown}
-              className="relative overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+              className="relative touch-pan-y overflow-hidden rounded-xl bg-white text-slate-500 select-none md:touch-none"
               style={{
                 width: LOGICAL_CANVAS_WIDTH,
                 height: LOGICAL_CANVAS_HEIGHT,
@@ -1077,7 +1077,6 @@ export default function EditorCanvas({
                   ? undefined
                   : `scale(${displayScale})`,
                 transformOrigin: isDesktopLayout ? undefined : "top left",
-                touchAction: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
               }}
