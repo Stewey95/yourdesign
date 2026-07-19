@@ -86,6 +86,9 @@ type DesktopPanGesture = {
   lastY: number;
 };
 
+const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5];
+const DISCRETE_ZOOM_DURATION = 160;
+
 const isTextEditingTarget = (target: EventTarget | null) =>
   target instanceof Element &&
   Boolean(
@@ -158,10 +161,25 @@ export default function EditorCanvas({
   );
   const latestPointerRef = useRef({ x: 0, y: 0, valid: false });
   const cursorFrameRef = useRef<number | null>(null);
+  const viewportRef = useRef(viewport);
+  const zoomAnimationFrameRef = useRef<number | null>(null);
+  const discreteZoomTargetRef = useRef<number | null>(null);
+  const zoomFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const zoomFeedbackIdRef = useRef(0);
   const workspaceHoveredRef = useRef(false);
   const spacePressedRef = useRef(false);
   const [baseScale, setBaseScale] = useState(1);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+  const [zoomFeedback, setZoomFeedback] = useState<{
+    id: number;
+    label: string;
+  } | null>(null);
+
+  useEffect(() => {
+    viewportRef.current = viewport;
+  }, [viewport]);
 
   const updateDisplayScale = useCallback(() => {
     const workspace = workspaceRef.current;
@@ -282,9 +300,130 @@ export default function EditorCanvas({
     [onViewportChange]
   );
 
-  const resetViewport = useCallback(() => {
-    onViewportChange({ zoom: 1, panX: 0, panY: 0 });
-  }, [onViewportChange]);
+  const cancelZoomAnimation = useCallback(() => {
+    if (zoomAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(zoomAnimationFrameRef.current);
+      zoomAnimationFrameRef.current = null;
+    }
+  }, []);
+
+  const showZoomFeedback = useCallback((label: string) => {
+    if (zoomFeedbackTimerRef.current) {
+      clearTimeout(zoomFeedbackTimerRef.current);
+    }
+
+    zoomFeedbackIdRef.current += 1;
+    setZoomFeedback({ id: zoomFeedbackIdRef.current, label });
+    zoomFeedbackTimerRef.current = setTimeout(() => {
+      setZoomFeedback(null);
+      zoomFeedbackTimerRef.current = null;
+    }, 900);
+  }, []);
+
+  const animateViewport = useCallback(
+    (
+      targetViewport: EditorViewport,
+      label: string,
+      onComplete?: () => void
+    ) => {
+      cancelZoomAnimation();
+      showZoomFeedback(label);
+
+      const startViewport = viewportRef.current;
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+      if (reducedMotion) {
+        viewportRef.current = targetViewport;
+        onViewportChange(targetViewport);
+        onComplete?.();
+        return;
+      }
+
+      const startTime = performance.now();
+      const step = (time: number) => {
+        const progress = Math.min(
+          1,
+          (time - startTime) / DISCRETE_ZOOM_DURATION
+        );
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        const nextViewport = {
+          zoom:
+            startViewport.zoom +
+            (targetViewport.zoom - startViewport.zoom) * easedProgress,
+          panX:
+            startViewport.panX +
+            (targetViewport.panX - startViewport.panX) * easedProgress,
+          panY:
+            startViewport.panY +
+            (targetViewport.panY - startViewport.panY) * easedProgress,
+        };
+
+        viewportRef.current = nextViewport;
+        onViewportChange(nextViewport);
+
+        if (progress < 1) {
+          zoomAnimationFrameRef.current = requestAnimationFrame(step);
+        } else {
+          zoomAnimationFrameRef.current = null;
+          onComplete?.();
+        }
+      };
+
+      zoomAnimationFrameRef.current = requestAnimationFrame(step);
+    },
+    [cancelZoomAnimation, onViewportChange, showZoomFeedback]
+  );
+
+  const runDiscreteZoom = useCallback(
+    (
+      requestedZoom: number,
+      label = `${Math.round(clampViewportZoom(requestedZoom) * 100)}%`,
+      clientX?: number,
+      clientY?: number
+    ) => {
+      const workspace = workspaceRef.current;
+
+      if (!workspace) return;
+
+      const bounds = workspace.getBoundingClientRect();
+      const anchorX =
+        (clientX ?? bounds.left + bounds.width / 2) -
+        bounds.left -
+        bounds.width / 2;
+      const anchorY =
+        (clientY ?? bounds.top + bounds.height / 2) -
+        bounds.top -
+        bounds.height / 2;
+      const targetViewport = zoomViewportAtAnchor(
+        viewportRef.current,
+        requestedZoom,
+        anchorX,
+        anchorY
+      );
+
+      discreteZoomTargetRef.current = targetViewport.zoom;
+      animateViewport(targetViewport, label);
+    },
+    [animateViewport]
+  );
+
+  const runZoomStep = useCallback(
+    (direction: -1 | 1) => {
+      const currentZoom =
+        discreteZoomTargetRef.current ?? viewportRef.current.zoom;
+      const nextZoom =
+        direction === 1
+          ? ZOOM_STEPS.find((zoom) => zoom > currentZoom + 0.001) ?? 5
+          : [...ZOOM_STEPS]
+              .reverse()
+              .find((zoom) => zoom < currentZoom - 0.001) ?? 0.25;
+
+      runDiscreteZoom(nextZoom);
+    },
+    [runDiscreteZoom]
+  );
 
   useEffect(() => {
     const workspace = workspaceRef.current;
@@ -306,6 +445,8 @@ export default function EditorCanvas({
       if (!event.ctrlKey && !event.metaKey) return;
 
       event.preventDefault();
+      cancelZoomAnimation();
+      discreteZoomTargetRef.current = null;
       const zoomFactor = Math.exp(-event.deltaY * 0.002);
 
       zoomAtPoint(
@@ -320,7 +461,7 @@ export default function EditorCanvas({
     });
 
     return () => workspace.removeEventListener("wheel", handleWheel);
-  }, [zoomAtPoint]);
+  }, [cancelZoomAnimation, zoomAtPoint]);
 
   const setDesktopPanCursor = useCallback(
     (mode: DesktopPanCursorMode | null) => {
@@ -498,6 +639,8 @@ export default function EditorCanvas({
 
     event.preventDefault();
     event.stopPropagation();
+    cancelZoomAnimation();
+    discreteZoomTargetRef.current = null;
     updateDesktopPanCursorPosition(event.clientX, event.clientY);
     event.currentTarget.setPointerCapture(event.pointerId);
     desktopPanGestureRef.current = {
@@ -563,14 +706,125 @@ export default function EditorCanvas({
     finishDesktopPan(event.pointerId);
   };
 
-  const fitViewport = () => {
-    onViewModeChange("fit");
-    resetViewport();
-  };
+  const runViewMode = useCallback(
+    (mode: CanvasViewMode) => {
+      const measurement = lastValidMeasurementRef.current;
 
-  const changeViewMode = (mode: CanvasViewMode) => {
-    onViewModeChange(mode);
-    resetViewport();
+      if (!measurement) return;
+
+      const widthScale = measurement.width / LOGICAL_CANVAS_WIDTH;
+      const heightScale = measurement.height / LOGICAL_CANVAS_HEIGHT;
+      const targetScale =
+        mode === "fit" ? Math.min(widthScale, heightScale) : widthScale;
+      const targetViewport = {
+        zoom: targetScale / baseScale,
+        panX: 0,
+        panY: 0,
+      };
+
+      discreteZoomTargetRef.current = null;
+      animateViewport(
+        targetViewport,
+        mode === "fit" ? "Fit" : "Fill",
+        () => {
+          const reset = { zoom: 1, panX: 0, panY: 0 };
+
+          setBaseScale(targetScale);
+          onViewModeChange(mode);
+          viewportRef.current = reset;
+          onViewportChange(reset);
+        }
+      );
+    },
+    [animateViewport, baseScale, onViewModeChange, onViewportChange]
+  );
+
+  useEffect(() => {
+    const handleViewportShortcut = (event: KeyboardEvent) => {
+      if (
+        !window.matchMedia("(min-width: 768px)").matches ||
+        !workspaceHoveredRef.current ||
+        (!event.metaKey && !event.ctrlKey) ||
+        editingItemId !== null ||
+        isTextEditingTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.code === "Digit0") {
+        event.preventDefault();
+        runViewMode("fit");
+      } else if (event.code === "Digit1") {
+        event.preventDefault();
+        runDiscreteZoom(1, "100%");
+      } else if (
+        event.code === "NumpadAdd" ||
+        event.code === "Equal" ||
+        event.key === "+"
+      ) {
+        event.preventDefault();
+        runZoomStep(1);
+      } else if (
+        event.code === "NumpadSubtract" ||
+        event.code === "Minus"
+      ) {
+        event.preventDefault();
+        runZoomStep(-1);
+      }
+    };
+
+    window.addEventListener("keydown", handleViewportShortcut, true);
+
+    return () =>
+      window.removeEventListener(
+        "keydown",
+        handleViewportShortcut,
+        true
+      );
+  }, [editingItemId, runDiscreteZoom, runViewMode, runZoomStep]);
+
+  useEffect(
+    () => () => {
+      cancelZoomAnimation();
+
+      if (zoomFeedbackTimerRef.current) {
+        clearTimeout(zoomFeedbackTimerRef.current);
+        zoomFeedbackTimerRef.current = null;
+      }
+    },
+    [cancelZoomAnimation]
+  );
+
+  const handleWorkspaceDoubleClick: React.MouseEventHandler<
+    HTMLDivElement
+  > = (event) => {
+    if (
+      !window.matchMedia("(min-width: 768px)").matches ||
+      desktopPanGestureRef.current ||
+      editingItemId !== null
+    ) {
+      return;
+    }
+
+    const target = event.target;
+
+    if (
+      target instanceof Element &&
+      target.closest(
+        "[data-canvas-item-id], button, a, input, textarea, select, [contenteditable='true'], [role='menu'], [role='slider']"
+      )
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (Math.abs(viewportRef.current.zoom - 1) > 0.01) {
+      runDiscreteZoom(1, "100%", event.clientX, event.clientY);
+    } else {
+      runViewMode("fit");
+    }
   };
 
   const getTouchGesture = (touches: React.TouchList) => {
@@ -590,6 +844,9 @@ export default function EditorCanvas({
     event
   ) => {
     if (event.touches.length !== 2) return;
+
+    cancelZoomAnimation();
+    discreteZoomTargetRef.current = null;
 
     const target = event.target;
     const selectedItemTarget =
@@ -702,16 +959,27 @@ export default function EditorCanvas({
         className="mb-1 hidden h-10 items-center justify-between gap-2 md:flex"
       >
         <div>{toolbar}</div>
-        <CanvasViewModeControl
-          mode={viewMode}
-          zoom={viewport.zoom}
-          onChange={changeViewMode}
-          onZoomIn={() => zoomAtPoint(viewport.zoom * 1.25)}
-          onZoomOut={() => zoomAtPoint(viewport.zoom / 1.25)}
-          onZoomChange={(zoom) => zoomAtPoint(zoom)}
-          onReset={resetViewport}
-          onFit={fitViewport}
-        />
+        <div className="relative">
+          {zoomFeedback && (
+            <div className="pointer-events-none absolute right-[calc(100%+0.5rem)] top-1/2 z-[60] -translate-y-1/2">
+              <div
+                key={zoomFeedback.id}
+                aria-hidden="true"
+                className="rounded-lg border border-white/10 bg-slate-900/95 px-2.5 py-1 text-[11px] font-bold tabular-nums text-white shadow-lg animate-[zoom-feedback_900ms_ease-out_forwards]"
+              >
+                {zoomFeedback.label}
+              </div>
+            </div>
+          )}
+          <CanvasViewModeControl
+            zoom={viewport.zoom}
+            onZoomIn={() => runZoomStep(1)}
+            onZoomOut={() => runZoomStep(-1)}
+            onZoomChange={(zoom) => runDiscreteZoom(zoom)}
+            onFit={() => runViewMode("fit")}
+            onFill={() => runViewMode("fill")}
+          />
+        </div>
       </div>
 
       <div
@@ -729,6 +997,7 @@ export default function EditorCanvas({
         onPointerUpCapture={endDesktopPan}
         onPointerCancelCapture={endDesktopPan}
         onLostPointerCapture={() => finishDesktopPan()}
+        onDoubleClickCapture={handleWorkspaceDoubleClick}
         onTouchStartCapture={startTouchGesture}
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}

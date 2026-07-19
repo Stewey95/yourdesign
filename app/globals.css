@@ -9,6 +9,22 @@
   }
 }
 
+@keyframes zoom-feedback {
+  0% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  12%,
+  78% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
