@@ -343,28 +343,40 @@ export default function EditorCanvas({
     []
   );
 
+  const updateDesktopPanCursorPosition = useCallback(
+    (clientX: number, clientY: number) => {
+      latestPointerRef.current = {
+        x: clientX,
+        y: clientY,
+        valid: true,
+      };
+
+      if (
+        !desktopPanCursorModeRef.current ||
+        cursorFrameRef.current !== null
+      ) {
+        return;
+      }
+
+      cursorFrameRef.current = requestAnimationFrame(() => {
+        cursorFrameRef.current = null;
+        const pointer = latestPointerRef.current;
+
+        if (pointer.valid && desktopPanCursorModeRef.current) {
+          desktopPanCursorRef.current?.move(pointer.x, pointer.y);
+        }
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     if (!window.matchMedia("(min-width: 768px)").matches) return;
 
     const trackPointer = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
 
-      latestPointerRef.current = {
-        x: event.clientX,
-        y: event.clientY,
-        valid: true,
-      };
-
-      if (!desktopPanCursorModeRef.current) return;
-
-      if (cursorFrameRef.current !== null) {
-        cancelAnimationFrame(cursorFrameRef.current);
-      }
-
-      cursorFrameRef.current = requestAnimationFrame(() => {
-        cursorFrameRef.current = null;
-        desktopPanCursorRef.current?.move(event.clientX, event.clientY);
-      });
+      updateDesktopPanCursorPosition(event.clientX, event.clientY);
     };
 
     document.addEventListener("pointermove", trackPointer, {
@@ -379,7 +391,7 @@ export default function EditorCanvas({
         cursorFrameRef.current = null;
       }
     };
-  }, []);
+  }, [updateDesktopPanCursorPosition]);
 
   const finishDesktopPan = useCallback((pointerId?: number) => {
     const workspace = workspaceRef.current;
@@ -486,6 +498,7 @@ export default function EditorCanvas({
 
     event.preventDefault();
     event.stopPropagation();
+    updateDesktopPanCursorPosition(event.clientX, event.clientY);
     event.currentTarget.setPointerCapture(event.pointerId);
     desktopPanGestureRef.current = {
       pointerId: event.pointerId,
@@ -510,6 +523,17 @@ export default function EditorCanvas({
     event.preventDefault();
     event.stopPropagation();
 
+    const coalescedEvents = event.nativeEvent.getCoalescedEvents?.();
+    const latestEvent =
+      coalescedEvents && coalescedEvents.length > 0
+        ? coalescedEvents[coalescedEvents.length - 1]
+        : event;
+
+    updateDesktopPanCursorPosition(
+      latestEvent.clientX,
+      latestEvent.clientY
+    );
+
     const deltaX = event.clientX - activeGesture.lastX;
     const deltaY = event.clientY - activeGesture.lastY;
     activeGesture.lastX = event.clientX;
@@ -531,6 +555,11 @@ export default function EditorCanvas({
 
     event.preventDefault();
     event.stopPropagation();
+
+    if (event.type !== "pointercancel") {
+      updateDesktopPanCursorPosition(event.clientX, event.clientY);
+    }
+
     finishDesktopPan(event.pointerId);
   };
 
@@ -690,11 +719,7 @@ export default function EditorCanvas({
         data-editor-retain-selection
         onPointerEnter={(event) => {
           workspaceHoveredRef.current = true;
-          latestPointerRef.current = {
-            x: event.clientX,
-            y: event.clientY,
-            valid: true,
-          };
+          updateDesktopPanCursorPosition(event.clientX, event.clientY);
         }}
         onPointerLeave={() => {
           workspaceHoveredRef.current = false;
