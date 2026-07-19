@@ -335,7 +335,6 @@ export default function EditorCanvas({
       ).matches;
 
       if (reducedMotion) {
-        viewportRef.current = targetViewport;
         onViewportChange(targetViewport);
         onComplete?.();
         return;
@@ -360,7 +359,6 @@ export default function EditorCanvas({
             (targetViewport.panY - startViewport.panY) * easedProgress,
         };
 
-        viewportRef.current = nextViewport;
         onViewportChange(nextViewport);
 
         if (progress < 1) {
@@ -424,6 +422,14 @@ export default function EditorCanvas({
     },
     [runDiscreteZoom]
   );
+
+  const freezeDisplayedViewport = useCallback(() => {
+    if (zoomAnimationFrameRef.current === null) return;
+
+    cancelZoomAnimation();
+    discreteZoomTargetRef.current = null;
+    onViewportChange(viewportRef.current);
+  }, [cancelZoomAnimation, onViewportChange]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;
@@ -623,6 +629,16 @@ export default function EditorCanvas({
   ) => {
     if (!window.matchMedia("(min-width: 768px)").matches) return;
 
+    const target = event.target;
+    const startsOnCanvasItem =
+      event.button === 0 &&
+      target instanceof Element &&
+      Boolean(target.closest("[data-canvas-item-id]"));
+
+    if (startsOnCanvasItem) {
+      freezeDisplayedViewport();
+    }
+
     const mode =
       event.button === 1
         ? "middle"
@@ -731,7 +747,6 @@ export default function EditorCanvas({
 
           setBaseScale(targetScale);
           onViewModeChange(mode);
-          viewportRef.current = reset;
           onViewportChange(reset);
         }
       );
@@ -1014,6 +1029,7 @@ export default function EditorCanvas({
         }}
       >
           <div
+            data-canvas-viewport
             className="absolute"
             style={{
               left: `calc(50% + ${

@@ -90,11 +90,27 @@ export default function CanvasViewModeControl({
       >
         −
       </button>
-      <ZoomPercentageInput
-        zoom={zoom}
-        onApply={onZoomChange}
-        className="h-8 w-14 rounded-lg bg-transparent px-1 text-center text-[11px] font-semibold tabular-nums text-slate-300 outline-none transition hover:bg-slate-800 hover:text-white focus:bg-slate-800 focus:text-white focus:ring-2 focus:ring-blue-500"
-      />
+      <div
+        className="flex h-8 w-[76px] items-center rounded-lg bg-transparent pl-2 transition hover:bg-slate-800"
+        title="Canvas zoom"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 20 20"
+          className="h-3.5 w-3.5 shrink-0 text-slate-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <circle cx="8.5" cy="8.5" r="5" />
+          <path d="m12.2 12.2 4 4" strokeLinecap="round" />
+        </svg>
+        <ZoomPercentageInput
+          zoom={zoom}
+          onApply={onZoomChange}
+          className="h-8 min-w-0 flex-1 rounded-lg bg-transparent px-1 text-center text-[11px] font-semibold tabular-nums text-slate-300 outline-none transition hover:text-white focus:text-white focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
       <button
         type="button"
         aria-label="Zoom in"
@@ -110,7 +126,7 @@ export default function CanvasViewModeControl({
       <button
         ref={triggerRef}
         type="button"
-        aria-label="Open zoom presets"
+        aria-label="Open canvas zoom options"
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         title="Zoom presets"
@@ -126,6 +142,9 @@ export default function CanvasViewModeControl({
           role="menu"
           className="absolute right-0 top-[calc(100%+0.375rem)] z-[70] w-32 overflow-hidden rounded-xl border border-white/10 bg-slate-900 p-1.5 text-xs text-slate-200 shadow-2xl"
         >
+          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            Canvas zoom
+          </div>
           <button
             type="button"
             role="menuitem"

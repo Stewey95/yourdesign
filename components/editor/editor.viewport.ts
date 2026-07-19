@@ -34,6 +34,14 @@ export const zoomViewportAtAnchor = (
 export const getCanvasDisplayScale = (bounds: DOMRect) =>
   bounds.width / LOGICAL_CANVAS_WIDTH;
 
+export const getCanvasInteractionBounds = (canvas: HTMLElement) => {
+  const viewport = canvas.parentElement;
+
+  return viewport?.hasAttribute("data-canvas-viewport")
+    ? viewport.getBoundingClientRect()
+    : canvas.getBoundingClientRect();
+};
+
 export const screenPointToCanvas = (
   clientX: number,
   clientY: number,

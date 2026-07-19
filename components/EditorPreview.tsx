@@ -25,6 +25,7 @@ import {
 import useEditorHistory from "./editor/useEditorHistory";
 import {
   getCanvasDisplayScale,
+  getCanvasInteractionBounds,
   screenPointToCanvas,
   type EditorViewport,
   zoomViewportAtAnchor,
@@ -86,8 +87,11 @@ export default function EditorPreview() {
 const getSnappedPosition = (
   event: React.PointerEvent<HTMLDivElement>,
   canvasBounds: DOMRect
-): Position => {
+): Position | null => {
   const displayScale = getCanvasDisplayScale(canvasBounds);
+
+  if (!Number.isFinite(displayScale) || displayScale <= 0) return null;
+
   const canvasPoint = screenPointToCanvas(
     event.clientX,
     event.clientY,
@@ -95,6 +99,8 @@ const getSnappedPosition = (
   );
   const rawX = canvasPoint.x;
   const rawY = canvasPoint.y;
+
+  if (!Number.isFinite(rawX) || !Number.isFinite(rawY)) return null;
 
   const canvasCentreX = LOGICAL_CANVAS_WIDTH / 2;
   const canvasCentreY = LOGICAL_CANVAS_HEIGHT / 2;
@@ -889,14 +895,29 @@ if (direction === "back") {
     setShowImageAdjustments(false);
   };
 
+  const updateDraggedItemPosition = (
+    itemId: string,
+    event: React.PointerEvent<HTMLDivElement>,
+    canvasBounds: DOMRect
+  ) => {
+    const position = getSnappedPosition(event, canvasBounds);
+
+    if (!position) return;
+
+    updateItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === itemId ? { ...item, position } : item
+      )
+    );
+  };
+
   const moveItem = (
     event: React.PointerEvent<HTMLDivElement>
   ) => {
     if (pinchRef.current) return;
 
     const pending = pendingDragRef.current;
-    const canvas =
-      event.currentTarget.getBoundingClientRect();
+    const canvas = getCanvasInteractionBounds(event.currentTarget);
 
     if (pending) {
       const movedEnough =
@@ -909,19 +930,7 @@ if (direction === "back") {
         setDraggingItemId(pending.itemId);
         setEditingItemId(null);
 
-        updateItems((currentItems) =>
-  currentItems.map((item) =>
-    item.id === pending.itemId
-      ? {
-          ...item,
-          position: getSnappedPosition(
-            event,
-            canvas
-          ),
-        }
-      : item
-  )
-);
+        updateDraggedItemPosition(pending.itemId, event, canvas);
       }
 
       return;
@@ -931,19 +940,7 @@ if (direction === "back") {
 
     setEditingItemId(null);
 
-    updateItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === draggingItemId
-          ? {
-              ...item,
-              position: getSnappedPosition(
-                event,
-                canvas
-              ),
-            }
-          : item
-      )
-    );
+    updateDraggedItemPosition(draggingItemId, event, canvas);
   };
 
   const stopDragging = () => {
@@ -1011,10 +1008,16 @@ if (direction === "back") {
     const startY = event.clientY;
     const startWidth = item.size.width;
     const startHeight = item.size.height;
-    const canvasBounds = canvasRef.current?.getBoundingClientRect();
-    const displayScale = canvasBounds
+    const canvasBounds = canvasRef.current
+      ? getCanvasInteractionBounds(canvasRef.current)
+      : null;
+    const measuredDisplayScale = canvasBounds
       ? getCanvasDisplayScale(canvasBounds)
       : 1;
+    const displayScale =
+      Number.isFinite(measuredDisplayScale) && measuredDisplayScale > 0
+        ? measuredDisplayScale
+        : 1;
 
     const resize = (moveEvent: PointerEvent) => {
       const change = Math.max(
@@ -1058,10 +1061,16 @@ if (direction === "back") {
     const startFontSize = item.fontSize;
     const horizontalDirection = corner.endsWith("right") ? 1 : -1;
     const verticalDirection = corner.startsWith("bottom") ? 1 : -1;
-    const canvasBounds = canvasRef.current?.getBoundingClientRect();
-    const displayScale = canvasBounds
+    const canvasBounds = canvasRef.current
+      ? getCanvasInteractionBounds(canvasRef.current)
+      : null;
+    const measuredDisplayScale = canvasBounds
       ? getCanvasDisplayScale(canvasBounds)
       : 1;
+    const displayScale =
+      Number.isFinite(measuredDisplayScale) && measuredDisplayScale > 0
+        ? measuredDisplayScale
+        : 1;
 
     const resize = (moveEvent: PointerEvent) => {
       const horizontalChange =
