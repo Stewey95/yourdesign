@@ -88,6 +88,16 @@ const isTextEditingTarget = (target: EventTarget | null) =>
     target.closest("input, textarea, select, [contenteditable='true']")
   );
 
+type DesktopPanCursor = "grab" | "grabbing";
+
+const setDocumentPanCursor = (cursor?: DesktopPanCursor) => {
+  if (cursor) {
+    document.documentElement.dataset.editorPanCursor = cursor;
+  } else {
+    delete document.documentElement.dataset.editorPanCursor;
+  }
+};
+
 export default function EditorCanvas({
   canvasRef,
   toolbar,
@@ -144,8 +154,6 @@ export default function EditorCanvas({
   const spacePressedRef = useRef(false);
   const [baseScale, setBaseScale] = useState(1);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
-  const [isSpacePressed, setIsSpacePressed] = useState(false);
-  const [isDesktopPanning, setIsDesktopPanning] = useState(false);
 
   const updateDisplayScale = useCallback(() => {
     const workspace = workspaceRef.current;
@@ -287,23 +295,16 @@ export default function EditorCanvas({
         return;
       }
 
+      if (!event.ctrlKey && !event.metaKey) return;
+
       event.preventDefault();
+      const zoomFactor = Math.exp(-event.deltaY * 0.002);
 
-      if (event.ctrlKey || event.metaKey) {
-        const zoomFactor = Math.exp(-event.deltaY * 0.002);
-
-        zoomAtPoint(
-          (currentZoom) => currentZoom * zoomFactor,
-          event.clientX,
-          event.clientY
-        );
-      } else {
-        onViewportChange((currentViewport) => ({
-          ...currentViewport,
-          panX: currentViewport.panX - event.deltaX,
-          panY: currentViewport.panY - event.deltaY,
-        }));
-      }
+      zoomAtPoint(
+        (currentZoom) => currentZoom * zoomFactor,
+        event.clientX,
+        event.clientY
+      );
     };
 
     workspace.addEventListener("wheel", handleWheel, {
@@ -311,7 +312,7 @@ export default function EditorCanvas({
     });
 
     return () => workspace.removeEventListener("wheel", handleWheel);
-  }, [onViewportChange, zoomAtPoint]);
+  }, [zoomAtPoint]);
 
   const finishDesktopPan = useCallback((pointerId?: number) => {
     const workspace = workspaceRef.current;
@@ -333,7 +334,7 @@ export default function EditorCanvas({
     }
 
     desktopPanGestureRef.current = null;
-    setIsDesktopPanning(false);
+    setDocumentPanCursor(spacePressedRef.current ? "grab" : undefined);
   }, []);
 
   useEffect(() => {
@@ -352,7 +353,7 @@ export default function EditorCanvas({
       if (event.repeat || spacePressedRef.current) return;
 
       spacePressedRef.current = true;
-      setIsSpacePressed(true);
+      setDocumentPanCursor("grab");
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -360,16 +361,16 @@ export default function EditorCanvas({
 
       event.preventDefault();
       spacePressedRef.current = false;
-      setIsSpacePressed(false);
 
       if (desktopPanGestureRef.current?.mode === "space") {
         finishDesktopPan();
+      } else {
+        setDocumentPanCursor();
       }
     };
 
     const handleWindowBlur = () => {
       spacePressedRef.current = false;
-      setIsSpacePressed(false);
       finishDesktopPan();
     };
 
@@ -381,6 +382,7 @@ export default function EditorCanvas({
       window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("keyup", handleKeyUp, true);
       window.removeEventListener("blur", handleWindowBlur);
+      setDocumentPanCursor();
     };
   }, [finishDesktopPan]);
 
@@ -412,7 +414,7 @@ export default function EditorCanvas({
       lastX: event.clientX,
       lastY: event.clientY,
     };
-    setIsDesktopPanning(true);
+    setDocumentPanCursor("grabbing");
   };
 
   const moveDesktopPan: React.PointerEventHandler<HTMLDivElement> = (
@@ -579,27 +581,9 @@ export default function EditorCanvas({
   };
 
   const displayScale = baseScale * viewport.zoom;
-  const desktopPanCursor = isDesktopPanning
-    ? "grabbing"
-    : isSpacePressed
-      ? "grab"
-      : undefined;
 
   return (
     <div className="order-first min-w-0 md:order-none md:flex md:h-full md:min-h-0 md:flex-col">
-      <style>{`
-        @media (min-width: 768px) {
-          [data-viewport-pan-cursor="grab"],
-          [data-viewport-pan-cursor="grab"] * {
-            cursor: grab !important;
-          }
-
-          [data-viewport-pan-cursor="grabbing"],
-          [data-viewport-pan-cursor="grabbing"] * {
-            cursor: grabbing !important;
-          }
-        }
-      `}</style>
       <div
         data-editor-retain-selection
         className="mb-1 hidden h-10 items-center justify-between gap-2 md:flex"
@@ -620,7 +604,6 @@ export default function EditorCanvas({
       <div
         ref={workspaceRef}
         data-editor-retain-selection
-        data-viewport-pan-cursor={desktopPanCursor}
         onPointerEnter={() => {
           workspaceHoveredRef.current = true;
         }}
