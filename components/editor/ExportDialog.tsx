@@ -5,14 +5,22 @@ import {
   LOGICAL_CANVAS_HEIGHT,
   LOGICAL_CANVAS_WIDTH,
 } from "./editor.constants";
-
-type ExportFormat = "png" | "jpg" | "pdf";
-type ExportQuality = "standard" | "high" | "print";
-type PdfType = "standard" | "print-ready";
+import type {
+  ExportFormat,
+  ExportQualityPreset,
+  PdfExportType,
+  PngExportConfig,
+} from "../../types/export";
 
 type ExportDialogProps = {
   open: boolean;
   onClose: () => void;
+  onExportPng: (config: PngExportConfig) => Promise<void>;
+};
+
+type ExportStatus = {
+  kind: "progress" | "success" | "error" | "info";
+  message: string;
 };
 
 const formatOptions: Array<{
@@ -38,7 +46,7 @@ const formatOptions: Array<{
 ];
 
 const qualityOptions: Array<{
-  value: ExportQuality;
+  value: ExportQualityPreset;
   label: string;
   resolution: string;
   description: string;
@@ -63,6 +71,12 @@ const qualityOptions: Array<{
   },
 ];
 
+const qualityScales: Record<ExportQualityPreset, number> = {
+  standard: 1,
+  high: 2,
+  print: 300 / 96,
+};
+
 const futureOptions = [
   "Resize into multiple formats",
   "Export multiple sizes",
@@ -74,16 +88,20 @@ const futureOptions = [
 export default function ExportDialog({
   open,
   onClose,
+  onExportPng,
 }: ExportDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [filename, setFilename] = useState("genvilo-design");
   const [format, setFormat] = useState<ExportFormat>("png");
-  const [quality, setQuality] = useState<ExportQuality>("high");
+  const [quality, setQuality] = useState<ExportQualityPreset>("high");
   const [transparentBackground, setTransparentBackground] =
     useState(false);
   const [jpgQuality, setJpgQuality] = useState(90);
-  const [pdfType, setPdfType] = useState<PdfType>("standard");
-  const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [pdfType, setPdfType] = useState<PdfExportType>("standard");
+  const [exportStatus, setExportStatus] = useState<ExportStatus | null>(
+    null
+  );
+  const [isExporting, setIsExporting] = useState(false);
 
   const filenameIsValid = filename.trim().length > 0;
   const extension = format.toUpperCase();
@@ -123,12 +141,49 @@ export default function ExportDialog({
     setExportStatus(null);
   };
 
-  const requestExport = () => {
-    if (!filenameIsValid) return;
+  const requestExport = async () => {
+    if (!filenameIsValid || isExporting) return;
 
-    setExportStatus(
-      `Export engine coming next. Your ${extension} settings are ready.`
-    );
+    if (format !== "png") {
+      setExportStatus({
+        kind: "info",
+        message: `Export engine coming next. Your ${extension} settings are ready.`,
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    setExportStatus({
+      kind: "progress",
+      message: "Preparing export…",
+    });
+
+    try {
+      await onExportPng({
+        format: "png",
+        filename,
+        qualityPreset: quality,
+        scale: qualityScales[quality],
+        transparentBackground,
+        canvas: {
+          width: LOGICAL_CANVAS_WIDTH,
+          height: LOGICAL_CANVAS_HEIGHT,
+          backgroundColor: "#ffffff",
+        },
+      });
+      setExportStatus({
+        kind: "success",
+        message: "Export complete",
+      });
+    } catch (error) {
+      console.error("PNG export failed", error);
+      setExportStatus({
+        kind: "error",
+        message: "Export failed. Please try again.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -454,10 +509,17 @@ export default function ExportDialog({
         {exportStatus && (
           <div className="shrink-0 border-t border-white/10 bg-slate-900/95 px-5 pt-3 md:px-6">
             <p
-              role="status"
-              className="rounded-xl border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-200"
+              role={exportStatus.kind === "error" ? "alert" : "status"}
+              aria-live="polite"
+              className={`rounded-xl border px-3 py-2 text-sm ${
+                exportStatus.kind === "error"
+                  ? "border-red-400/20 bg-red-500/10 text-red-200"
+                  : exportStatus.kind === "success"
+                    ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
+                    : "border-cyan-400/20 bg-cyan-500/10 text-cyan-200"
+              }`}
             >
-              {exportStatus}
+              {exportStatus.message}
             </p>
           </div>
         )}
@@ -481,10 +543,11 @@ export default function ExportDialog({
             <button
               type="button"
               onClick={requestExport}
-              disabled={!filenameIsValid}
+              disabled={!filenameIsValid || isExporting}
+              aria-busy={isExporting}
               className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:from-blue-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-40 md:flex-none"
             >
-              Export design
+              {isExporting ? "Preparing export…" : "Export design"}
             </button>
           </div>
         </footer>

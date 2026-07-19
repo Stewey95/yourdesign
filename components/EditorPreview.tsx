@@ -7,6 +7,7 @@ import type { CanvasViewMode } from "./editor/CanvasViewModeControl";
 import EditorHeader from "./editor/EditorHeader";
 import EditorInspector from "./editor/EditorInspector";
 import EditorSidebar from "./editor/EditorSidebar";
+import ExportCanvas from "./editor/ExportCanvas";
 import ExportDialog from "./editor/ExportDialog";
 import LayerToolbar from "./editor/LayerToolbar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
@@ -26,6 +27,8 @@ import type {
   DesignItem,
   Position,
 } from "./editor/editor.types";
+import { exportDesignAsPng } from "../lib/export/exportDesign";
+import type { PngExportConfig } from "../types/export";
 
 export default function EditorPreview() {
   const {
@@ -62,6 +65,7 @@ export default function EditorPreview() {
 
   const editorShellRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const exportCanvasRef = useRef<HTMLDivElement | null>(null);
   const hideAlignmentGuides = () => {
   setAlignmentGuides({
     vertical: false,
@@ -1113,6 +1117,16 @@ if (direction === "back") {
     beginHistoryTransaction();
   };
 
+  const exportPng = async (config: PngExportConfig) => {
+    const exportCanvas = exportCanvasRef.current;
+
+    if (!exportCanvas) {
+      throw new Error("The design canvas is not ready to export.");
+    }
+
+    await exportDesignAsPng(exportCanvas, config);
+  };
+
   return (
     <>
       <div
@@ -1287,9 +1301,27 @@ if (direction === "back") {
         />
       )}
 
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: -10000,
+          top: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <ExportCanvas
+          ref={exportCanvasRef}
+          items={items}
+          width={LOGICAL_CANVAS_WIDTH}
+          height={LOGICAL_CANVAS_HEIGHT}
+        />
+      </div>
+
       <ExportDialog
         open={showExportDialog}
         onClose={() => setShowExportDialog(false)}
+        onExportPng={exportPng}
       />
     </>
   );
