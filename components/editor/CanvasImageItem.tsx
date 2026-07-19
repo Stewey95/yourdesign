@@ -20,6 +20,11 @@ export default function CanvasImageItem({
   onPointerDown,
   onResizeStart,
 }: CanvasImageItemProps) {
+  const hasImageFilters =
+    item.brightness !== 100 ||
+    item.contrast !== 100 ||
+    item.saturation !== 100;
+
   return (
     <div
       style={{
@@ -38,8 +43,10 @@ export default function CanvasImageItem({
         }}
         className="h-full w-full cursor-move select-none rounded-lg object-contain"
         style={{
-          filter: `brightness(${item.brightness}%) contrast(${item.contrast}%) saturate(${item.saturation}%)`,
-          opacity: item.opacity / 100,
+          filter: hasImageFilters
+            ? `brightness(${item.brightness}%) contrast(${item.contrast}%) saturate(${item.saturation}%)`
+            : undefined,
+          opacity: item.opacity === 100 ? undefined : item.opacity / 100,
         }}
       />
 

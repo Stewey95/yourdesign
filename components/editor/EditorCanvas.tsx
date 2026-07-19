@@ -75,6 +75,19 @@ type EditorCanvasProps = {
   ) => void;
 };
 
+type DesktopPanGesture = {
+  pointerId: number;
+  mode: "space" | "middle";
+  lastX: number;
+  lastY: number;
+};
+
+const isTextEditingTarget = (target: EventTarget | null) =>
+  target instanceof Element &&
+  Boolean(
+    target.closest("input, textarea, select, [contenteditable='true']")
+  );
+
 export default function EditorCanvas({
   canvasRef,
   toolbar,
@@ -126,8 +139,13 @@ export default function EditorCanvas({
       }
     | null
   >(null);
+  const desktopPanGestureRef = useRef<DesktopPanGesture | null>(null);
+  const workspaceHoveredRef = useRef(false);
+  const spacePressedRef = useRef(false);
   const [baseScale, setBaseScale] = useState(1);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [isDesktopPanning, setIsDesktopPanning] = useState(false);
 
   const updateDisplayScale = useCallback(() => {
     const workspace = workspaceRef.current;
@@ -295,6 +313,142 @@ export default function EditorCanvas({
     return () => workspace.removeEventListener("wheel", handleWheel);
   }, [onViewportChange, zoomAtPoint]);
 
+  const finishDesktopPan = useCallback((pointerId?: number) => {
+    const workspace = workspaceRef.current;
+    const activeGesture = desktopPanGestureRef.current;
+
+    if (
+      pointerId !== undefined &&
+      activeGesture?.pointerId !== pointerId
+    ) {
+      return;
+    }
+
+    if (
+      workspace &&
+      activeGesture &&
+      workspace.hasPointerCapture(activeGesture.pointerId)
+    ) {
+      workspace.releasePointerCapture(activeGesture.pointerId);
+    }
+
+    desktopPanGestureRef.current = null;
+    setIsDesktopPanning(false);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.code !== "Space" ||
+        event.repeat ||
+        isTextEditingTarget(event.target) ||
+        !workspaceHoveredRef.current ||
+        !window.matchMedia("(min-width: 768px)").matches
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      spacePressedRef.current = true;
+      setIsSpacePressed(true);
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code !== "Space" || !spacePressedRef.current) return;
+
+      event.preventDefault();
+      spacePressedRef.current = false;
+      setIsSpacePressed(false);
+
+      if (desktopPanGestureRef.current?.mode === "space") {
+        finishDesktopPan();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      spacePressedRef.current = false;
+      setIsSpacePressed(false);
+      finishDesktopPan();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, [finishDesktopPan]);
+
+  const startDesktopPan: React.PointerEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
+
+    const mode =
+      event.button === 1
+        ? "middle"
+        : event.button === 0 && spacePressedRef.current
+          ? "space"
+          : null;
+
+    if (
+      !mode ||
+      (mode === "space" && isTextEditingTarget(event.target))
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    desktopPanGestureRef.current = {
+      pointerId: event.pointerId,
+      mode,
+      lastX: event.clientX,
+      lastY: event.clientY,
+    };
+    setIsDesktopPanning(true);
+  };
+
+  const moveDesktopPan: React.PointerEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    const activeGesture = desktopPanGestureRef.current;
+
+    if (!activeGesture || activeGesture.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const deltaX = event.clientX - activeGesture.lastX;
+    const deltaY = event.clientY - activeGesture.lastY;
+    activeGesture.lastX = event.clientX;
+    activeGesture.lastY = event.clientY;
+
+    onViewportChange((currentViewport) => ({
+      ...currentViewport,
+      panX: currentViewport.panX + deltaX,
+      panY: currentViewport.panY + deltaY,
+    }));
+  };
+
+  const endDesktopPan: React.PointerEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    if (desktopPanGestureRef.current?.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    finishDesktopPan(event.pointerId);
+  };
+
   const fitViewport = () => {
     onViewModeChange("fit");
     resetViewport();
@@ -446,11 +600,28 @@ export default function EditorCanvas({
       <div
         ref={workspaceRef}
         data-editor-retain-selection
+        onPointerEnter={() => {
+          workspaceHoveredRef.current = true;
+        }}
+        onPointerLeave={() => {
+          workspaceHoveredRef.current = false;
+        }}
+        onPointerDownCapture={startDesktopPan}
+        onPointerMoveCapture={moveDesktopPan}
+        onPointerUpCapture={endDesktopPan}
+        onPointerCancelCapture={endDesktopPan}
+        onLostPointerCapture={() => finishDesktopPan()}
         onTouchStartCapture={startTouchGesture}
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}
         onTouchCancelCapture={cancelTouchGesture}
         className={`relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:px-2 md:pb-2 ${
+          isDesktopPanning
+            ? "md:cursor-grabbing md:[&_*]:!cursor-grabbing"
+            : isSpacePressed
+              ? "md:cursor-grab md:[&_*]:!cursor-grab"
+              : ""
+        } ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
             : "md:overflow-y-hidden"
