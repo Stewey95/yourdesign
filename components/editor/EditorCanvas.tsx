@@ -579,9 +579,27 @@ export default function EditorCanvas({
   };
 
   const displayScale = baseScale * viewport.zoom;
+  const desktopPanCursor = isDesktopPanning
+    ? "grabbing"
+    : isSpacePressed
+      ? "grab"
+      : undefined;
 
   return (
     <div className="order-first min-w-0 md:order-none md:flex md:h-full md:min-h-0 md:flex-col">
+      <style>{`
+        @media (min-width: 768px) {
+          [data-viewport-pan-cursor="grab"],
+          [data-viewport-pan-cursor="grab"] * {
+            cursor: grab !important;
+          }
+
+          [data-viewport-pan-cursor="grabbing"],
+          [data-viewport-pan-cursor="grabbing"] * {
+            cursor: grabbing !important;
+          }
+        }
+      `}</style>
       <div
         data-editor-retain-selection
         className="mb-1 hidden h-10 items-center justify-between gap-2 md:flex"
@@ -602,6 +620,7 @@ export default function EditorCanvas({
       <div
         ref={workspaceRef}
         data-editor-retain-selection
+        data-viewport-pan-cursor={desktopPanCursor}
         onPointerEnter={() => {
           workspaceHoveredRef.current = true;
         }}
@@ -618,12 +637,6 @@ export default function EditorCanvas({
         onTouchEndCapture={endTouchGesture}
         onTouchCancelCapture={cancelTouchGesture}
         className={`relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:px-2 md:pb-2 ${
-          isDesktopPanning
-            ? "md:cursor-grabbing md:[&_*]:!cursor-grabbing"
-            : isSpacePressed
-              ? "md:cursor-grab md:[&_*]:!cursor-grab"
-              : ""
-        } ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
             : "md:overflow-y-hidden"
