@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import type { TextDesignItem } from "./editor.types";
 
 export type TextResizeCorner =
@@ -46,6 +47,25 @@ export default function CanvasTextItem({
   onPendingDragStart,
   onResizeStart,
 }: CanvasTextItemProps) {
+  const initialiseEditingTextarea = useCallback(
+    (textarea: HTMLTextAreaElement | null) => {
+      if (!textarea) return;
+
+      requestAnimationFrame(() => {
+        if (!textarea.isConnected) return;
+
+        const textLength = textarea.value.length;
+
+        textarea.setSelectionRange(textLength, textLength);
+        textarea.style.height = "auto";
+        textarea.style.height = `${textarea.scrollHeight}px`;
+        textarea.scrollTop = 0;
+        textarea.focus();
+      });
+    },
+    []
+  );
+
   const resizeHandles: Array<{
     corner: TextResizeCorner;
     className: string;
@@ -94,24 +114,7 @@ export default function CanvasTextItem({
         {editing ? (
           <textarea
             autoFocus
-           ref={(textarea) => {
-  if (!textarea) return;
-
-  requestAnimationFrame(() => {
-  const textLength = textarea.value.length;
-
-  textarea.setSelectionRange(
-    textLength,
-    textLength
-  );
-
-  textarea.style.height = "auto";
-  textarea.style.height = `${textarea.scrollHeight}px`;
-  textarea.scrollTop = 0;
-
-  textarea.focus();
-});
-}}
+            ref={initialiseEditingTextarea}
             value={item.value}
            onChange={(event) => {
   const value =
