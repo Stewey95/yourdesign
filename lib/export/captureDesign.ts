@@ -1,5 +1,6 @@
 import { toBlob } from "html-to-image";
 import type { PngExportConfig } from "../../types/export";
+import { getScaledExportDimensions } from "./exportDimensions";
 
 const waitForNextPaint = () =>
   new Promise<void>((resolve) => {
@@ -50,35 +51,99 @@ const waitForDesignAssets = async (node: HTMLElement) => {
   await Promise.all(images.map(waitForImage));
 };
 
+const readBlobAsDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("An uploaded image could not be embedded."));
+      }
+    });
+    reader.addEventListener("error", () => {
+      reject(new Error("An uploaded image could not be embedded."));
+    });
+    reader.readAsDataURL(blob);
+  });
+
+const embedBlobImages = async (node: HTMLElement) => {
+  const images = Array.from(node.querySelectorAll("img"));
+  const originalSources = new Map<HTMLImageElement, string>();
+  const dataUrlCache = new Map<string, string>();
+
+  try {
+    for (const image of images) {
+      const source = image.src;
+
+      if (!source.startsWith("blob:")) continue;
+
+      originalSources.set(image, source);
+
+      let dataUrl = dataUrlCache.get(source);
+
+      if (!dataUrl) {
+        const response = await fetch(source);
+
+        if (!response.ok) {
+          throw new Error("An uploaded image could not be embedded.");
+        }
+
+        dataUrl = await readBlobAsDataUrl(await response.blob());
+        dataUrlCache.set(source, dataUrl);
+      }
+
+      image.src = dataUrl;
+      await waitForImage(image);
+    }
+  } catch (error) {
+    originalSources.forEach((source, image) => {
+      image.src = source;
+    });
+    throw error;
+  }
+
+  return () => {
+    originalSources.forEach((source, image) => {
+      image.src = source;
+    });
+    originalSources.clear();
+    dataUrlCache.clear();
+  };
+};
+
 export async function captureDesignAsPng(
   node: HTMLElement,
   config: PngExportConfig
 ) {
-  await waitForDesignAssets(node);
+  const restoreBlobImages = await embedBlobImages(node);
 
-  const canvasWidth = Math.max(
-    1,
-    Math.round(config.canvas.width * config.scale)
-  );
-  const canvasHeight = Math.max(
-    1,
-    Math.round(config.canvas.height * config.scale)
-  );
-  const blob = await toBlob(node, {
-    width: config.canvas.width,
-    height: config.canvas.height,
-    canvasWidth,
-    canvasHeight,
-    pixelRatio: 1,
-    backgroundColor: config.transparentBackground
-      ? undefined
-      : config.canvas.backgroundColor || "#ffffff",
-    cacheBust: false,
-  });
+  try {
+    await waitForDesignAssets(node);
 
-  if (!blob) {
-    throw new Error("The browser could not create the PNG image.");
+    const dimensions = getScaledExportDimensions(
+      config.canvas,
+      config.scale
+    );
+    const blob = await toBlob(node, {
+      width: config.canvas.width,
+      height: config.canvas.height,
+      canvasWidth: dimensions.width,
+      canvasHeight: dimensions.height,
+      pixelRatio: 1,
+      backgroundColor: config.transparentBackground
+        ? undefined
+        : config.canvas.backgroundColor || "#ffffff",
+      cacheBust: false,
+    });
+
+    if (!blob) {
+      throw new Error("The browser could not create the PNG image.");
+    }
+
+    return blob;
+  } finally {
+    restoreBlobImages();
   }
-
-  return blob;
 }

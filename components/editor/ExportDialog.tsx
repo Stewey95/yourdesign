@@ -11,6 +11,7 @@ import type {
   PdfExportType,
   PngExportConfig,
 } from "../../types/export";
+import { getScaledExportDimensions } from "../../lib/export/exportDimensions";
 
 type ExportDialogProps = {
   open: boolean;
@@ -108,6 +109,14 @@ export default function ExportDialog({
   const selectedQuality = qualityOptions.find(
     (option) => option.value === quality
   );
+  const exportScale = qualityScales[quality];
+  const exportDimensions = getScaledExportDimensions(
+    {
+      width: LOGICAL_CANVAS_WIDTH,
+      height: LOGICAL_CANVAS_HEIGHT,
+    },
+    exportScale
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -163,7 +172,7 @@ export default function ExportDialog({
         format: "png",
         filename,
         qualityPreset: quality,
-        scale: qualityScales[quality],
+        scale: exportScale,
         transparentBackground,
         canvas: {
           width: LOGICAL_CANVAS_WIDTH,
@@ -465,7 +474,7 @@ export default function ExportDialog({
               <div className="flex justify-between gap-4">
                 <dt className="text-slate-400">Canvas size</dt>
                 <dd className="font-semibold text-slate-200">
-                  {LOGICAL_CANVAS_WIDTH} × {LOGICAL_CANVAS_HEIGHT} px
+                  {exportDimensions.width} × {exportDimensions.height} px
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
