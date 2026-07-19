@@ -196,6 +196,8 @@ export async function renderDesignToPng(
   const scaleX = dimensions.width / config.canvas.width;
   const scaleY = dimensions.height / config.canvas.height;
 
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
   context.setTransform(scaleX, 0, 0, scaleY, 0, 0);
 
   if (!config.transparentBackground) {
@@ -203,56 +205,72 @@ export async function renderDesignToPng(
     context.fillRect(0, 0, config.canvas.width, config.canvas.height);
   }
 
+  const imageSources = [
+    ...new Set(
+      items
+        .filter((item) => item.type === "image")
+        .map((item) => item.src)
+    ),
+  ];
   const loadedImages = new Map<string, HTMLImageElement>();
 
-  await Promise.all(
-    items
-      .filter((item) => item.type === "image")
-      .map(async (item) => {
-        if (!loadedImages.has(item.src)) {
-          loadedImages.set(item.src, await loadImage(item.src));
-        }
-      })
-  );
+  try {
+    const imageEntries = await Promise.all(
+      imageSources.map(
+        async (source) =>
+          [source, await loadImage(source)] as const
+      )
+    );
 
-  for (const item of items) {
-    if (item.type === "text") {
-      drawTextItem(context, item);
-      continue;
+    imageEntries.forEach(([source, image]) => {
+      loadedImages.set(source, image);
+    });
+
+    for (const item of items) {
+      if (item.type === "text") {
+        drawTextItem(context, item);
+        continue;
+      }
+
+      const image = loadedImages.get(item.src);
+
+      if (!image) {
+        throw new Error("An uploaded image was not prepared for export.");
+      }
+
+      const x = -item.size.width / 2;
+      const y = -item.size.height / 2;
+
+      context.save();
+      context.translate(item.position.x, item.position.y);
+      context.rotate((item.rotation * Math.PI) / 180);
+      context.globalAlpha = item.opacity / 100;
+      context.filter = `brightness(${item.brightness}%) contrast(${item.contrast}%) saturate(${item.saturation}%)`;
+      addRoundedRectangle(
+        context,
+        x,
+        y,
+        item.size.width,
+        item.size.height,
+        8
+      );
+      context.clip();
+      context.drawImage(
+        image,
+        x,
+        y,
+        item.size.width,
+        item.size.height
+      );
+      context.restore();
     }
 
-    const image = loadedImages.get(item.src);
-
-    if (!image) {
-      throw new Error("An uploaded image was not prepared for export.");
-    }
-
-    const x = -item.size.width / 2;
-    const y = -item.size.height / 2;
-
-    context.save();
-    context.translate(item.position.x, item.position.y);
-    context.rotate((item.rotation * Math.PI) / 180);
-    context.globalAlpha = item.opacity / 100;
-    context.filter = `brightness(${item.brightness}%) contrast(${item.contrast}%) saturate(${item.saturation}%)`;
-    addRoundedRectangle(
-      context,
-      x,
-      y,
-      item.size.width,
-      item.size.height,
-      8
-    );
-    context.clip();
-    context.drawImage(
-      image,
-      x,
-      y,
-      item.size.width,
-      item.size.height
-    );
-    context.restore();
+    return await canvasToPngBlob(canvas);
+  } finally {
+    loadedImages.clear();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = 1;
+    canvas.height = 1;
   }
-
-  return canvasToPngBlob(canvas);
 }

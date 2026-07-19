@@ -11,7 +11,10 @@ import type {
   PdfExportType,
   PngExportConfig,
 } from "../../types/export";
-import { getScaledExportDimensions } from "../../lib/export/exportDimensions";
+import {
+  getExportScale,
+  getScaledExportDimensions,
+} from "../../lib/export/exportDimensions";
 
 type ExportDialogProps = {
   open: boolean;
@@ -61,22 +64,16 @@ const qualityOptions: Array<{
   {
     value: "high",
     label: "High quality",
-    resolution: "2× resolution",
+    resolution: "3× resolution",
     description: "Recommended for sharper digital graphics.",
   },
   {
     value: "print",
     label: "Print quality",
-    resolution: "300 DPI",
-    description: "Recommended for professional printing.",
+    resolution: "High-resolution print",
+    description: "Recommended for large, sharp PNG exports.",
   },
 ];
-
-const qualityScales: Record<ExportQualityPreset, number> = {
-  standard: 1,
-  high: 2,
-  print: 300 / 96,
-};
 
 const futureOptions = [
   "Resize into multiple formats",
@@ -109,7 +106,7 @@ export default function ExportDialog({
   const selectedQuality = qualityOptions.find(
     (option) => option.value === quality
   );
-  const exportScale = qualityScales[quality];
+  const exportScale = getExportScale(quality);
   const exportDimensions = getScaledExportDimensions(
     {
       width: LOGICAL_CANVAS_WIDTH,
