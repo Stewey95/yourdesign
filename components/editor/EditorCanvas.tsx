@@ -340,15 +340,17 @@ export default function EditorCanvas({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
         event.code !== "Space" ||
-        event.repeat ||
         isTextEditingTarget(event.target) ||
-        !workspaceHoveredRef.current ||
-        !window.matchMedia("(min-width: 768px)").matches
+        !window.matchMedia("(min-width: 768px)").matches ||
+        (!workspaceHoveredRef.current && !spacePressedRef.current)
       ) {
         return;
       }
 
       event.preventDefault();
+
+      if (event.repeat || spacePressedRef.current) return;
+
       spacePressedRef.current = true;
       setIsSpacePressed(true);
     };
@@ -371,13 +373,13 @@ export default function EditorCanvas({
       finishDesktopPan();
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keyup", handleKeyUp, true);
     window.addEventListener("blur", handleWindowBlur);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
       window.removeEventListener("blur", handleWindowBlur);
     };
   }, [finishDesktopPan]);
@@ -633,25 +635,37 @@ export default function EditorCanvas({
         }}
       >
           <div
-            ref={canvasRef}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerCancel}
-            onPointerDown={onPointerDown}
-            className="absolute overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+            className="absolute"
             style={{
-              left: `calc(50% + ${viewport.panX}px)`,
-              top: `calc(50% + ${viewport.panY}px)`,
-              width: LOGICAL_CANVAS_WIDTH,
-              height: LOGICAL_CANVAS_HEIGHT,
-              transform: `translate(-50%, -50%) scale(${displayScale})`,
-              transformOrigin: "center",
-              touchAction: "none",
-              WebkitUserSelect: "none",
-              userSelect: "none",
-              overscrollBehavior: "contain",
+              left: `calc(50% + ${
+                viewport.panX -
+                (LOGICAL_CANVAS_WIDTH * displayScale) / 2
+              }px)`,
+              top: `calc(50% + ${
+                viewport.panY -
+                (LOGICAL_CANVAS_HEIGHT * displayScale) / 2
+              }px)`,
+              width: LOGICAL_CANVAS_WIDTH * displayScale,
+              height: LOGICAL_CANVAS_HEIGHT * displayScale,
             }}
           >
+            <div
+              ref={canvasRef}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
+              onPointerDown={onPointerDown}
+              className="relative overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+              style={{
+                width: LOGICAL_CANVAS_WIDTH,
+                height: LOGICAL_CANVAS_HEIGHT,
+                zoom: displayScale,
+                touchAction: "none",
+                WebkitUserSelect: "none",
+                userSelect: "none",
+                overscrollBehavior: "contain",
+              }}
+            >
             {items.length === 0 && (
               <p className="flex h-full items-center justify-center">
                 Your design canvas
@@ -689,6 +703,7 @@ export default function EditorCanvas({
                 />
               )
             )}
+            </div>
           </div>
       </div>
     </div>
