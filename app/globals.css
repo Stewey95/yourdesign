@@ -25,13 +25,6 @@
   }
 }
 
-@media (max-width: 767px) {
-  .mobile-canvas-text {
-    -webkit-text-size-adjust: none;
-    text-size-adjust: none;
-  }
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

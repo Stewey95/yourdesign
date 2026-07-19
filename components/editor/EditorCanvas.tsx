@@ -1072,7 +1072,11 @@ export default function EditorCanvas({
               style={{
                 width: LOGICAL_CANVAS_WIDTH,
                 height: LOGICAL_CANVAS_HEIGHT,
-                zoom: displayScale,
+                zoom: isDesktopLayout ? displayScale : undefined,
+                transform: isDesktopLayout
+                  ? undefined
+                  : `scale(${displayScale})`,
+                transformOrigin: isDesktopLayout ? undefined : "top left",
                 touchAction: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
