@@ -54,6 +54,7 @@ export default function CanvasItem(props: CanvasItemProps) {
 
   return (
     <div
+      data-canvas-item-id={item.id}
       className={`absolute ${
         selected
           ? item.type === "text"

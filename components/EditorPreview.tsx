@@ -23,6 +23,10 @@ import {
   SNAP_THRESHOLD,
 } from "./editor/editor.constants";
 import useEditorHistory from "./editor/useEditorHistory";
+import {
+  getCanvasDisplayScale,
+  screenPointToCanvas,
+} from "./editor/editor.viewport";
 import type {
   DesignItem,
   Position,
@@ -76,15 +80,19 @@ const getSnappedPosition = (
   event: React.PointerEvent<HTMLDivElement>,
   canvasBounds: DOMRect
 ): Position => {
-  const scaleX = canvasBounds.width / LOGICAL_CANVAS_WIDTH;
-  const scaleY = canvasBounds.height / LOGICAL_CANVAS_HEIGHT;
-  const rawX = (event.clientX - canvasBounds.left) / scaleX;
-  const rawY = (event.clientY - canvasBounds.top) / scaleY;
+  const displayScale = getCanvasDisplayScale(canvasBounds);
+  const canvasPoint = screenPointToCanvas(
+    event.clientX,
+    event.clientY,
+    canvasBounds
+  );
+  const rawX = canvasPoint.x;
+  const rawY = canvasPoint.y;
 
   const canvasCentreX = LOGICAL_CANVAS_WIDTH / 2;
   const canvasCentreY = LOGICAL_CANVAS_HEIGHT / 2;
   const activeSnapThreshold =
-  (event.pointerType === "touch" ? 18 : SNAP_THRESHOLD) / scaleX;
+  (event.pointerType === "touch" ? 18 : SNAP_THRESHOLD) / displayScale;
 
   const snapToVerticalCentre =
     Math.abs(rawX - canvasCentreX) <= activeSnapThreshold;
@@ -998,7 +1006,7 @@ if (direction === "back") {
     const startHeight = item.size.height;
     const canvasBounds = canvasRef.current?.getBoundingClientRect();
     const displayScale = canvasBounds
-      ? canvasBounds.width / LOGICAL_CANVAS_WIDTH
+      ? getCanvasDisplayScale(canvasBounds)
       : 1;
 
     const resize = (moveEvent: PointerEvent) => {
@@ -1045,7 +1053,7 @@ if (direction === "back") {
     const verticalDirection = corner.startsWith("bottom") ? 1 : -1;
     const canvasBounds = canvasRef.current?.getBoundingClientRect();
     const displayScale = canvasBounds
-      ? canvasBounds.width / LOGICAL_CANVAS_WIDTH
+      ? getCanvasDisplayScale(canvasBounds)
       : 1;
 
     const resize = (moveEvent: PointerEvent) => {

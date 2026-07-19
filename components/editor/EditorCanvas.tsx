@@ -22,6 +22,10 @@ import type {
   TextDesignItem,
 } from "./editor.types";
 import type { CanvasViewMode } from "./CanvasViewModeControl";
+import {
+  clampViewportZoom,
+  type EditorViewport,
+} from "./editor.viewport";
 
 type EditorCanvasProps = {
   canvasRef: RefObject<HTMLDivElement | null>;
@@ -100,7 +104,27 @@ export default function EditorCanvas({
     width: number;
     height: number;
   } | null>(null);
-  const [displayScale, setDisplayScale] = useState(1);
+  const viewportGestureRef = useRef<
+    | { mode: "item" }
+    | {
+        mode: "viewport";
+        startDistance: number;
+        startCenterX: number;
+        startCenterY: number;
+        startZoom: number;
+        startPanX: number;
+        startPanY: number;
+        workspaceCenterX: number;
+        workspaceCenterY: number;
+      }
+    | null
+  >(null);
+  const [baseScale, setBaseScale] = useState(1);
+  const [viewport, setViewport] = useState<EditorViewport>({
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+  });
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
 
   const updateDisplayScale = useCallback(() => {
@@ -147,7 +171,7 @@ export default function EditorCanvas({
 
     setIsDesktopLayout(isDesktop);
 
-    setDisplayScale((currentScale) =>
+    setBaseScale((currentScale) =>
       Math.abs(currentScale - nextScale) > 0.001
         ? nextScale
         : currentScale
@@ -188,6 +212,173 @@ export default function EditorCanvas({
     };
   }, [updateDisplayScale]);
 
+  const zoomAtPoint = useCallback(
+    (requestedZoom: number, clientX?: number, clientY?: number) => {
+      const workspace = workspaceRef.current;
+
+      if (!workspace) return;
+
+      const workspaceBounds = workspace.getBoundingClientRect();
+      const anchorX =
+        (clientX ?? workspaceBounds.left + workspaceBounds.width / 2) -
+        workspaceBounds.left -
+        workspaceBounds.width / 2;
+      const anchorY =
+        (clientY ?? workspaceBounds.top + workspaceBounds.height / 2) -
+        workspaceBounds.top -
+        workspaceBounds.height / 2;
+
+      setViewport((currentViewport) => {
+        const nextZoom = clampViewportZoom(requestedZoom);
+        const zoomRatio = nextZoom / currentViewport.zoom;
+
+        return {
+          zoom: nextZoom,
+          panX:
+            anchorX -
+            (anchorX - currentViewport.panX) * zoomRatio,
+          panY:
+            anchorY -
+            (anchorY - currentViewport.panY) * zoomRatio,
+        };
+      });
+    },
+    []
+  );
+
+  const resetViewport = useCallback(() => {
+    setViewport({ zoom: 1, panX: 0, panY: 0 });
+  }, []);
+
+  const fitViewport = () => {
+    onViewModeChange("fit");
+    resetViewport();
+  };
+
+  const changeViewMode = (mode: CanvasViewMode) => {
+    onViewModeChange(mode);
+    resetViewport();
+  };
+
+  const getTouchGesture = (touches: React.TouchList) => {
+    const firstTouch = touches[0];
+    const secondTouch = touches[1];
+    const deltaX = firstTouch.clientX - secondTouch.clientX;
+    const deltaY = firstTouch.clientY - secondTouch.clientY;
+
+    return {
+      distance: Math.hypot(deltaX, deltaY),
+      centerX: (firstTouch.clientX + secondTouch.clientX) / 2,
+      centerY: (firstTouch.clientY + secondTouch.clientY) / 2,
+    };
+  };
+
+  const startTouchGesture: React.TouchEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    if (event.touches.length !== 2) return;
+
+    const target = event.target;
+    const selectedItemTarget =
+      target instanceof HTMLElement &&
+      selectedItemId !== null &&
+      target.closest(`[data-canvas-item-id="${selectedItemId}"]`);
+
+    if (selectedItemTarget) {
+      viewportGestureRef.current = { mode: "item" };
+      onTouchStartCapture(event);
+      return;
+    }
+
+    const workspace = workspaceRef.current;
+
+    if (!workspace) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const gesture = getTouchGesture(event.touches);
+    const workspaceBounds = workspace.getBoundingClientRect();
+
+    viewportGestureRef.current = {
+      mode: "viewport",
+      startDistance: gesture.distance,
+      startCenterX: gesture.centerX,
+      startCenterY: gesture.centerY,
+      startZoom: viewport.zoom,
+      startPanX: viewport.panX,
+      startPanY: viewport.panY,
+      workspaceCenterX: workspaceBounds.left + workspaceBounds.width / 2,
+      workspaceCenterY: workspaceBounds.top + workspaceBounds.height / 2,
+    };
+  };
+
+  const moveTouchGesture: React.TouchEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    const activeGesture = viewportGestureRef.current;
+
+    if (!activeGesture || event.touches.length !== 2) return;
+
+    if (activeGesture.mode === "item") {
+      onTouchMoveCapture(event);
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const gesture = getTouchGesture(event.touches);
+    const startDistance = activeGesture.startDistance;
+    const startZoom = activeGesture.startZoom;
+    const startCenterX = activeGesture.startCenterX;
+    const startCenterY = activeGesture.startCenterY;
+    const startPanX = activeGesture.startPanX;
+    const startPanY = activeGesture.startPanY;
+    const workspaceCenterX = activeGesture.workspaceCenterX;
+    const workspaceCenterY = activeGesture.workspaceCenterY;
+    const nextZoom = clampViewportZoom(
+      startZoom * (gesture.distance / startDistance)
+    );
+    const zoomRatio = nextZoom / startZoom;
+    const startAnchorX = startCenterX - workspaceCenterX;
+    const startAnchorY = startCenterY - workspaceCenterY;
+
+    setViewport({
+      zoom: nextZoom,
+      panX:
+        startPanX +
+        (gesture.centerX - startCenterX) +
+        (1 - zoomRatio) * (startAnchorX - startPanX),
+      panY:
+        startPanY +
+        (gesture.centerY - startCenterY) +
+        (1 - zoomRatio) * (startAnchorY - startPanY),
+    });
+  };
+
+  const endTouchGesture: React.TouchEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    if (viewportGestureRef.current?.mode === "item") {
+      onTouchEndCapture(event);
+    }
+
+    viewportGestureRef.current = null;
+  };
+
+  const cancelTouchGesture: React.TouchEventHandler<HTMLDivElement> = (
+    event
+  ) => {
+    if (viewportGestureRef.current?.mode === "item") {
+      onTouchCancelCapture(event);
+    }
+
+    viewportGestureRef.current = null;
+  };
+
+  const displayScale = baseScale * viewport.zoom;
+
   return (
     <div className="order-first min-w-0 md:order-none md:flex md:h-full md:min-h-0 md:flex-col">
       <div
@@ -197,12 +388,43 @@ export default function EditorCanvas({
         <div>{toolbar}</div>
         <CanvasViewModeControl
           mode={viewMode}
-          onChange={onViewModeChange}
+          zoom={viewport.zoom}
+          onChange={changeViewMode}
+          onZoomIn={() => zoomAtPoint(viewport.zoom * 1.25)}
+          onZoomOut={() => zoomAtPoint(viewport.zoom / 1.25)}
+          onReset={resetViewport}
+          onFit={fitViewport}
         />
       </div>
 
       <div
         ref={workspaceRef}
+        data-editor-retain-selection
+        onWheel={(event) => {
+          if (!window.matchMedia("(min-width: 768px)").matches) return;
+
+          event.preventDefault();
+
+          if (event.ctrlKey || event.metaKey) {
+            const zoomFactor = Math.exp(-event.deltaY * 0.002);
+
+            zoomAtPoint(
+              viewport.zoom * zoomFactor,
+              event.clientX,
+              event.clientY
+            );
+          } else {
+            setViewport((currentViewport) => ({
+              ...currentViewport,
+              panX: currentViewport.panX - event.deltaX,
+              panY: currentViewport.panY - event.deltaY,
+            }));
+          }
+        }}
+        onTouchStartCapture={startTouchGesture}
+        onTouchMoveCapture={moveTouchGesture}
+        onTouchEndCapture={endTouchGesture}
+        onTouchCancelCapture={cancelTouchGesture}
         className={`relative w-full overflow-hidden md:min-h-0 md:flex-1 md:overflow-x-hidden md:px-2 md:pb-2 ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
@@ -211,32 +433,23 @@ export default function EditorCanvas({
         style={{
           height: isDesktopLayout
             ? undefined
-            : LOGICAL_CANVAS_HEIGHT * displayScale,
+            : LOGICAL_CANVAS_HEIGHT * baseScale,
         }}
       >
-        <div
-          className="relative mx-auto"
-          style={{
-            width: LOGICAL_CANVAS_WIDTH * displayScale,
-            height: LOGICAL_CANVAS_HEIGHT * displayScale,
-          }}
-        >
           <div
             ref={canvasRef}
-            onTouchStartCapture={onTouchStartCapture}
-            onTouchMoveCapture={onTouchMoveCapture}
-            onTouchEndCapture={onTouchEndCapture}
-            onTouchCancelCapture={onTouchCancelCapture}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
             onPointerDown={onPointerDown}
-            className="absolute left-0 top-0 overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
+            className="absolute overflow-hidden rounded-xl bg-white text-slate-500 touch-none select-none"
             style={{
+              left: `calc(50% + ${viewport.panX}px)`,
+              top: `calc(50% + ${viewport.panY}px)`,
               width: LOGICAL_CANVAS_WIDTH,
               height: LOGICAL_CANVAS_HEIGHT,
-              transform: `scale(${displayScale})`,
-              transformOrigin: "top left",
+              transform: `translate(-50%, -50%) scale(${displayScale})`,
+              transformOrigin: "center",
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",
@@ -281,7 +494,6 @@ export default function EditorCanvas({
               )
             )}
           </div>
-        </div>
       </div>
     </div>
   );
