@@ -1,6 +1,9 @@
 import { toBlob } from "html-to-image";
 import type { PngExportConfig } from "../../types/export";
+import type { DesignItem } from "../../components/editor/editor.types";
 import { getScaledExportDimensions } from "./exportDimensions";
+import { isMobileSafari } from "./isMobileSafari";
+import { renderDesignToPng } from "./renderDesignToCanvas";
 
 const waitForNextPaint = () =>
   new Promise<void>((resolve) => {
@@ -115,8 +118,13 @@ const embedBlobImages = async (node: HTMLElement) => {
 
 export async function captureDesignAsPng(
   node: HTMLElement,
+  items: DesignItem[],
   config: PngExportConfig
 ) {
+  if (isMobileSafari()) {
+    return renderDesignToPng(items, config);
+  }
+
   const restoreBlobImages = await embedBlobImages(node);
 
   try {

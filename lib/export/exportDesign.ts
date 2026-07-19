@@ -1,4 +1,5 @@
 import type { PngExportConfig } from "../../types/export";
+import type { DesignItem } from "../../components/editor/editor.types";
 import { captureDesignAsPng } from "./captureDesign";
 
 export const sanitizeExportFilename = (filename: string) => {
@@ -17,9 +18,10 @@ export const sanitizeExportFilename = (filename: string) => {
 
 export async function exportDesignAsPng(
   node: HTMLElement,
+  items: DesignItem[],
   config: PngExportConfig
 ) {
-  const blob = await captureDesignAsPng(node, config);
+  const blob = await captureDesignAsPng(node, items, config);
   const objectUrl = URL.createObjectURL(blob);
   const downloadLink = document.createElement("a");
 

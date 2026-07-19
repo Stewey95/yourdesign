@@ -188,7 +188,10 @@ export default function ExportDialog({
       console.error("PNG export failed", error);
       setExportStatus({
         kind: "error",
-        message: "Export failed. Please try again.",
+        message:
+          error instanceof Error
+            ? `Export failed: ${error.message}`
+            : "Export failed. Please try again.",
       });
     } finally {
       setIsExporting(false);
