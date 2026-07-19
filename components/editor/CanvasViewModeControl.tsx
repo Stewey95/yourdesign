@@ -1,5 +1,7 @@
 "use client";
 
+import ZoomPercentageInput from "./ZoomPercentageInput";
+
 export type CanvasViewMode = "fit" | "fill";
 
 type CanvasViewModeControlProps = {
@@ -8,6 +10,7 @@ type CanvasViewModeControlProps = {
   onChange: (mode: CanvasViewMode) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onZoomChange: (zoom: number) => void;
   onReset: () => void;
   onFit: () => void;
 };
@@ -18,6 +21,7 @@ export default function CanvasViewModeControl({
   onChange,
   onZoomIn,
   onZoomOut,
+  onZoomChange,
   onReset,
   onFit,
 }: CanvasViewModeControlProps) {
@@ -43,12 +47,11 @@ export default function CanvasViewModeControl({
       >
         −
       </button>
-      <span
-        aria-live="polite"
-        className="w-11 text-center text-[10px] font-semibold text-slate-400"
-      >
-        {Math.round(zoom * 100)}%
-      </span>
+      <ZoomPercentageInput
+        zoom={zoom}
+        onApply={onZoomChange}
+        className="h-8 w-12 rounded-lg bg-transparent px-1 text-center text-[10px] font-semibold text-slate-400 outline-none transition hover:bg-slate-800 hover:text-white focus:bg-slate-800 focus:text-white focus:ring-2 focus:ring-blue-500"
+      />
       <button
         type="button"
         aria-label="Zoom in"

@@ -26,6 +26,8 @@ import useEditorHistory from "./editor/useEditorHistory";
 import {
   getCanvasDisplayScale,
   screenPointToCanvas,
+  type EditorViewport,
+  zoomViewportAtAnchor,
 } from "./editor/editor.viewport";
 import type {
   DesignItem,
@@ -55,6 +57,11 @@ export default function EditorPreview() {
     useState(false);
   const [canvasViewMode, setCanvasViewMode] =
     useState<CanvasViewMode>("fit");
+  const [editorViewport, setEditorViewport] = useState<EditorViewport>({
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+  });
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
   "media" | "text" | "arrange" | "effects" | null
@@ -1100,6 +1107,18 @@ if (direction === "back") {
     hideAlignmentGuides();
     setCanvasViewMode(mode);
   };
+  const setViewportZoom = (zoom: number) => {
+    setEditorViewport((currentViewport) =>
+      zoomViewportAtAnchor(currentViewport, zoom)
+    );
+  };
+  const resetEditorViewport = () => {
+    setEditorViewport({ zoom: 1, panX: 0, panY: 0 });
+  };
+  const fitEditorViewport = () => {
+    changeCanvasViewMode("fit");
+    resetEditorViewport();
+  };
   const toggleImageAdjustments = () => {
   setShowImageAdjustments((currentValue) => {
     const nextValue = !currentValue;
@@ -1168,6 +1187,8 @@ if (direction === "back") {
           canvasRef={canvasRef}
           viewMode={canvasViewMode}
           onViewModeChange={changeCanvasViewMode}
+          viewport={editorViewport}
+          onViewportChange={setEditorViewport}
           toolbar={selectedItem ? (
             <LayerToolbar
               itemId={selectedItem.id}
@@ -1286,6 +1307,16 @@ if (direction === "back") {
           canSendBackward={canSendBackward}
           canBringForward={canBringForward}
           showImageAdjustments={showImageAdjustments}
+          viewportZoom={editorViewport.zoom}
+          onViewportZoomOut={() =>
+            setViewportZoom(editorViewport.zoom / 1.25)
+          }
+          onViewportZoomIn={() =>
+            setViewportZoom(editorViewport.zoom * 1.25)
+          }
+          onViewportZoomChange={setViewportZoom}
+          onViewportReset={resetEditorViewport}
+          onViewportFit={fitEditorViewport}
           onChangeTextSize={changeTextSize}
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}

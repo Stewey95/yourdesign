@@ -5,8 +5,10 @@ import {
   useEffect,
   useRef,
   useState,
+  type Dispatch,
   type ReactNode,
   type RefObject,
+  type SetStateAction,
 } from "react";
 import AlignmentGuides from "./AlignmentGuides";
 import CanvasViewModeControl from "./CanvasViewModeControl";
@@ -25,6 +27,7 @@ import type { CanvasViewMode } from "./CanvasViewModeControl";
 import {
   clampViewportZoom,
   type EditorViewport,
+  zoomViewportAtAnchor,
 } from "./editor.viewport";
 
 type EditorCanvasProps = {
@@ -32,6 +35,8 @@ type EditorCanvasProps = {
   toolbar: ReactNode;
   viewMode: CanvasViewMode;
   onViewModeChange: (mode: CanvasViewMode) => void;
+  viewport: EditorViewport;
+  onViewportChange: Dispatch<SetStateAction<EditorViewport>>;
   items: DesignItem[];
   selectedItemId: string | null;
   editingItemId: string | null;
@@ -75,6 +80,8 @@ export default function EditorCanvas({
   toolbar,
   viewMode,
   onViewModeChange,
+  viewport,
+  onViewportChange,
   items,
   selectedItemId,
   editingItemId,
@@ -120,11 +127,6 @@ export default function EditorCanvas({
     | null
   >(null);
   const [baseScale, setBaseScale] = useState(1);
-  const [viewport, setViewport] = useState<EditorViewport>({
-    zoom: 1,
-    panX: 0,
-    panY: 0,
-  });
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
 
   const updateDisplayScale = useCallback(() => {
@@ -213,7 +215,11 @@ export default function EditorCanvas({
   }, [updateDisplayScale]);
 
   const zoomAtPoint = useCallback(
-    (requestedZoom: number, clientX?: number, clientY?: number) => {
+    (
+      requestedZoom: number | ((currentZoom: number) => number),
+      clientX?: number,
+      clientY?: number
+    ) => {
       const workspace = workspaceRef.current;
 
       if (!workspace) return;
@@ -228,27 +234,66 @@ export default function EditorCanvas({
         workspaceBounds.top -
         workspaceBounds.height / 2;
 
-      setViewport((currentViewport) => {
-        const nextZoom = clampViewportZoom(requestedZoom);
-        const zoomRatio = nextZoom / currentViewport.zoom;
-
-        return {
-          zoom: nextZoom,
-          panX:
-            anchorX -
-            (anchorX - currentViewport.panX) * zoomRatio,
-          panY:
-            anchorY -
-            (anchorY - currentViewport.panY) * zoomRatio,
-        };
-      });
+      onViewportChange((currentViewport) =>
+        zoomViewportAtAnchor(
+          currentViewport,
+          typeof requestedZoom === "function"
+            ? requestedZoom(currentViewport.zoom)
+            : requestedZoom,
+          anchorX,
+          anchorY
+        )
+      );
     },
-    []
+    [onViewportChange]
   );
 
   const resetViewport = useCallback(() => {
-    setViewport({ zoom: 1, panX: 0, panY: 0 });
-  }, []);
+    onViewportChange({ zoom: 1, panX: 0, panY: 0 });
+  }, [onViewportChange]);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+
+    if (!workspace) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!window.matchMedia("(min-width: 768px)").matches) return;
+
+      const target = event.target;
+
+      if (
+        target instanceof Element &&
+        target.closest("input, textarea, select, [contenteditable='true']")
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (event.ctrlKey || event.metaKey) {
+        const zoomFactor = Math.exp(-event.deltaY * 0.002);
+
+        zoomAtPoint(
+          (currentZoom) => currentZoom * zoomFactor,
+          event.clientX,
+          event.clientY
+        );
+      } else {
+        onViewportChange((currentViewport) => ({
+          ...currentViewport,
+          panX: currentViewport.panX - event.deltaX,
+          panY: currentViewport.panY - event.deltaY,
+        }));
+      }
+    };
+
+    workspace.addEventListener("wheel", handleWheel, {
+      passive: false,
+    });
+
+    return () => workspace.removeEventListener("wheel", handleWheel);
+  }, [onViewportChange, zoomAtPoint]);
 
   const fitViewport = () => {
     onViewModeChange("fit");
@@ -344,7 +389,7 @@ export default function EditorCanvas({
     const startAnchorX = startCenterX - workspaceCenterX;
     const startAnchorY = startCenterY - workspaceCenterY;
 
-    setViewport({
+    onViewportChange({
       zoom: nextZoom,
       panX:
         startPanX +
@@ -392,6 +437,7 @@ export default function EditorCanvas({
           onChange={changeViewMode}
           onZoomIn={() => zoomAtPoint(viewport.zoom * 1.25)}
           onZoomOut={() => zoomAtPoint(viewport.zoom / 1.25)}
+          onZoomChange={(zoom) => zoomAtPoint(zoom)}
           onReset={resetViewport}
           onFit={fitViewport}
         />
@@ -400,27 +446,6 @@ export default function EditorCanvas({
       <div
         ref={workspaceRef}
         data-editor-retain-selection
-        onWheel={(event) => {
-          if (!window.matchMedia("(min-width: 768px)").matches) return;
-
-          event.preventDefault();
-
-          if (event.ctrlKey || event.metaKey) {
-            const zoomFactor = Math.exp(-event.deltaY * 0.002);
-
-            zoomAtPoint(
-              viewport.zoom * zoomFactor,
-              event.clientX,
-              event.clientY
-            );
-          } else {
-            setViewport((currentViewport) => ({
-              ...currentViewport,
-              panX: currentViewport.panX - event.deltaX,
-              panY: currentViewport.panY - event.deltaY,
-            }));
-          }
-        }}
         onTouchStartCapture={startTouchGesture}
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}

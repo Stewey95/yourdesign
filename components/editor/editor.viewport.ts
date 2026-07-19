@@ -15,6 +15,22 @@ export type EditorViewport = {
 export const clampViewportZoom = (zoom: number) =>
   Math.min(MAX_VIEWPORT_ZOOM, Math.max(MIN_VIEWPORT_ZOOM, zoom));
 
+export const zoomViewportAtAnchor = (
+  viewport: EditorViewport,
+  requestedZoom: number,
+  anchorX = 0,
+  anchorY = 0
+): EditorViewport => {
+  const zoom = clampViewportZoom(requestedZoom);
+  const zoomRatio = zoom / viewport.zoom;
+
+  return {
+    zoom,
+    panX: anchorX - (anchorX - viewport.panX) * zoomRatio,
+    panY: anchorY - (anchorY - viewport.panY) * zoomRatio,
+  };
+};
+
 export const getCanvasDisplayScale = (bounds: DOMRect) =>
   bounds.width / LOGICAL_CANVAS_WIDTH;
 
