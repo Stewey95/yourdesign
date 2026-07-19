@@ -97,7 +97,7 @@ export default function CanvasTextItem({
     : item.value || "Type here";
 
   return (
-    <div className="relative md:inline-grid md:max-w-full">
+    <div className="mobile-canvas-text relative md:inline-grid md:max-w-full">
         <span
           aria-hidden="true"
           className="invisible hidden min-h-[1.2em] w-fit max-w-[min(76vw,460px)] whitespace-pre-wrap break-words text-center font-bold md:block"

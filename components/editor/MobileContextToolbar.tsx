@@ -5,27 +5,16 @@ import {
   fontOptions,
   TEXT_FONT_SIZE_STEP,
 } from "./editor.constants";
-import {
-  MAX_VIEWPORT_ZOOM,
-  MIN_VIEWPORT_ZOOM,
-} from "./editor.viewport";
 import type {
   DesignItem,
   ImageAdjustment,
 } from "./editor.types";
-import ZoomPercentageInput from "./ZoomPercentageInput";
 
 type MobileContextToolbarProps = {
   item: DesignItem;
   canSendBackward: boolean;
   canBringForward: boolean;
   showImageAdjustments: boolean;
-  viewportZoom: number;
-  onViewportZoomOut: () => void;
-  onViewportZoomIn: () => void;
-  onViewportZoomChange: (zoom: number) => void;
-  onViewportReset: () => void;
-  onViewportFit: () => void;
   onChangeTextSize: (id: string, amount: number) => void;
   onChangeTextColor: (id: string, color: string) => void;
   onChangeTextFont: (id: string, fontFamily: string) => void;
@@ -60,12 +49,6 @@ export default function MobileContextToolbar({
   canSendBackward,
   canBringForward,
   showImageAdjustments,
-  viewportZoom,
-  onViewportZoomOut,
-  onViewportZoomIn,
-  onViewportZoomChange,
-  onViewportReset,
-  onViewportFit,
   onChangeTextSize,
   onChangeTextColor,
   onChangeTextFont,
@@ -86,7 +69,6 @@ export default function MobileContextToolbar({
   const controlsRef = useRef<HTMLDivElement | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const [showZoomControls, setShowZoomControls] = useState(false);
 
   const updateScrollControls = useCallback(() => {
     const controls = controlsRef.current;
@@ -115,7 +97,6 @@ export default function MobileContextToolbar({
     item.id,
     item.type,
     showImageAdjustments,
-    showZoomControls,
     updateScrollControls,
   ]);
 
@@ -146,58 +127,6 @@ export default function MobileContextToolbar({
         userSelect: "none",
       }}
     >
-      {showZoomControls && (
-        <div className="flex items-center justify-center gap-1 rounded-2xl border border-white/10 bg-slate-900/95 p-2 text-white shadow-2xl backdrop-blur-xl">
-          <button
-            type="button"
-            disabled={viewportZoom <= MIN_VIEWPORT_ZOOM}
-            onPointerDown={protectButtonPointer}
-            onClick={onViewportZoomOut}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Zoom out"
-            title="Zoom out"
-          >
-            −
-          </button>
-          <ZoomPercentageInput
-            zoom={viewportZoom}
-            onApply={onViewportZoomChange}
-            className="h-9 w-16 rounded-full bg-slate-700 px-2 text-center text-xs font-bold text-white outline-none transition hover:bg-slate-600 focus:ring-2 focus:ring-blue-400"
-          />
-          <button
-            type="button"
-            disabled={viewportZoom >= MAX_VIEWPORT_ZOOM}
-            onPointerDown={protectButtonPointer}
-            onClick={onViewportZoomIn}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Zoom in"
-            title="Zoom in"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={onViewportReset}
-            className="h-9 rounded-full bg-slate-700 px-3 text-xs font-bold text-white transition hover:bg-slate-600"
-            aria-label="Reset zoom to 100%"
-            title="Reset zoom to 100%"
-          >
-            100%
-          </button>
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={onViewportFit}
-            className="h-9 rounded-full bg-blue-600 px-3 text-xs font-bold text-white transition hover:bg-blue-500"
-            aria-label="Fit canvas to workspace"
-            title="Fit canvas to workspace"
-          >
-            Fit
-          </button>
-        </div>
-      )}
-
       {item.type === "image" && showImageAdjustments && (
         <div className="max-h-[44vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-white shadow-2xl backdrop-blur-xl">
           <div className="grid grid-cols-2 gap-3">
@@ -281,22 +210,6 @@ export default function MobileContextToolbar({
           onScroll={updateScrollControls}
           className="flex min-w-0 items-center gap-2 overflow-x-auto px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={() =>
-              setShowZoomControls((currentValue) => !currentValue)
-            }
-            className={`h-9 shrink-0 rounded-full px-3 text-xs font-bold text-white transition ${
-              showZoomControls ? "bg-blue-600" : "bg-slate-700"
-            }`}
-            aria-expanded={showZoomControls}
-            aria-label="Show canvas zoom controls"
-            title="Canvas zoom"
-          >
-            {Math.round(viewportZoom * 100)}%
-          </button>
-
           {item.type === "text" && (
             <>
               <button

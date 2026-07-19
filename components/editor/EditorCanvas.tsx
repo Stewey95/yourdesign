@@ -17,6 +17,7 @@ import DesktopPanCursor, {
   type DesktopPanCursorHandle,
   type DesktopPanCursorMode,
 } from "./DesktopPanCursor";
+import MobileCanvasZoomHud from "./MobileCanvasZoomHud";
 import type { TextResizeCorner } from "./CanvasTextItem";
 import {
   LOGICAL_CANVAS_HEIGHT,
@@ -1028,6 +1029,23 @@ export default function EditorCanvas({
             : LOGICAL_CANVAS_HEIGHT * baseScale,
         }}
       >
+          <MobileCanvasZoomHud
+            zoom={viewport.zoom}
+            onZoomOut={() => zoomAtPoint(viewport.zoom / 1.25)}
+            onZoomIn={() => zoomAtPoint(viewport.zoom * 1.25)}
+            onZoomChange={(zoom) => zoomAtPoint(zoom)}
+            onReset={() => {
+              cancelZoomAnimation();
+              discreteZoomTargetRef.current = null;
+              onViewportChange({ zoom: 1, panX: 0, panY: 0 });
+            }}
+            onFit={() => {
+              cancelZoomAnimation();
+              discreteZoomTargetRef.current = null;
+              onViewModeChange("fit");
+              onViewportChange({ zoom: 1, panX: 0, panY: 0 });
+            }}
+          />
           <div
             data-canvas-viewport
             className="absolute"
