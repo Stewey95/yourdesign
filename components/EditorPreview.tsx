@@ -389,7 +389,6 @@ const getSnappedPosition = (
         verticalDistance > horizontalDistance
       ) {
         pageInteractionRef.current = null;
-        setShowMobileContextToolbar(false);
         setShowImageAdjustments(false);
       }
     };
@@ -1165,6 +1164,35 @@ if (direction === "back") {
         onExport={() => setShowExportDialog(true)}
       />
 
+      {selectedItem && showMobileContextToolbar && (
+        <MobileContextToolbar
+          item={selectedItem}
+          canSendBackward={canSendBackward}
+          canBringForward={canBringForward}
+          showImageAdjustments={showImageAdjustments}
+          onChangeTextSize={changeTextSize}
+          onChangeTextColor={changeTextColor}
+          onChangeTextFont={changeTextFont}
+          onRotate={rotateItem}
+          onMoveBackward={(id) =>
+            moveItemLayer(id, "backward")
+          }
+          onMoveForward={(id) =>
+            moveItemLayer(id, "forward")
+          }
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={performUndo}
+          onRedo={performRedo}
+          onDelete={deleteSelected}
+          onToggleImageAdjustments={toggleImageAdjustments}
+          onAdjustmentStart={startImageAdjustment}
+          onAdjustmentEnd={commitHistoryTransaction}
+          onAdjustmentChange={changeImageAdjustment}
+          onResetImageAdjustments={resetImageAdjustments}
+        />
+      )}
+
       <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[190px_minmax(0,1fr)_180px] md:gap-2">
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
@@ -1289,42 +1317,7 @@ if (direction === "back") {
         />
       </div>
 
-      {selectedItem && showMobileContextToolbar && (
-        <div
-          aria-hidden="true"
-          className="h-[calc(env(safe-area-inset-bottom)+4.75rem)] md:hidden"
-        />
-      )}
       </div>
-
-      {selectedItem && showMobileContextToolbar && (
-        <MobileContextToolbar
-          item={selectedItem}
-          canSendBackward={canSendBackward}
-          canBringForward={canBringForward}
-          showImageAdjustments={showImageAdjustments}
-          onChangeTextSize={changeTextSize}
-          onChangeTextColor={changeTextColor}
-          onChangeTextFont={changeTextFont}
-          onRotate={rotateItem}
-          onMoveBackward={(id) =>
-            moveItemLayer(id, "backward")
-          }
-          onMoveForward={(id) =>
-            moveItemLayer(id, "forward")
-          }
-          canUndo={canUndo}
-          canRedo={canRedo}
-          onUndo={performUndo}
-          onRedo={performRedo}
-          onDelete={deleteSelected}
-          onToggleImageAdjustments={toggleImageAdjustments}
-          onAdjustmentStart={startImageAdjustment}
-          onAdjustmentEnd={commitHistoryTransaction}
-          onAdjustmentChange={changeImageAdjustment}
-          onResetImageAdjustments={resetImageAdjustments}
-        />
-      )}
 
       <div
         aria-hidden="true"

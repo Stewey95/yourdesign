@@ -114,15 +114,15 @@ export default function MobileContextToolbar({
   return (
     <div
       data-editor-retain-selection
+      data-editor-keep-zoom-hud-open
       data-text-toolbar={item.type === "text" ? item.id : undefined}
       data-image-toolbar={item.type === "image" ? item.id : undefined}
       onDragStart={(event) => event.preventDefault()}
       onPointerDown={(event) => event.stopPropagation()}
       onPointerMove={(event) => event.stopPropagation()}
       onPointerUp={(event) => event.stopPropagation()}
-      className="fixed inset-x-3 z-40 mx-auto flex max-w-xl flex-col gap-2 md:hidden"
+      className="relative z-40 mb-4 flex w-full min-w-0 flex-col gap-2 md:hidden"
       style={{
-        bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
         WebkitUserSelect: "none",
         userSelect: "none",
       }}
