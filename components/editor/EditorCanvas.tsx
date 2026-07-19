@@ -13,6 +13,10 @@ import {
 import AlignmentGuides from "./AlignmentGuides";
 import CanvasViewModeControl from "./CanvasViewModeControl";
 import CanvasItem from "./CanvasItem";
+import DesktopPanCursor, {
+  type DesktopPanCursorHandle,
+  type DesktopPanCursorMode,
+} from "./DesktopPanCursor";
 import type { TextResizeCorner } from "./CanvasTextItem";
 import {
   LOGICAL_CANVAS_HEIGHT,
@@ -88,11 +92,9 @@ const isTextEditingTarget = (target: EventTarget | null) =>
     target.closest("input, textarea, select, [contenteditable='true']")
   );
 
-type DesktopPanCursor = "grab" | "grabbing";
-
-const setDocumentPanCursor = (cursor?: DesktopPanCursor) => {
-  if (cursor) {
-    document.documentElement.dataset.editorPanCursor = cursor;
+const setNativeCursorHidden = (hidden: boolean) => {
+  if (hidden) {
+    document.documentElement.dataset.editorPanCursor = "active";
   } else {
     delete document.documentElement.dataset.editorPanCursor;
   }
@@ -150,6 +152,12 @@ export default function EditorCanvas({
     | null
   >(null);
   const desktopPanGestureRef = useRef<DesktopPanGesture | null>(null);
+  const desktopPanCursorRef = useRef<DesktopPanCursorHandle | null>(null);
+  const desktopPanCursorModeRef = useRef<DesktopPanCursorMode | null>(
+    null
+  );
+  const latestPointerRef = useRef({ x: 0, y: 0, valid: false });
+  const cursorFrameRef = useRef<number | null>(null);
   const workspaceHoveredRef = useRef(false);
   const spacePressedRef = useRef(false);
   const [baseScale, setBaseScale] = useState(1);
@@ -314,6 +322,65 @@ export default function EditorCanvas({
     return () => workspace.removeEventListener("wheel", handleWheel);
   }, [zoomAtPoint]);
 
+  const setDesktopPanCursor = useCallback(
+    (mode: DesktopPanCursorMode | null) => {
+      desktopPanCursorModeRef.current = mode;
+      setNativeCursorHidden(mode !== null);
+
+      if (!mode) {
+        desktopPanCursorRef.current?.hide();
+        return;
+      }
+
+      const pointer = latestPointerRef.current;
+
+      if (pointer.valid) {
+        desktopPanCursorRef.current?.show(mode, pointer.x, pointer.y);
+      } else {
+        desktopPanCursorRef.current?.hide();
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
+
+    const trackPointer = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+
+      latestPointerRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        valid: true,
+      };
+
+      if (!desktopPanCursorModeRef.current) return;
+
+      if (cursorFrameRef.current !== null) {
+        cancelAnimationFrame(cursorFrameRef.current);
+      }
+
+      cursorFrameRef.current = requestAnimationFrame(() => {
+        cursorFrameRef.current = null;
+        desktopPanCursorRef.current?.move(event.clientX, event.clientY);
+      });
+    };
+
+    document.addEventListener("pointermove", trackPointer, {
+      passive: true,
+    });
+
+    return () => {
+      document.removeEventListener("pointermove", trackPointer);
+
+      if (cursorFrameRef.current !== null) {
+        cancelAnimationFrame(cursorFrameRef.current);
+        cursorFrameRef.current = null;
+      }
+    };
+  }, []);
+
   const finishDesktopPan = useCallback((pointerId?: number) => {
     const workspace = workspaceRef.current;
     const activeGesture = desktopPanGestureRef.current;
@@ -334,8 +401,8 @@ export default function EditorCanvas({
     }
 
     desktopPanGestureRef.current = null;
-    setDocumentPanCursor(spacePressedRef.current ? "grab" : undefined);
-  }, []);
+    setDesktopPanCursor(spacePressedRef.current ? "open" : null);
+  }, [setDesktopPanCursor]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -353,7 +420,7 @@ export default function EditorCanvas({
       if (event.repeat || spacePressedRef.current) return;
 
       spacePressedRef.current = true;
-      setDocumentPanCursor("grab");
+      setDesktopPanCursor("open");
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -365,7 +432,7 @@ export default function EditorCanvas({
       if (desktopPanGestureRef.current?.mode === "space") {
         finishDesktopPan();
       } else {
-        setDocumentPanCursor();
+        setDesktopPanCursor(null);
       }
     };
 
@@ -374,17 +441,29 @@ export default function EditorCanvas({
       finishDesktopPan();
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") return;
+
+      spacePressedRef.current = false;
+      finishDesktopPan();
+    };
+
     window.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener("keyup", handleKeyUp, true);
     window.addEventListener("blur", handleWindowBlur);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("keyup", handleKeyUp, true);
       window.removeEventListener("blur", handleWindowBlur);
-      setDocumentPanCursor();
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+      setDesktopPanCursor(null);
     };
-  }, [finishDesktopPan]);
+  }, [finishDesktopPan, setDesktopPanCursor]);
 
   const startDesktopPan: React.PointerEventHandler<HTMLDivElement> = (
     event
@@ -414,7 +493,9 @@ export default function EditorCanvas({
       lastX: event.clientX,
       lastY: event.clientY,
     };
-    setDocumentPanCursor("grabbing");
+    if (mode === "space" || spacePressedRef.current) {
+      setDesktopPanCursor("grabbing");
+    }
   };
 
   const moveDesktopPan: React.PointerEventHandler<HTMLDivElement> = (
@@ -584,6 +665,9 @@ export default function EditorCanvas({
 
   return (
     <div className="order-first min-w-0 md:order-none md:flex md:h-full md:min-h-0 md:flex-col">
+      {isDesktopLayout && (
+        <DesktopPanCursor ref={desktopPanCursorRef} />
+      )}
       <div
         data-editor-retain-selection
         className="mb-1 hidden h-10 items-center justify-between gap-2 md:flex"
@@ -604,8 +688,13 @@ export default function EditorCanvas({
       <div
         ref={workspaceRef}
         data-editor-retain-selection
-        onPointerEnter={() => {
+        onPointerEnter={(event) => {
           workspaceHoveredRef.current = true;
+          latestPointerRef.current = {
+            x: event.clientX,
+            y: event.clientY,
+            valid: true,
+          };
         }}
         onPointerLeave={() => {
           workspaceHoveredRef.current = false;
