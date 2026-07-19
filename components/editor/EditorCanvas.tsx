@@ -659,7 +659,6 @@ export default function EditorCanvas({
                 touchAction: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
-                overscrollBehavior: "contain",
               }}
             >
             {items.length === 0 && (
