@@ -155,6 +155,7 @@ export default function EditorCanvas({
       }
     | null
   >(null);
+  const suppressNativeTouchRef = useRef(false);
   const desktopPanGestureRef = useRef<DesktopPanGesture | null>(null);
   const desktopPanCursorRef = useRef<DesktopPanCursorHandle | null>(null);
   const desktopPanCursorModeRef = useRef<DesktopPanCursorMode | null>(
@@ -469,6 +470,84 @@ export default function EditorCanvas({
 
     return () => workspace.removeEventListener("wheel", handleWheel);
   }, [cancelZoomAnimation, zoomAtPoint]);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+
+    if (!workspace) return;
+
+    const startsOnControl = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return false;
+
+      if (target.closest("[data-canvas-item-id]")) return false;
+
+      return Boolean(
+        target.closest(
+          "button, a, input, textarea, select, [contenteditable='true'], [role='menu'], [role='slider']"
+        )
+      );
+    };
+
+    const claimTwoFingerGesture = (event: TouchEvent) => {
+      if (
+        window.matchMedia("(min-width: 768px)").matches ||
+        event.touches.length !== 2 ||
+        startsOnControl(event.target)
+      ) {
+        return;
+      }
+
+      suppressNativeTouchRef.current = true;
+      event.preventDefault();
+    };
+
+    const suppressClaimedGesture = (event: TouchEvent) => {
+      if (!suppressNativeTouchRef.current) return;
+
+      event.preventDefault();
+    };
+
+    const releaseClaimedGesture = (event: TouchEvent) => {
+      if (event.touches.length === 0) {
+        suppressNativeTouchRef.current = false;
+      }
+    };
+
+    workspace.addEventListener("touchstart", claimTwoFingerGesture, {
+      passive: false,
+      capture: true,
+    });
+    workspace.addEventListener("touchmove", suppressClaimedGesture, {
+      passive: false,
+      capture: true,
+    });
+    workspace.addEventListener("touchend", releaseClaimedGesture, true);
+    workspace.addEventListener("touchcancel", releaseClaimedGesture, true);
+
+    return () => {
+      workspace.removeEventListener(
+        "touchstart",
+        claimTwoFingerGesture,
+        true
+      );
+      workspace.removeEventListener(
+        "touchmove",
+        suppressClaimedGesture,
+        true
+      );
+      workspace.removeEventListener(
+        "touchend",
+        releaseClaimedGesture,
+        true
+      );
+      workspace.removeEventListener(
+        "touchcancel",
+        releaseClaimedGesture,
+        true
+      );
+      suppressNativeTouchRef.current = false;
+    };
+  }, []);
 
   const setDesktopPanCursor = useCallback(
     (mode: DesktopPanCursorMode | null) => {
