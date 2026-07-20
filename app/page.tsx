@@ -6,6 +6,47 @@ import Navbar from "../components/ui/Navbar";
 import FeatureCard from "../components/FeatureCard";
 import EditorPreview from "../components/EditorPreview";
 
+const LANDING_SCROLL_RESET_SCRIPT = `
+  (() => {
+    try {
+      const entry = performance.getEntriesByType("navigation")[0];
+      const navigationType = entry?.type;
+
+      if (navigationType === "back_forward") return;
+
+      const root = document.documentElement;
+      root.dataset.landingScrollResetActive = "true";
+      root.dataset.landingPreviousScrollRestoration =
+        history.scrollRestoration;
+      history.scrollRestoration = "manual";
+
+      if (location.hash === "#editor") {
+        history.replaceState(
+          history.state,
+          "",
+          location.pathname + location.search
+        );
+      }
+
+      scrollTo(0, 0);
+      addEventListener(
+        "pageshow",
+        (event) => {
+          if (
+            event.persisted ||
+            root.dataset.landingScrollResetActive !== "true"
+          ) {
+            return;
+          }
+
+          scrollTo(0, 0);
+        },
+        { once: true }
+      );
+    } catch {}
+  })();
+`;
+
 export default function Home() {
   const cancelLandingResetRef = useRef<(() => void) | null>(null);
 
@@ -17,9 +58,11 @@ export default function Home() {
 
     if (navigationType === "back_forward") return;
 
-    const previousScrollRestoration = history.scrollRestoration;
-    let firstFrame: number | null = null;
-    let secondFrame: number | null = null;
+    const root = document.documentElement;
+    const previousScrollRestoration =
+      root.dataset.landingPreviousScrollRestoration === "manual"
+        ? "manual"
+        : "auto";
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
     let active = true;
 
@@ -32,24 +75,13 @@ export default function Home() {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     };
     const cancelScheduledReset = () => {
-      if (firstFrame !== null) {
-        cancelAnimationFrame(firstFrame);
-        firstFrame = null;
-      }
-
-      if (secondFrame !== null) {
-        cancelAnimationFrame(secondFrame);
-        secondFrame = null;
-      }
-
       if (settleTimer !== null) {
         clearTimeout(settleTimer);
         settleTimer = null;
       }
     };
     const removeListeners = () => {
-      window.removeEventListener("load", handleLifecycleRestore);
-      window.removeEventListener("pageshow", handleLifecycleRestore);
+      window.removeEventListener("pageshow", handlePageShow);
       window.removeEventListener("pointerdown", cancelLandingReset, true);
       window.removeEventListener("touchstart", cancelLandingReset, true);
       window.removeEventListener("wheel", cancelLandingReset, true);
@@ -62,36 +94,35 @@ export default function Home() {
       cancelScheduledReset();
       removeListeners();
       restoreScrollRestoration();
+      delete root.dataset.landingScrollResetActive;
+      delete root.dataset.landingPreviousScrollRestoration;
 
       if (cancelLandingResetRef.current === cancelLandingReset) {
         cancelLandingResetRef.current = null;
       }
     };
-    const scheduleReset = (finishAfterward: boolean) => {
+    const scheduleFinalCorrection = () => {
       if (!active) return;
 
       cancelScheduledReset();
-      resetScroll();
-      firstFrame = requestAnimationFrame(() => {
-        firstFrame = null;
+      settleTimer = setTimeout(() => {
+        settleTimer = null;
         resetScroll();
-        secondFrame = requestAnimationFrame(() => {
-          secondFrame = null;
-          resetScroll();
-        });
-      });
-
-      if (finishAfterward) {
-        settleTimer = setTimeout(() => {
-          settleTimer = null;
-          resetScroll();
-          finishInitialization();
-        }, 250);
-      }
+        finishInitialization();
+      }, 250);
     };
 
-    function handleLifecycleRestore() {
-      scheduleReset(true);
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        finishInitialization();
+        return;
+      }
+
+      if (Math.abs(window.scrollY) > 1) {
+        resetScroll();
+      }
+
+      scheduleFinalCorrection();
     }
 
     function cancelLandingReset() {
@@ -108,9 +139,9 @@ export default function Home() {
       );
     }
 
+    root.dataset.landingScrollResetActive = "true";
     cancelLandingResetRef.current = cancelLandingReset;
-    window.addEventListener("load", handleLifecycleRestore);
-    window.addEventListener("pageshow", handleLifecycleRestore);
+    window.addEventListener("pageshow", handlePageShow);
     window.addEventListener("pointerdown", cancelLandingReset, true);
     window.addEventListener("touchstart", cancelLandingReset, true);
     window.addEventListener("wheel", cancelLandingReset, {
@@ -119,7 +150,11 @@ export default function Home() {
     });
     window.addEventListener("keydown", cancelLandingReset, true);
 
-    scheduleReset(document.readyState === "complete");
+    resetScroll();
+
+    if (document.readyState === "complete") {
+      scheduleFinalCorrection();
+    }
 
     return () => {
       finishInitialization();
@@ -136,7 +171,11 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <>
+      <script
+        dangerouslySetInnerHTML={{ __html: LANDING_SCROLL_RESET_SCRIPT }}
+      />
+      <main className="min-h-screen bg-slate-950 text-white">
       <Navbar />
 
       <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center">
@@ -222,6 +261,7 @@ export default function Home() {
       >
         <EditorPreview />
       </section>
-    </main>
+      </main>
+    </>
   );
 }
