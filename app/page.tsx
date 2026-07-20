@@ -1,15 +1,69 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import Navbar from "../components/ui/Navbar";
 import FeatureCard from "../components/FeatureCard";
 import EditorPreview from "../components/EditorPreview";
 
 export default function Home() {
-  useEffect(() => {
-    window.scrollTo(0, 0);
+  useLayoutEffect(() => {
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    const navigationEntry = performance.getEntriesByType(
+      "navigation"
+    )[0] as PerformanceNavigationTiming | undefined;
+
+    if (navigationEntry?.type !== "reload") return;
+
+    const previousScrollRestoration = history.scrollRestoration;
+    let firstFrame: number | null = null;
+    let secondFrame: number | null = null;
+    let restorationReset = false;
+
+    const restoreScrollRestoration = () => {
+      if (restorationReset) return;
+
+      history.scrollRestoration = previousScrollRestoration;
+      restorationReset = true;
+    };
+    const resetScroll = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    };
+
+    history.scrollRestoration = "manual";
+
+    if (window.location.hash === "#editor") {
+      history.replaceState(
+        history.state,
+        "",
+        `${window.location.pathname}${window.location.search}`
+      );
+    }
+
+    resetScroll();
+    firstFrame = requestAnimationFrame(() => {
+      resetScroll();
+      secondFrame = requestAnimationFrame(() => {
+        resetScroll();
+        restoreScrollRestoration();
+      });
+    });
+
+    return () => {
+      if (firstFrame !== null) cancelAnimationFrame(firstFrame);
+      if (secondFrame !== null) cancelAnimationFrame(secondFrame);
+      restoreScrollRestoration();
+    };
   }, []);
+
+  const openEditor = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    document.getElementById("editor")?.scrollIntoView({
+      block: "start",
+      inline: "nearest",
+    });
+  };
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -41,6 +95,7 @@ export default function Home() {
         <div className="flex flex-col gap-4 sm:flex-row">
           <a
             href="#editor"
+            onClick={openEditor}
             className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-500"
           >
             Start Creating
@@ -100,4 +155,3 @@ export default function Home() {
     </main>
   );
 }
-
