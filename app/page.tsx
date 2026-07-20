@@ -1,35 +1,102 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import Navbar from "../components/ui/Navbar";
 import FeatureCard from "../components/FeatureCard";
 import EditorPreview from "../components/EditorPreview";
 
 export default function Home() {
-  useLayoutEffect(() => {
-    if (!window.matchMedia("(max-width: 767px)").matches) return;
+  const cancelLandingResetRef = useRef<(() => void) | null>(null);
 
+  useLayoutEffect(() => {
     const navigationEntry = performance.getEntriesByType(
       "navigation"
     )[0] as PerformanceNavigationTiming | undefined;
+    const navigationType = navigationEntry?.type;
 
-    if (navigationEntry?.type !== "reload") return;
+    if (navigationType === "back_forward") return;
 
     const previousScrollRestoration = history.scrollRestoration;
     let firstFrame: number | null = null;
     let secondFrame: number | null = null;
-    let restorationReset = false;
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
+    let active = true;
 
     const restoreScrollRestoration = () => {
-      if (restorationReset) return;
-
       history.scrollRestoration = previousScrollRestoration;
-      restorationReset = true;
     };
     const resetScroll = () => {
+      if (!active) return;
+
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     };
+    const cancelScheduledReset = () => {
+      if (firstFrame !== null) {
+        cancelAnimationFrame(firstFrame);
+        firstFrame = null;
+      }
+
+      if (secondFrame !== null) {
+        cancelAnimationFrame(secondFrame);
+        secondFrame = null;
+      }
+
+      if (settleTimer !== null) {
+        clearTimeout(settleTimer);
+        settleTimer = null;
+      }
+    };
+    const removeListeners = () => {
+      window.removeEventListener("load", handleLifecycleRestore);
+      window.removeEventListener("pageshow", handleLifecycleRestore);
+      window.removeEventListener("pointerdown", cancelLandingReset, true);
+      window.removeEventListener("touchstart", cancelLandingReset, true);
+      window.removeEventListener("wheel", cancelLandingReset, true);
+      window.removeEventListener("keydown", cancelLandingReset, true);
+    };
+    const finishInitialization = () => {
+      if (!active) return;
+
+      active = false;
+      cancelScheduledReset();
+      removeListeners();
+      restoreScrollRestoration();
+
+      if (cancelLandingResetRef.current === cancelLandingReset) {
+        cancelLandingResetRef.current = null;
+      }
+    };
+    const scheduleReset = (finishAfterward: boolean) => {
+      if (!active) return;
+
+      cancelScheduledReset();
+      resetScroll();
+      firstFrame = requestAnimationFrame(() => {
+        firstFrame = null;
+        resetScroll();
+        secondFrame = requestAnimationFrame(() => {
+          secondFrame = null;
+          resetScroll();
+        });
+      });
+
+      if (finishAfterward) {
+        settleTimer = setTimeout(() => {
+          settleTimer = null;
+          resetScroll();
+          finishInitialization();
+        }, 250);
+      }
+    };
+
+    function handleLifecycleRestore() {
+      scheduleReset(true);
+    }
+
+    function cancelLandingReset() {
+      finishInitialization();
+    }
 
     history.scrollRestoration = "manual";
 
@@ -41,24 +108,27 @@ export default function Home() {
       );
     }
 
-    resetScroll();
-    firstFrame = requestAnimationFrame(() => {
-      resetScroll();
-      secondFrame = requestAnimationFrame(() => {
-        resetScroll();
-        restoreScrollRestoration();
-      });
+    cancelLandingResetRef.current = cancelLandingReset;
+    window.addEventListener("load", handleLifecycleRestore);
+    window.addEventListener("pageshow", handleLifecycleRestore);
+    window.addEventListener("pointerdown", cancelLandingReset, true);
+    window.addEventListener("touchstart", cancelLandingReset, true);
+    window.addEventListener("wheel", cancelLandingReset, {
+      capture: true,
+      passive: true,
     });
+    window.addEventListener("keydown", cancelLandingReset, true);
+
+    scheduleReset(document.readyState === "complete");
 
     return () => {
-      if (firstFrame !== null) cancelAnimationFrame(firstFrame);
-      if (secondFrame !== null) cancelAnimationFrame(secondFrame);
-      restoreScrollRestoration();
+      finishInitialization();
     };
   }, []);
 
   const openEditor = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
+    cancelLandingResetRef.current?.();
     document.getElementById("editor")?.scrollIntoView({
       block: "start",
       inline: "nearest",
