@@ -488,6 +488,13 @@ const getSnappedPosition = (
     stopDragging();
   };
 
+  const cancelPendingCanvasGesture = useCallback(() => {
+    canvasTapRef.current = null;
+    pageInteractionRef.current = null;
+    pendingDragRef.current = null;
+    setDraggingItemId(null);
+  }, []);
+
   const changeTextSize = (id: string, amount: number) => {
     commitItems((currentItems) =>
       currentItems.map((item) =>
@@ -1302,6 +1309,7 @@ if (direction === "back") {
             setSelectedItemId(id);
             setShowMobileContextToolbar(true);
           }}
+          onTwoFingerGestureStart={cancelPendingCanvasGesture}
         />
 
         <EditorInspector

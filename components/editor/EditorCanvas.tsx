@@ -78,6 +78,7 @@ type EditorCanvasProps = {
     startX: number,
     startY: number
   ) => void;
+  onTwoFingerGestureStart: () => void;
 };
 
 type DesktopPanGesture = {
@@ -133,6 +134,7 @@ export default function EditorCanvas({
   onFinishEditing,
   onEditingPointerDown,
   onPendingDragStart,
+  onTwoFingerGestureStart,
 }: EditorCanvasProps) {
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const measurementFrameRef = useRef<number | null>(null);
@@ -155,7 +157,18 @@ export default function EditorCanvas({
       }
     | null
   >(null);
-  const suppressNativeTouchRef = useRef(false);
+  const pageLockRef = useRef<{
+    scrollX: number;
+    scrollY: number;
+    bodyPosition: string;
+    bodyTop: string;
+    bodyLeft: string;
+    bodyWidth: string;
+    bodyOverflow: string;
+    bodyOverscrollBehavior: string;
+    documentOverflow: string;
+    documentOverscrollBehavior: string;
+  } | null>(null);
   const desktopPanGestureRef = useRef<DesktopPanGesture | null>(null);
   const desktopPanCursorRef = useRef<DesktopPanCursorHandle | null>(null);
   const desktopPanCursorModeRef = useRef<DesktopPanCursorMode | null>(
@@ -476,10 +489,31 @@ export default function EditorCanvas({
 
     if (!workspace) return;
 
-    const startsOnControl = (target: EventTarget | null) => {
-      if (!(target instanceof Element)) return false;
+    let eligibleEditorSequence = false;
+    const activeEditorTouchIds = new Set<number>();
+
+    const addChangedTouches = (touches: TouchList) => {
+      for (let index = 0; index < touches.length; index += 1) {
+        activeEditorTouchIds.add(touches[index].identifier);
+      }
+    };
+
+    const removeChangedTouches = (touches: TouchList) => {
+      for (let index = 0; index < touches.length; index += 1) {
+        activeEditorTouchIds.delete(touches[index].identifier);
+      }
+    };
+
+    const startsOnExcludedControl = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return true;
 
       if (target.closest("[data-canvas-item-id]")) return false;
+
+      const protectedArea = target.closest(
+        "[data-editor-retain-selection]"
+      );
+
+      if (protectedArea && protectedArea !== workspace) return true;
 
       return Boolean(
         target.closest(
@@ -488,66 +522,144 @@ export default function EditorCanvas({
       );
     };
 
-    const claimTwoFingerGesture = (event: TouchEvent) => {
+    const lockPage = () => {
+      if (pageLockRef.current) return;
+
+      const body = document.body;
+      const documentElement = document.documentElement;
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+
+      pageLockRef.current = {
+        scrollX,
+        scrollY,
+        bodyPosition: body.style.position,
+        bodyTop: body.style.top,
+        bodyLeft: body.style.left,
+        bodyWidth: body.style.width,
+        bodyOverflow: body.style.overflow,
+        bodyOverscrollBehavior: body.style.overscrollBehavior,
+        documentOverflow: documentElement.style.overflow,
+        documentOverscrollBehavior:
+          documentElement.style.overscrollBehavior,
+      };
+
+      body.style.position = "fixed";
+      body.style.top = `${-scrollY}px`;
+      body.style.left = `${-scrollX}px`;
+      body.style.width = "100%";
+      body.style.overflow = "hidden";
+      body.style.overscrollBehavior = "none";
+      documentElement.style.overflow = "hidden";
+      documentElement.style.overscrollBehavior = "none";
+    };
+
+    const unlockPage = () => {
+      const lock = pageLockRef.current;
+
+      if (!lock) return;
+
+      const body = document.body;
+      const documentElement = document.documentElement;
+
+      body.style.position = lock.bodyPosition;
+      body.style.top = lock.bodyTop;
+      body.style.left = lock.bodyLeft;
+      body.style.width = lock.bodyWidth;
+      body.style.overflow = lock.bodyOverflow;
+      body.style.overscrollBehavior = lock.bodyOverscrollBehavior;
+      documentElement.style.overflow = lock.documentOverflow;
+      documentElement.style.overscrollBehavior =
+        lock.documentOverscrollBehavior;
+      pageLockRef.current = null;
+      window.scrollTo(lock.scrollX, lock.scrollY);
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (window.matchMedia("(min-width: 768px)").matches) return;
+
+      if (event.touches.length === 1) {
+        eligibleEditorSequence =
+          workspace.contains(event.target as Node) &&
+          !startsOnExcludedControl(event.target);
+
+        activeEditorTouchIds.clear();
+
+        if (eligibleEditorSequence) {
+          addChangedTouches(event.changedTouches);
+        }
+
+        return;
+      }
+
+      if (pageLockRef.current) {
+        addChangedTouches(event.changedTouches);
+
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+
+        return;
+      }
+
       if (
-        window.matchMedia("(min-width: 768px)").matches ||
         event.touches.length !== 2 ||
-        startsOnControl(event.target)
+        !eligibleEditorSequence
       ) {
         return;
       }
 
-      suppressNativeTouchRef.current = true;
-      event.preventDefault();
-    };
+      addChangedTouches(event.changedTouches);
+      onTwoFingerGestureStart();
+      lockPage();
 
-    const suppressClaimedGesture = (event: TouchEvent) => {
-      if (!suppressNativeTouchRef.current) return;
-
-      event.preventDefault();
-    };
-
-    const releaseClaimedGesture = (event: TouchEvent) => {
-      if (event.touches.length === 0) {
-        suppressNativeTouchRef.current = false;
+      if (event.cancelable) {
+        event.preventDefault();
       }
     };
 
-    workspace.addEventListener("touchstart", claimTwoFingerGesture, {
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!pageLockRef.current || !event.cancelable) return;
+
+      event.preventDefault();
+    };
+
+    const finishTouchSequence = (event: TouchEvent) => {
+      if (!eligibleEditorSequence) return;
+
+      removeChangedTouches(event.changedTouches);
+
+      if (activeEditorTouchIds.size > 0) return;
+
+      eligibleEditorSequence = false;
+      unlockPage();
+    };
+
+    document.addEventListener("touchstart", handleTouchStart, {
       passive: false,
       capture: true,
     });
-    workspace.addEventListener("touchmove", suppressClaimedGesture, {
+    document.addEventListener("touchmove", handleTouchMove, {
       passive: false,
       capture: true,
     });
-    workspace.addEventListener("touchend", releaseClaimedGesture, true);
-    workspace.addEventListener("touchcancel", releaseClaimedGesture, true);
+    document.addEventListener("touchend", finishTouchSequence, true);
+    document.addEventListener("touchcancel", finishTouchSequence, true);
 
     return () => {
-      workspace.removeEventListener(
-        "touchstart",
-        claimTwoFingerGesture,
-        true
-      );
-      workspace.removeEventListener(
-        "touchmove",
-        suppressClaimedGesture,
-        true
-      );
-      workspace.removeEventListener(
-        "touchend",
-        releaseClaimedGesture,
-        true
-      );
-      workspace.removeEventListener(
+      document.removeEventListener("touchstart", handleTouchStart, true);
+      document.removeEventListener("touchmove", handleTouchMove, true);
+      document.removeEventListener("touchend", finishTouchSequence, true);
+      document.removeEventListener(
         "touchcancel",
-        releaseClaimedGesture,
+        finishTouchSequence,
         true
       );
-      suppressNativeTouchRef.current = false;
+      eligibleEditorSequence = false;
+      activeEditorTouchIds.clear();
+      unlockPage();
     };
-  }, []);
+  }, [onTwoFingerGestureStart]);
 
   const setDesktopPanCursor = useCallback(
     (mode: DesktopPanCursorMode | null) => {
