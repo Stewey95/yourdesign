@@ -40,6 +40,7 @@ type EditorCanvasProps = {
   viewport: EditorViewport;
   onViewportChange: Dispatch<SetStateAction<EditorViewport>>;
   canvasSize: Size;
+  canvasPresetFitRequest: number;
   items: DesignItem[];
   selectedItemId: string | null;
   editingItemId: string | null;
@@ -111,6 +112,7 @@ export default function EditorCanvas({
   viewport,
   onViewportChange,
   canvasSize,
+  canvasPresetFitRequest,
   items,
   selectedItemId,
   editingItemId,
@@ -182,6 +184,7 @@ export default function EditorCanvas({
     null
   );
   const zoomFeedbackIdRef = useRef(0);
+  const handledCanvasPresetFitRequestRef = useRef(0);
   const workspaceHoveredRef = useRef(false);
   const spacePressedRef = useRef(false);
   const [baseScale, setBaseScale] = useState(1);
@@ -966,6 +969,30 @@ export default function EditorCanvas({
       onViewportChange,
     ]
   );
+
+  useEffect(() => {
+    if (
+      canvasPresetFitRequest === 0 ||
+      handledCanvasPresetFitRequestRef.current ===
+        canvasPresetFitRequest
+    ) {
+      return;
+    }
+
+    handledCanvasPresetFitRequestRef.current = canvasPresetFitRequest;
+    let fitFrame: number | null = null;
+    const measurementFrame = requestAnimationFrame(() => {
+      fitFrame = requestAnimationFrame(() => runViewMode("fit"));
+    });
+
+    return () => {
+      cancelAnimationFrame(measurementFrame);
+
+      if (fitFrame !== null) {
+        cancelAnimationFrame(fitFrame);
+      }
+    };
+  }, [canvasPresetFitRequest, runViewMode]);
 
   const centerCanvas = useCallback(() => {
     cancelZoomAnimation();

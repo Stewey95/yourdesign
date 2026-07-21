@@ -23,11 +23,13 @@ import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_MAX_WIDTH,
   DEFAULT_TEXT_FONT_SIZE,
-  DESKTOP_CANVAS_SIZE,
+  DEFAULT_DESKTOP_CANVAS_PRESET_ID,
+  DEFAULT_MOBILE_CANVAS_PRESET_ID,
   getBoundedImageSize,
+  getCanvasPreset,
   getInitialImageSize,
-  MOBILE_CANVAS_SIZE,
   SNAP_THRESHOLD,
+  type CanvasPresetId,
 } from "./editor/editor.constants";
 import useEditorHistory from "./editor/useEditorHistory";
 import {
@@ -76,10 +78,10 @@ export default function EditorPreview({
     panY: 0,
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [canvasSize, setCanvasSize] = useState<{
-    width: number;
-    height: number;
-  }>(DESKTOP_CANVAS_SIZE);
+  const [selectedCanvasPresetId, setSelectedCanvasPresetId] =
+    useState<CanvasPresetId>(DEFAULT_DESKTOP_CANVAS_PRESET_ID);
+  const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
+    useState(0);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
   "media" | "text" | "arrange" | "effects" | null
 >(null);
@@ -94,6 +96,8 @@ export default function EditorPreview({
   const editorShellRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const exportCanvasRef = useRef<HTMLDivElement | null>(null);
+  const hasUserSelectedCanvasPresetRef = useRef(false);
+  const canvasSize = getCanvasPreset(selectedCanvasPresetId);
   const canvasItems = useMemo(
     () =>
       items.map((item) => ({
@@ -108,18 +112,28 @@ export default function EditorPreview({
 
   useLayoutEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 767px)");
-    const updateCanvasSize = () => {
-      setCanvasSize(
-        mobileQuery.matches ? MOBILE_CANVAS_SIZE : DESKTOP_CANVAS_SIZE
+    const updateResponsiveDefault = () => {
+      if (hasUserSelectedCanvasPresetRef.current) return;
+
+      setSelectedCanvasPresetId(
+        mobileQuery.matches
+          ? DEFAULT_MOBILE_CANVAS_PRESET_ID
+          : DEFAULT_DESKTOP_CANVAS_PRESET_ID
       );
     };
 
-    updateCanvasSize();
-    mobileQuery.addEventListener("change", updateCanvasSize);
+    updateResponsiveDefault();
+    mobileQuery.addEventListener("change", updateResponsiveDefault);
 
     return () =>
-      mobileQuery.removeEventListener("change", updateCanvasSize);
+      mobileQuery.removeEventListener("change", updateResponsiveDefault);
   }, []);
+
+  const selectCanvasPreset = (presetId: CanvasPresetId) => {
+    hasUserSelectedCanvasPresetRef.current = true;
+    setSelectedCanvasPresetId(presetId);
+    setCanvasPresetFitRequest((request) => request + 1);
+  };
   const hideAlignmentGuides = () => {
   setAlignmentGuides({
     vertical: false,
@@ -1251,6 +1265,8 @@ if (direction === "back") {
           onToolbarPanelChange={setActiveToolbarPanel}
           onImageUpload={handleImageUpload}
           onAddText={addText}
+          selectedCanvasPresetId={selectedCanvasPresetId}
+          onCanvasPresetChange={selectCanvasPreset}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={performUndo}
@@ -1266,6 +1282,7 @@ if (direction === "back") {
           viewport={editorViewport}
           onViewportChange={setEditorViewport}
           canvasSize={canvasSize}
+          canvasPresetFitRequest={canvasPresetFitRequest}
           toolbar={selectedItem ? (
             <LayerToolbar
               itemId={selectedItem.id}

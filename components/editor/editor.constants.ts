@@ -12,8 +12,29 @@ export const fontOptions = [
 
 export const SNAP_THRESHOLD = 8;
 
-export const DESKTOP_CANVAS_SIZE = { width: 360, height: 256 } as const;
-export const MOBILE_CANVAS_SIZE = { width: 360, height: 480 } as const;
+export type CanvasPresetId = "landscape" | "portrait" | "square";
+
+export type CanvasPreset = {
+  id: CanvasPresetId;
+  label: string;
+  width: number;
+  height: number;
+};
+
+export const CANVAS_PRESETS: readonly CanvasPreset[] = [
+  { id: "landscape", label: "Landscape", width: 360, height: 256 },
+  { id: "portrait", label: "Portrait", width: 360, height: 480 },
+  { id: "square", label: "Square", width: 360, height: 360 },
+];
+
+export const DEFAULT_DESKTOP_CANVAS_PRESET_ID: CanvasPresetId =
+  "landscape";
+export const DEFAULT_MOBILE_CANVAS_PRESET_ID: CanvasPresetId =
+  "portrait";
+
+export const getCanvasPreset = (id: CanvasPresetId) =>
+  CANVAS_PRESETS.find((preset) => preset.id === id) ??
+  CANVAS_PRESETS[0];
 
 export const DEFAULT_IMAGE_MAX_WIDTH = 120;
 export const DEFAULT_IMAGE_MAX_HEIGHT = 84;
