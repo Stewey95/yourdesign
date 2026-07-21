@@ -199,6 +199,7 @@ export default function CanvasTextItem({
 
         {editing ? (
           <textarea
+            data-canvas-text-editor={item.id}
             autoFocus={!mobileLayout}
             ref={initialiseEditingTextarea}
             value={item.value}

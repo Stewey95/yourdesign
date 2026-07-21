@@ -450,13 +450,6 @@ const getSnappedPosition = (
           )
         );
 
-      if (
-        isEditableElement(target) ||
-        isEditableElement(activeElement)
-      ) {
-        return;
-      }
-
       const key = event.key.toLowerCase();
       const usesCommandModifier = event.metaKey || event.ctrlKey;
       const usesApplePlatform = /Mac|iPhone|iPad|iPod/.test(
@@ -476,6 +469,64 @@ const getSnappedPosition = (
         !event.shiftKey &&
         !event.altKey &&
         !event.repeat;
+      const selectedItemExists =
+        selectedItemId !== null &&
+        items.some((item) => item.id === selectedItemId);
+      const targetTextEditor =
+        target instanceof Element
+          ? target.closest<HTMLTextAreaElement>(
+              "textarea[data-canvas-text-editor]"
+            )
+          : null;
+      const activeTextEditor =
+        activeElement instanceof Element
+          ? activeElement.closest<HTMLTextAreaElement>(
+              "textarea[data-canvas-text-editor]"
+            )
+          : null;
+      const canvasTextEditor = targetTextEditor ?? activeTextEditor;
+      const editsSelectedCanvasText = Boolean(
+        canvasTextEditor &&
+          selectedItemId &&
+          canvasTextEditor.dataset.canvasTextEditor === selectedItemId
+      );
+
+      if (requestsDuplicate) {
+        if (
+          !selectedItemExists ||
+          showExportDialog ||
+          showNewDesignDialog ||
+          ((isEditableElement(target) ||
+            isEditableElement(activeElement)) &&
+            !editsSelectedCanvasText)
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+
+        if (canvasTextEditor && editsSelectedCanvasText) {
+          const currentValue = canvasTextEditor.value;
+
+          updateItems((currentItems) =>
+            currentItems.map((item) =>
+              item.id === selectedItemId && item.type === "text"
+                ? { ...item, value: currentValue }
+                : item
+            )
+          );
+        }
+
+        duplicateSelectedItem();
+        return;
+      }
+
+      if (
+        isEditableElement(target) ||
+        isEditableElement(activeElement)
+      ) {
+        return;
+      }
 
       if (requestsUndo && canUndo) {
         event.preventDefault();
@@ -483,16 +534,6 @@ const getSnappedPosition = (
       } else if (requestsRedo && canRedo) {
         event.preventDefault();
         performRedo();
-      } else if (
-        requestsDuplicate &&
-        selectedItemId &&
-        !editingItemId &&
-        !showExportDialog &&
-        !showNewDesignDialog &&
-        items.some((item) => item.id === selectedItemId)
-      ) {
-        event.preventDefault();
-        duplicateSelectedItem();
       }
     };
 
@@ -505,13 +546,13 @@ const getSnappedPosition = (
     canRedo,
     canUndo,
     duplicateSelectedItem,
-    editingItemId,
     items,
     performRedo,
     performUndo,
     selectedItemId,
     showExportDialog,
     showNewDesignDialog,
+    updateItems,
   ]);
 
   useEffect(() => {
