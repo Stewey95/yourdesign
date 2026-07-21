@@ -12,6 +12,7 @@ import {
   getExportScale,
   getScaledExportDimensions,
 } from "../../lib/export/exportDimensions";
+import { CANVAS_PRESETS } from "./editor.constants";
 
 type ExportDialogProps = {
   open: boolean;
@@ -33,17 +34,17 @@ const formatOptions: Array<{
   {
     value: "png",
     label: "PNG",
-    description: "Best for high-quality graphics and transparency.",
+    description: "Sharp graphics with optional transparency.",
   },
   {
     value: "jpg",
     label: "JPG",
-    description: "Smaller file size for photos and online sharing.",
+    description: "Compact files for photos and online sharing.",
   },
   {
     value: "pdf",
     label: "PDF",
-    description: "Best for documents and professional printing.",
+    description: "A versatile document for sharing and printing.",
   },
 ];
 
@@ -56,20 +57,20 @@ const qualityOptions: Array<{
   {
     value: "standard",
     label: "Standard",
-    resolution: "1× resolution",
-    description: "Recommended for everyday online use.",
+    resolution: "Original size",
+    description: "Ideal for quick sharing and everyday use.",
   },
   {
     value: "high",
-    label: "High quality",
-    resolution: "3× resolution",
-    description: "Recommended for sharper digital graphics.",
+    label: "High",
+    resolution: "3× larger",
+    description: "Extra detail for websites and digital products.",
   },
   {
     value: "print",
-    label: "Print quality",
-    resolution: "High-resolution print",
-    description: "Recommended for large, sharp PNG exports.",
+    label: "Print",
+    resolution: "10× larger",
+    description: "Maximum detail for large, high-quality output.",
   },
 ];
 
@@ -113,6 +114,12 @@ export default function ExportDialog({
     },
     exportScale
   );
+  const canvasPresetName =
+    CANVAS_PRESETS.find(
+      (preset) =>
+        preset.width === canvasSize.width &&
+        preset.height === canvasSize.height
+    )?.label ?? "Custom";
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -152,7 +159,7 @@ export default function ExportDialog({
     if (format !== "png") {
       setExportStatus({
         kind: "info",
-        message: `Export engine coming next. Your ${extension} settings are ready.`,
+        message: `${extension} export is coming soon. Your settings are ready.`,
       });
       return;
     }
@@ -221,13 +228,13 @@ export default function ExportDialog({
               id="export-dialog-title"
               className="text-xl font-bold text-white"
             >
-              Export design
+              Download your design
             </h2>
             <p
               id="export-dialog-description"
               className="mt-1 text-sm text-slate-400"
             >
-              Choose your format and download quality.
+              Choose a file type and output quality.
             </p>
           </div>
 
@@ -236,13 +243,13 @@ export default function ExportDialog({
             onClick={closeDialog}
             aria-label="Close export dialog"
             title="Close"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-800 text-xl text-slate-300 transition hover:bg-slate-700 hover:text-white"
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-800 text-xl text-slate-300 transition hover:bg-slate-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
             ×
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-5 py-5 md:px-6">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 md:px-6 md:py-6">
           <section aria-labelledby="export-filename-label">
             <div className="mb-2 flex items-center justify-between gap-3">
               <label
@@ -250,7 +257,7 @@ export default function ExportDialog({
                 htmlFor="export-filename"
                 className="text-sm font-semibold text-white"
               >
-                Filename
+                File name
               </label>
               <span className="rounded-md bg-slate-800 px-2 py-1 text-xs font-bold text-cyan-300">
                 .{format}
@@ -286,7 +293,7 @@ export default function ExportDialog({
 
           <fieldset>
             <legend className="mb-3 text-sm font-semibold text-white">
-              File format
+              File type
             </legend>
             <div className="grid gap-2 sm:grid-cols-3">
               {formatOptions.map((option) => {
@@ -298,7 +305,7 @@ export default function ExportDialog({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => selectFormat(option.value)}
-                    className={`cursor-pointer rounded-xl border p-3 text-left transition ${
+                    className={`cursor-pointer rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                       selected
                         ? "border-blue-400 bg-blue-500/15 shadow-[0_0_18px_rgba(59,130,246,0.16)]"
                         : "border-white/10 bg-slate-800/70 hover:border-white/20 hover:bg-slate-800"
@@ -333,7 +340,7 @@ export default function ExportDialog({
                       setQuality(option.value);
                       setExportStatus(null);
                     }}
-                    className={`cursor-pointer rounded-xl border p-3 text-left transition ${
+                    className={`cursor-pointer rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 ${
                       selected
                         ? "border-purple-400 bg-purple-500/15 shadow-[0_0_18px_rgba(168,85,247,0.14)]"
                         : "border-white/10 bg-slate-800/70 hover:border-white/20 hover:bg-slate-800"
@@ -362,7 +369,7 @@ export default function ExportDialog({
                     Transparent background
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                    Remove the canvas background for flexible placement.
+                    Export without the white canvas background.
                   </p>
                 </div>
                 <button
@@ -446,7 +453,7 @@ export default function ExportDialog({
                         setPdfType(option.value);
                         setExportStatus(null);
                       }}
-                      className={`cursor-pointer rounded-xl border p-3 text-left transition ${
+                      className={`cursor-pointer rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                         pdfType === option.value
                           ? "border-blue-400 bg-blue-500/15"
                           : "border-white/10 bg-slate-800/70 hover:border-white/20"
@@ -465,38 +472,69 @@ export default function ExportDialog({
             )}
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-slate-800/50 p-4">
-            <h3 className="text-sm font-semibold text-white">
-              Design information
-            </h3>
-            <dl className="mt-3 space-y-2 text-xs">
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Canvas size</dt>
-                <dd className="font-semibold text-slate-200">
+          <section className="rounded-2xl border border-white/10 bg-slate-800/50 p-4 md:p-5">
+            <div>
+              <h3 className="text-sm font-semibold text-white">
+                Export summary
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                Review your design and download settings.
+              </p>
+            </div>
+            <dl className="mt-4 grid gap-2.5 sm:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3.5">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                  Canvas
+                </dt>
+                <dd className="mt-1.5 text-sm font-semibold text-white">
+                  {canvasPresetName}
+                </dd>
+                <p className="mt-0.5 text-xs tabular-nums text-slate-400">
+                  Design size · {canvasSize.width} × {canvasSize.height} px
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3.5">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                  Export quality
+                </dt>
+                <dd className="mt-1.5 text-sm font-semibold text-white">
+                  {selectedQuality?.label}
+                </dd>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {selectedQuality?.resolution}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3.5">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                  Output resolution
+                </dt>
+                <dd className="mt-1.5 text-sm font-semibold tabular-nums text-white">
                   {exportDimensions.width} × {exportDimensions.height} px
                 </dd>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  Final downloaded dimensions
+                </p>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">File type</dt>
-                <dd className="font-semibold text-slate-200">.{format}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Quality</dt>
-                <dd className="text-right font-semibold text-slate-200">
-                  {selectedQuality?.label} · {selectedQuality?.resolution}
+              <div className="rounded-xl border border-white/10 bg-slate-950/35 p-3.5">
+                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                  File type
+                </dt>
+                <dd className="mt-1.5 text-sm font-semibold text-white">
+                  {extension}
                 </dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Estimated file size</dt>
-                <dd className="text-right text-slate-300">
-                  Calculated when exporting
-                </dd>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {format === "png"
+                    ? "High-quality image"
+                    : format === "jpg"
+                      ? "Compressed image"
+                      : "Portable document"}
+                </p>
               </div>
             </dl>
           </section>
 
           <details className="group rounded-2xl border border-dashed border-white/10 bg-slate-950/25 p-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-300">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg text-sm font-semibold text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
               <span>More export options</span>
               <span className="rounded-full bg-purple-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-purple-300">
                 Coming later
@@ -544,7 +582,7 @@ export default function ExportDialog({
             <button
               type="button"
               onClick={closeDialog}
-              className="flex-1 cursor-pointer rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700 md:flex-none"
+              className="flex-1 cursor-pointer rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 md:flex-none"
             >
               Cancel
             </button>
@@ -553,7 +591,7 @@ export default function ExportDialog({
               onClick={requestExport}
               disabled={!filenameIsValid || isExporting}
               aria-busy={isExporting}
-              className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:from-blue-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-40 md:flex-none"
+              className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:from-blue-500 hover:to-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40 md:flex-none"
             >
               {isExporting ? "Preparing export…" : "Export design"}
             </button>
