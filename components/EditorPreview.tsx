@@ -127,6 +127,10 @@ export default function EditorPreview({
       })),
     [canvasSize.height, canvasSize.width, items]
   );
+  const visibleCanvasItems = useMemo(
+    () => canvasItems.filter((item) => item.hidden !== true),
+    [canvasItems]
+  );
 
   useEffect(() => {
     latestItemsRef.current = items;
@@ -280,12 +284,12 @@ const getSnappedPosition = (
 };
   const justPinchedRef = useRef(false);
 
-  const selectedTextItem = canvasItems.find(
+  const selectedTextItem = visibleCanvasItems.find(
     (item): item is Extract<DesignItem, { type: "text" }> =>
       item.id === selectedItemId && item.type === "text"
   );
 
-  const selectedImageItem = canvasItems.find(
+  const selectedImageItem = visibleCanvasItems.find(
     (item): item is Extract<DesignItem, { type: "image" }> =>
       item.id === selectedItemId && item.type === "image"
   );
@@ -348,7 +352,9 @@ const getSnappedPosition = (
 
     const selectedItemSurvives =
       selectedItemId !== null &&
-      restoredItems.some((item) => item.id === selectedItemId);
+      restoredItems.some(
+        (item) => item.id === selectedItemId && item.hidden !== true
+      );
 
     if (!selectedItemSurvives) {
       setSelectedItemId(null);
@@ -926,7 +932,11 @@ const getSnappedPosition = (
     );
   };
   const selectItemFromLayers = (id: string) => {
-    if (!items.some((item) => item.id === id)) return;
+    if (
+      !items.some((item) => item.id === id && item.hidden !== true)
+    ) {
+      return;
+    }
 
     commitHistoryTransaction();
     pendingDragRef.current = null;
@@ -983,6 +993,35 @@ const getSnappedPosition = (
 
       return reorderedItems;
     });
+  };
+  const toggleLayerVisibility = (id: string) => {
+    const layer = items.find((item) => item.id === id);
+
+    if (!layer) return;
+
+    const willHide = layer.hidden !== true;
+
+    commitItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id ? { ...item, hidden: willHide } : item
+      )
+    );
+
+    if (!willHide || selectedItemId !== id) return;
+
+    activeResizeCleanupRef.current?.();
+    activeResizeCleanupRef.current = null;
+    pendingDragRef.current = null;
+    pinchRef.current = null;
+    canvasTapRef.current = null;
+    pageInteractionRef.current = null;
+    justPinchedRef.current = false;
+    setSelectedItemId(null);
+    setDraggingItemId(null);
+    setEditingItemId(null);
+    setShowMobileContextToolbar(false);
+    setShowImageAdjustments(false);
+    hideAlignmentGuides();
   };
     const moveItemLayer = (
     id: string,
@@ -1221,6 +1260,7 @@ if (direction === "back") {
       const newImage: DesignItem = {
         id: crypto.randomUUID(),
         type: "image",
+        hidden: false,
         src: imageUrl,
         position: {
           x: canvasSize.width / 2,
@@ -1261,6 +1301,7 @@ if (direction === "back") {
     const newText: DesignItem = {
       id: crypto.randomUUID(),
       type: "text",
+      hidden: false,
       value: "",
       position: {
         x: canvasSize.width / 2,
@@ -1561,7 +1602,12 @@ if (direction === "back") {
       throw new Error("The design canvas is not ready to export.");
     }
 
-    return exportDesign(exportCanvas, canvasItems, config, options);
+    return exportDesign(
+      exportCanvas,
+      visibleCanvasItems,
+      config,
+      options
+    );
   };
 
   return (
@@ -1652,7 +1698,7 @@ if (direction === "back") {
               onMoveItemLayer={moveItemLayer}
             />
           ) : null}
-          items={canvasItems}
+          items={visibleCanvasItems}
           selectedItemId={selectedItemId}
           editingItemId={editingItemId}
           verticalGuide={alignmentGuides.vertical}
@@ -1741,6 +1787,7 @@ if (direction === "back") {
           selectedItemId={selectedItemId}
           onSelectItem={selectItemFromLayers}
           onReorderLayers={reorderLayers}
+          onToggleLayerVisibility={toggleLayerVisibility}
           onChangeTextSize={changeTextSize}
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}
@@ -1765,7 +1812,7 @@ if (direction === "back") {
       >
         <ExportCanvas
           ref={exportCanvasRef}
-          items={canvasItems}
+          items={visibleCanvasItems}
           width={canvasSize.width}
           height={canvasSize.height}
         />

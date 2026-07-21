@@ -1,6 +1,12 @@
 "use client";
 
-import { GripVertical, ImageIcon, Type } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  GripVertical,
+  ImageIcon,
+  Type,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DesignItem } from "./editor.types";
 
@@ -9,6 +15,7 @@ type LayersPanelProps = {
   selectedItemId: string | null;
   onSelectItem: (id: string) => void;
   onReorderLayers: (orderedIds: string[]) => void;
+  onToggleVisibility: (id: string) => void;
 };
 
 const getTextLayerName = (value: string) => {
@@ -26,6 +33,7 @@ export default function LayersPanel({
   selectedItemId,
   onSelectItem,
   onReorderLayers,
+  onToggleVisibility,
 }: LayersPanelProps) {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
@@ -90,6 +98,7 @@ export default function LayersPanel({
         <div className="max-h-48 space-y-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
           {visibleItems.map((layer) => {
             const selected = layer.id === selectedItemId;
+            const hidden = layer.hidden === true;
             const dragging = layer.id === draggedItemId;
             const dropTarget = layer.id === dropTargetId;
             const name =
@@ -128,7 +137,13 @@ export default function LayersPanel({
                     : selected
                       ? "border-blue-400/50 bg-gradient-to-r from-blue-500/20 to-purple-500/15"
                       : "border-transparent bg-slate-800/50 hover:border-white/10 hover:bg-slate-800"
-                } ${dragging ? "opacity-50" : "opacity-100"}`}
+                } ${
+                  dragging
+                    ? "opacity-50"
+                    : hidden
+                      ? "opacity-70"
+                      : "opacity-100"
+                }`}
               >
                 <span
                   aria-hidden="true"
@@ -140,8 +155,9 @@ export default function LayersPanel({
                   type="button"
                   aria-pressed={selected}
                   aria-label={`Select layer ${name}`}
+                  disabled={hidden}
                   onClick={() => onSelectItem(layer.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-2 pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-default"
                 >
                   <span
                     aria-hidden="true"
@@ -155,11 +171,33 @@ export default function LayersPanel({
                   </span>
                   <span
                     className={`truncate text-xs font-semibold ${
-                      selected ? "text-white" : "text-slate-300"
+                      selected
+                        ? "text-white"
+                        : hidden
+                          ? "text-slate-400"
+                          : "text-slate-300"
                     }`}
                   >
                     {name}
                   </span>
+                </button>
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggleVisibility(layer.id);
+                  }}
+                  onDragStart={(event) => event.preventDefault()}
+                  className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  aria-label={`${hidden ? "Show" : "Hide"} layer ${name}`}
+                  title={hidden ? "Show layer" : "Hide layer"}
+                >
+                  {hidden ? (
+                    <EyeOff size={14} aria-hidden="true" />
+                  ) : (
+                    <Eye size={14} aria-hidden="true" />
+                  )}
                 </button>
               </div>
             );
