@@ -925,6 +925,65 @@ const getSnappedPosition = (
       )
     );
   };
+  const selectItemFromLayers = (id: string) => {
+    if (!items.some((item) => item.id === id)) return;
+
+    commitHistoryTransaction();
+    pendingDragRef.current = null;
+    pinchRef.current = null;
+    canvasTapRef.current = null;
+    pageInteractionRef.current = null;
+    setDraggingItemId(null);
+    setEditingItemId(null);
+    setSelectedItemId(id);
+    setShowMobileContextToolbar(true);
+    setShowImageAdjustments(false);
+    hideAlignmentGuides();
+
+    requestAnimationFrame(() => {
+      const canvasItem = Array.from(
+        canvasRef.current?.querySelectorAll<HTMLElement>(
+          "[data-canvas-item-id]"
+        ) ?? []
+      ).find((element) => element.dataset.canvasItemId === id);
+
+      canvasItem?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    });
+  };
+  const reorderLayers = (orderedIds: string[]) => {
+    commitItems((currentItems) => {
+      if (
+        orderedIds.length !== currentItems.length ||
+        new Set(orderedIds).size !== currentItems.length
+      ) {
+        return currentItems;
+      }
+
+      const itemsById = new Map(
+        currentItems.map((item) => [item.id, item])
+      );
+      const reorderedItems: DesignItem[] = [];
+
+      for (const id of orderedIds) {
+        const item = itemsById.get(id);
+
+        if (!item) return currentItems;
+        reorderedItems.push(item);
+      }
+
+      if (
+        currentItems.every((item, index) => item.id === orderedIds[index])
+      ) {
+        return currentItems;
+      }
+
+      return reorderedItems;
+    });
+  };
     const moveItemLayer = (
     id: string,
     direction:
@@ -1677,7 +1736,11 @@ if (direction === "back") {
         />
 
         <EditorInspector
+          items={items}
           item={selectedItem}
+          selectedItemId={selectedItemId}
+          onSelectItem={selectItemFromLayers}
+          onReorderLayers={reorderLayers}
           onChangeTextSize={changeTextSize}
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}

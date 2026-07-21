@@ -8,9 +8,14 @@ import type {
   DesignItem,
   ImageAdjustment,
 } from "./editor.types";
+import LayersPanel from "./LayersPanel";
 
 type EditorInspectorProps = {
+  items: DesignItem[];
   item: DesignItem | undefined;
+  selectedItemId: string | null;
+  onSelectItem: (id: string) => void;
+  onReorderLayers: (orderedIds: string[]) => void;
   onChangeTextSize: (id: string, amount: number) => void;
   onChangeTextColor: (id: string, color: string) => void;
   onChangeTextFont: (id: string, fontFamily: string) => void;
@@ -26,7 +31,11 @@ type EditorInspectorProps = {
 };
 
 export default function EditorInspector({
+  items,
   item,
+  selectedItemId,
+  onSelectItem,
+  onReorderLayers,
   onChangeTextSize,
   onChangeTextColor,
   onChangeTextFont,
@@ -41,6 +50,15 @@ export default function EditorInspector({
       data-editor-retain-selection
       className="hidden h-full min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:block"
     >
+      <LayersPanel
+        items={items}
+        selectedItemId={selectedItemId}
+        onSelectItem={onSelectItem}
+        onReorderLayers={onReorderLayers}
+      />
+
+      <div className="my-4 border-t border-white/10" />
+
       <p className="mb-4 text-xs font-bold uppercase tracking-widest text-cyan-400">
         Properties
       </p>
