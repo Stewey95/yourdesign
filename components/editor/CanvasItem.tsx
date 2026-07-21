@@ -23,6 +23,7 @@ type TextCanvasItemProps = {
   item: TextDesignItem;
   selected: boolean;
   editing: boolean;
+  mobileLayout: boolean;
   displayScale: number;
   onRequestAutoFit: (
     id: string,
@@ -85,6 +86,7 @@ export default function CanvasItem(props: CanvasItemProps) {
           item={item}
           selected={props.selected}
           editing={props.editing}
+          mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onRequestAutoFit={props.onRequestAutoFit}
           onValueChange={props.onValueChange}

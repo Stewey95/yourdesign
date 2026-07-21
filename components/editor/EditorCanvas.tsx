@@ -1340,6 +1340,7 @@ export default function EditorCanvas({
                   item={item}
                   selected={selectedItemId === item.id}
                   editing={editingItemId === item.id}
+                  mobileLayout={!isDesktopLayout}
                   displayScale={displayScale}
                   onRequestAutoFit={onRequestAutoFit}
                   onValueChange={onTextValueChange}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { TextDesignItem } from "./editor.types";
 
 export type TextResizeCorner =
@@ -13,6 +13,7 @@ type CanvasTextItemProps = {
   item: TextDesignItem;
   selected: boolean;
   editing: boolean;
+  mobileLayout: boolean;
   displayScale: number;
   onRequestAutoFit: (
     id: string,
@@ -38,6 +39,7 @@ export default function CanvasTextItem({
   item,
   selected,
   editing,
+  mobileLayout,
   displayScale,
   onRequestAutoFit,
   onValueChange,
@@ -47,9 +49,86 @@ export default function CanvasTextItem({
   onPendingDragStart,
   onResizeStart,
 }: CanvasTextItemProps) {
+  const focusScrollCleanupRef = useRef<(() => void) | null>(null);
+
   const initialiseEditingTextarea = useCallback(
     (textarea: HTMLTextAreaElement | null) => {
+      focusScrollCleanupRef.current?.();
+      focusScrollCleanupRef.current = null;
+
       if (!textarea) return;
+
+      if (mobileLayout) {
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
+        const visualViewport = window.visualViewport;
+        let restoreFrame: number | null = null;
+
+        const restorePagePosition = () => {
+          if (window.scrollX !== scrollX || window.scrollY !== scrollY) {
+            window.scrollTo(scrollX, scrollY);
+          }
+        };
+
+        const reinforcePagePosition = () => {
+          restorePagePosition();
+
+          if (restoreFrame !== null) {
+            cancelAnimationFrame(restoreFrame);
+          }
+
+          restoreFrame = requestAnimationFrame(restorePagePosition);
+        };
+
+        textarea.style.height = "auto";
+        textarea.style.height = `${textarea.scrollHeight}px`;
+        textarea.scrollTop = 0;
+        textarea.focus({ preventScroll: true });
+
+        const textLength = textarea.value.length;
+        textarea.setSelectionRange(textLength, textLength);
+        reinforcePagePosition();
+
+        visualViewport?.addEventListener(
+          "resize",
+          reinforcePagePosition
+        );
+        visualViewport?.addEventListener(
+          "scroll",
+          reinforcePagePosition
+        );
+
+        const settlingTimer = window.setTimeout(() => {
+          visualViewport?.removeEventListener(
+            "resize",
+            reinforcePagePosition
+          );
+          visualViewport?.removeEventListener(
+            "scroll",
+            reinforcePagePosition
+          );
+          restorePagePosition();
+          focusScrollCleanupRef.current = null;
+        }, 450);
+
+        focusScrollCleanupRef.current = () => {
+          window.clearTimeout(settlingTimer);
+          visualViewport?.removeEventListener(
+            "resize",
+            reinforcePagePosition
+          );
+          visualViewport?.removeEventListener(
+            "scroll",
+            reinforcePagePosition
+          );
+
+          if (restoreFrame !== null) {
+            cancelAnimationFrame(restoreFrame);
+          }
+        };
+
+        return;
+      }
 
       requestAnimationFrame(() => {
         if (!textarea.isConnected) return;
@@ -63,7 +142,7 @@ export default function CanvasTextItem({
         textarea.focus();
       });
     },
-    []
+    [mobileLayout]
   );
 
   const resizeHandles: Array<{
@@ -113,7 +192,7 @@ export default function CanvasTextItem({
 
         {editing ? (
           <textarea
-            autoFocus
+            autoFocus={!mobileLayout}
             ref={initialiseEditingTextarea}
             value={item.value}
            onChange={(event) => {
