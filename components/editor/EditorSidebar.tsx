@@ -1,5 +1,6 @@
 "use client";
 
+import { Copy } from "lucide-react";
 import { useRef } from "react";
 import {
   CANVAS_PRESETS,
@@ -26,6 +27,8 @@ type EditorSidebarProps = {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  canDuplicate: boolean;
+  onDuplicate: () => void;
   canDelete: boolean;
   onDelete: () => void;
 };
@@ -41,6 +44,8 @@ export default function EditorSidebar({
   canRedo,
   onUndo,
   onRedo,
+  canDuplicate,
+  onDuplicate,
   canDelete,
   onDelete,
 }: EditorSidebarProps) {
@@ -258,9 +263,22 @@ export default function EditorSidebar({
 
         <button
           type="button"
+          onClick={onDuplicate}
+          disabled={!canDuplicate}
+          className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Duplicate selected item"
+          title="Duplicate"
+        >
+          <Copy size={15} aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
           onClick={onDelete}
           disabled={!canDelete}
-          className="ml-auto cursor-pointer rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
+          className="cursor-pointer rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Delete selected item"
+          title="Delete"
         >
           Delete
         </button>

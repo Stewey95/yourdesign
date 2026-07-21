@@ -376,6 +376,68 @@ const getSnappedPosition = (
     }
   }, [canRedo, reconcileAfterHistoryNavigation, redoHistory]);
 
+  const duplicateSelectedItem = useCallback(() => {
+    if (!selectedItemId) return;
+
+    activeResizeCleanupRef.current?.();
+    activeResizeCleanupRef.current = null;
+    commitHistoryTransaction();
+    pendingDragRef.current = null;
+    pinchRef.current = null;
+    canvasTapRef.current = null;
+    pageInteractionRef.current = null;
+    justPinchedRef.current = false;
+
+    let duplicateId: string | null = null;
+
+    commitItems((currentItems) => {
+      const sourceItem = currentItems.find(
+        (item) => item.id === selectedItemId
+      );
+
+      if (!sourceItem) return currentItems;
+
+      const duplicate = structuredClone(sourceItem);
+      const horizontalOffset =
+        sourceItem.position.x + 20 <= canvasSize.width ? 20 : -20;
+      const verticalOffset =
+        sourceItem.position.y + 20 <= canvasSize.height ? 20 : -20;
+
+      duplicateId = crypto.randomUUID();
+      duplicate.id = duplicateId;
+      duplicate.position = {
+        x: Math.min(
+          canvasSize.width,
+          Math.max(0, sourceItem.position.x + horizontalOffset)
+        ),
+        y: Math.min(
+          canvasSize.height,
+          Math.max(0, sourceItem.position.y + verticalOffset)
+        ),
+      };
+
+      return [...currentItems, duplicate];
+    });
+
+    if (!duplicateId) return;
+
+    setSelectedItemId(duplicateId);
+    setDraggingItemId(null);
+    setEditingItemId(null);
+    setShowMobileContextToolbar(true);
+    setShowImageAdjustments(false);
+    setAlignmentGuides({
+      vertical: false,
+      horizontal: false,
+    });
+  }, [
+    canvasSize.height,
+    canvasSize.width,
+    commitHistoryTransaction,
+    commitItems,
+    selectedItemId,
+  ]);
+
   useEffect(() => {
     const handleHistoryShortcut = (event: KeyboardEvent) => {
       const target = event.target;
@@ -396,6 +458,11 @@ const getSnappedPosition = (
       const requestsRedo =
         (usesCommandModifier && key === "z" && event.shiftKey) ||
         (event.ctrlKey && key === "y");
+      const requestsDuplicate =
+        usesCommandModifier &&
+        key === "d" &&
+        !event.shiftKey &&
+        !event.altKey;
 
       if (requestsUndo && canUndo) {
         event.preventDefault();
@@ -403,6 +470,13 @@ const getSnappedPosition = (
       } else if (requestsRedo && canRedo) {
         event.preventDefault();
         performRedo();
+      } else if (
+        requestsDuplicate &&
+        selectedItemId &&
+        !editingItemId
+      ) {
+        event.preventDefault();
+        duplicateSelectedItem();
       }
     };
 
@@ -414,8 +488,11 @@ const getSnappedPosition = (
   }, [
     canRedo,
     canUndo,
+    duplicateSelectedItem,
+    editingItemId,
     performRedo,
     performUndo,
+    selectedItemId,
   ]);
 
   useEffect(() => {
@@ -1411,6 +1488,7 @@ if (direction === "back") {
           canRedo={canRedo}
           onUndo={performUndo}
           onRedo={performRedo}
+          onDuplicate={duplicateSelectedItem}
           onDelete={deleteSelected}
           onToggleImageAdjustments={toggleImageAdjustments}
           onAdjustmentStart={startImageAdjustment}
@@ -1432,6 +1510,8 @@ if (direction === "back") {
           canRedo={canRedo}
           onUndo={performUndo}
           onRedo={performRedo}
+          canDuplicate={Boolean(selectedItem)}
+          onDuplicate={duplicateSelectedItem}
           canDelete={Boolean(selectedItemId)}
           onDelete={deleteSelected}
         />

@@ -1,5 +1,6 @@
 "use client";
 
+import { Copy } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fontOptions,
@@ -25,6 +26,7 @@ type MobileContextToolbarProps = {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
   onToggleImageAdjustments: () => void;
   onAdjustmentStart: () => void;
@@ -59,6 +61,7 @@ export default function MobileContextToolbar({
   canRedo,
   onUndo,
   onRedo,
+  onDuplicate,
   onDelete,
   onToggleImageAdjustments,
   onAdjustmentStart,
@@ -364,6 +367,17 @@ export default function MobileContextToolbar({
             title="Redo"
           >
             ↷
+          </button>
+
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={onDuplicate}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            aria-label="Duplicate selected item"
+            title="Duplicate"
+          >
+            <Copy size={16} aria-hidden="true" />
           </button>
 
           <button
