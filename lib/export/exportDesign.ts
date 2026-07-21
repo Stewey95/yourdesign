@@ -11,8 +11,13 @@ import {
 } from "./captureDesign";
 import { createSinglePagePdf } from "./createPdf";
 
+export type PreparedExportDelivery = {
+  continueDownload: () => void;
+  cancelDownload: () => void;
+};
+
 export type ExportDeliveryOptions = {
-  onBeforeDownload?: () => void | Promise<void>;
+  onDownloadReady?: (delivery: PreparedExportDelivery) => void;
 };
 
 export const sanitizeExportFilename = (filename: string) => {
@@ -43,13 +48,47 @@ const downloadExport = async (
   downloadLink.hidden = true;
   document.body.appendChild(downloadLink);
 
-  try {
-    await options?.onBeforeDownload?.();
-    downloadLink.click();
-  } finally {
+  const finishDelivery = (shouldDownload: boolean) => {
+    if (shouldDownload) {
+      downloadLink.click();
+    }
+
     downloadLink.remove();
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    if (shouldDownload) {
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } else {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  if (!options?.onDownloadReady) {
+    finishDelivery(true);
+    return true;
   }
+
+  return new Promise<boolean>((resolve, reject) => {
+    let settled = false;
+    const settle = (shouldDownload: boolean) => {
+      if (settled) return;
+
+      settled = true;
+      finishDelivery(shouldDownload);
+      resolve(shouldDownload);
+    };
+
+    try {
+      options.onDownloadReady?.({
+        continueDownload: () => settle(true),
+        cancelDownload: () => settle(false),
+      });
+    } catch (error) {
+      if (!settled) {
+        settled = true;
+        finishDelivery(false);
+      }
+      reject(error);
+    }
+  });
 };
 
 export async function exportDesignAsPng(
@@ -60,7 +99,7 @@ export async function exportDesignAsPng(
 ) {
   const blob = await captureDesignAsPng(node, items, config);
 
-  await downloadExport(blob, config.filename, "png", options);
+  return downloadExport(blob, config.filename, "png", options);
 }
 
 export async function exportDesignAsJpg(
@@ -71,7 +110,7 @@ export async function exportDesignAsJpg(
 ) {
   const blob = await captureDesignAsJpg(node, items, config);
 
-  await downloadExport(blob, config.filename, "jpg", options);
+  return downloadExport(blob, config.filename, "jpg", options);
 }
 
 export async function exportDesignAsPdf(
@@ -89,7 +128,7 @@ export async function exportDesignAsPdf(
   const jpeg = await captureDesignAsJpg(node, items, jpegConfig);
   const pdf = await createSinglePagePdf(jpeg, config);
 
-  await downloadExport(pdf, config.filename, "pdf", options);
+  return downloadExport(pdf, config.filename, "pdf", options);
 }
 
 export async function exportDesign(

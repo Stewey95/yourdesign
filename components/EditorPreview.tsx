@@ -1214,7 +1214,7 @@ if (direction === "back") {
       throw new Error("The design canvas is not ready to export.");
     }
 
-    await exportDesign(exportCanvas, canvasItems, config, options);
+    return exportDesign(exportCanvas, canvasItems, config, options);
   };
 
   return (

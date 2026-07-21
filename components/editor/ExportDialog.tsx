@@ -14,7 +14,10 @@ import {
 } from "../../lib/export/exportDimensions";
 import { CANVAS_PRESETS } from "./editor.constants";
 import { isMobileSafari } from "../../lib/export/isMobileSafari";
-import type { ExportDeliveryOptions } from "../../lib/export/exportDesign";
+import type {
+  ExportDeliveryOptions,
+  PreparedExportDelivery,
+} from "../../lib/export/exportDesign";
 
 type ExportDialogProps = {
   open: boolean;
@@ -22,7 +25,7 @@ type ExportDialogProps = {
   onExport: (
     config: DesignExportConfig,
     options?: ExportDeliveryOptions
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   canvasSize: Pick<ExportCanvasDimensions, "width" | "height">;
 };
 
@@ -36,13 +39,6 @@ type ExportDeliveryNotice = {
   message: string;
   actions: string[];
 };
-
-const waitForNoticePaint = () =>
-  new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => resolve());
-    });
-  });
 
 const formatOptions: Array<{
   value: ExportFormat;
@@ -107,6 +103,7 @@ export default function ExportDialog({
   canvasSize,
 }: ExportDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const preparedDeliveryRef = useRef<PreparedExportDelivery | null>(null);
   const [filename, setFilename] = useState("genvilo-design");
   const [format, setFormat] = useState<ExportFormat>("png");
   const [quality, setQuality] = useState<ExportQualityPreset>("high");
@@ -141,6 +138,24 @@ export default function ExportDialog({
         preset.height === canvasSize.height
     )?.label ?? "Custom";
 
+  const finishPreparedDelivery = (
+    action: "continueDownload" | "cancelDownload"
+  ) => {
+    const delivery = preparedDeliveryRef.current;
+
+    preparedDeliveryRef.current = null;
+    setDeliveryNotice(null);
+    delivery?.[action]();
+  };
+
+  useEffect(
+    () => () => {
+      preparedDeliveryRef.current?.cancelDownload();
+      preparedDeliveryRef.current = null;
+    },
+    []
+  );
+
   useEffect(() => {
     const dialog = dialogRef.current;
 
@@ -164,6 +179,8 @@ export default function ExportDialog({
   }, [open]);
 
   const closeDialog = () => {
+    preparedDeliveryRef.current?.cancelDownload();
+    preparedDeliveryRef.current = null;
     setExportStatus(null);
     setDeliveryNotice(null);
     onClose();
@@ -220,13 +237,14 @@ export default function ExportDialog({
       const usesSafariPdfPreview =
         config.format === "pdf" && isMobileSafari();
 
-      await onExport(
+      const delivered = await onExport(
         config,
         usesSafariPdfPreview
           ? {
-              onBeforeDownload: async () => {
+              onDownloadReady: (delivery) => {
+                preparedDeliveryRef.current = delivery;
                 setDeliveryNotice({
-                  title: "Your PDF is ready",
+                  title: "✓ Your PDF is ready",
                   message: "Safari opens PDFs in Preview.",
                   actions: [
                     "Save to Files",
@@ -236,13 +254,12 @@ export default function ExportDialog({
                   ],
                 });
                 setExportStatus(null);
-                await waitForNoticePaint();
               },
             }
           : undefined
       );
 
-      if (!usesSafariPdfPreview) {
+      if (delivered && !usesSafariPdfPreview) {
         setExportStatus({
           kind: "success",
           message: `${extension} export complete`,
@@ -280,7 +297,7 @@ export default function ExportDialog({
       className="fixed bottom-0 left-0 right-0 top-auto m-0 h-[min(92dvh,780px)] max-h-[calc(100dvh-0.75rem)] w-full max-w-none overflow-hidden border-0 bg-transparent p-0 text-left text-slate-100 backdrop:bg-slate-950/75 backdrop:backdrop-blur-sm md:inset-0 md:m-auto md:h-auto md:max-h-[calc(100dvh-2rem)] md:w-[min(760px,calc(100vw-2rem))] md:rounded-3xl"
     >
       <div
-        className="flex h-full max-h-[inherit] flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-slate-900 shadow-2xl md:h-auto md:rounded-3xl"
+        className="relative flex h-full max-h-[inherit] flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-slate-900 shadow-2xl md:h-auto md:rounded-3xl"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-5 py-4 md:px-6">
@@ -616,27 +633,24 @@ export default function ExportDialog({
         {deliveryNotice && (
           <section
             aria-labelledby="export-delivery-title"
-            className="shrink-0 border-t border-emerald-400/15 bg-slate-900/95 px-5 pt-3 md:hidden"
+            aria-modal="true"
+            role="dialog"
+            className="absolute inset-0 z-[80] flex items-end bg-slate-950/70 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] backdrop-blur-sm md:hidden"
           >
-            <div className="relative rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3.5 text-emerald-50 shadow-lg shadow-emerald-950/10">
-              <button
-                type="button"
-                onClick={() => setDeliveryNotice(null)}
-                aria-label="Dismiss export guidance"
-                className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full text-lg text-emerald-200 transition hover:bg-emerald-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
-              >
-                ×
-              </button>
+            <div className="w-full rounded-3xl border border-emerald-400/20 bg-slate-900 p-5 text-emerald-50 shadow-2xl shadow-slate-950/50">
               <h3
                 id="export-delivery-title"
-                className="pr-8 text-sm font-bold text-white"
+                className="text-lg font-bold text-white"
               >
                 {deliveryNotice.title}
               </h3>
-              <p className="mt-1 text-xs leading-relaxed text-emerald-100/80">
-                {deliveryNotice.message} Tap the Share button to:
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
+                {deliveryNotice.message}
               </p>
-              <ul className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs font-medium text-emerald-100">
+              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                From there you can
+              </p>
+              <ul className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-2 text-sm font-medium text-slate-200">
                 {deliveryNotice.actions.map((action) => (
                   <li key={action} className="flex items-center gap-1.5">
                     <span
@@ -647,6 +661,27 @@ export default function ExportDialog({
                   </li>
                 ))}
               </ul>
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    finishPreparedDelivery("cancelDownload")
+                  }
+                  className="flex-1 rounded-xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() =>
+                    finishPreparedDelivery("continueDownload")
+                  }
+                  className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-950/20 transition hover:from-emerald-400 hover:to-cyan-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           </section>
         )}
