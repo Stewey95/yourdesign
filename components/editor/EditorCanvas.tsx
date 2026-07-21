@@ -1097,21 +1097,55 @@ export default function EditorCanvas({
     cancelZoomAnimation();
     discreteZoomTargetRef.current = null;
 
-    const target = event.target;
-    const selectedItemTarget =
-      target instanceof HTMLElement &&
-      selectedItemId !== null &&
-      target.closest(`[data-canvas-item-id="${selectedItemId}"]`);
+    const workspace = workspaceRef.current;
 
-    if (selectedItemTarget) {
+    if (!workspace) return;
+
+    const selectedItemElement = selectedItemId
+      ? Array.from(
+          workspace.querySelectorAll<HTMLElement>(
+            "[data-canvas-item-id]"
+          )
+        ).find(
+          (element) =>
+            element.dataset.canvasItemId === selectedItemId
+        )
+      : undefined;
+    const selectedItemBounds =
+      selectedItemElement?.getBoundingClientRect();
+    const pinchHitPadding = 24;
+    const mobileLayout = window.matchMedia(
+      "(max-width: 767px)"
+    ).matches;
+    const target = event.target;
+    const touchesSelectedItem = mobileLayout
+      ? Boolean(
+          selectedItemBounds &&
+            Array.from(event.touches).some(
+              (touch) =>
+                touch.clientX >=
+                  selectedItemBounds.left - pinchHitPadding &&
+                touch.clientX <=
+                  selectedItemBounds.right + pinchHitPadding &&
+                touch.clientY >=
+                  selectedItemBounds.top - pinchHitPadding &&
+                touch.clientY <=
+                  selectedItemBounds.bottom + pinchHitPadding
+            )
+        )
+      : Boolean(
+          target instanceof HTMLElement &&
+            selectedItemId !== null &&
+            target.closest(
+              `[data-canvas-item-id="${selectedItemId}"]`
+            )
+        );
+
+    if (touchesSelectedItem) {
       viewportGestureRef.current = { mode: "item" };
       onTouchStartCapture(event);
       return;
     }
-
-    const workspace = workspaceRef.current;
-
-    if (!workspace) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -1259,7 +1293,7 @@ export default function EditorCanvas({
         style={{
           height: isDesktopLayout
             ? undefined
-            : LOGICAL_CANVAS_HEIGHT * baseScale,
+            : `max(${LOGICAL_CANVAS_HEIGHT * baseScale}px, clamp(22rem, 52dvh, 32rem))`,
         }}
       >
           <MobileCanvasZoomHud
