@@ -36,7 +36,13 @@ import type {
 import { exportDesignAsPng } from "../lib/export/exportDesign";
 import type { PngExportConfig } from "../types/export";
 
-export default function EditorPreview() {
+type EditorPreviewProps = {
+  fullScreen?: boolean;
+};
+
+export default function EditorPreview({
+  fullScreen = false,
+}: EditorPreviewProps) {
   const {
     present: items,
     canUndo,
@@ -263,6 +269,8 @@ const getSnappedPosition = (
   ]);
 
   useEffect(() => {
+    if (fullScreen) return;
+
     const editorShell = editorShellRef.current;
     const minimumDesktopEditorHeight = 600;
 
@@ -291,7 +299,7 @@ const getSnappedPosition = (
       cancelAnimationFrame(initialMeasurementFrame);
       window.removeEventListener("resize", updateEditorHeight);
     };
-  }, []);
+  }, [fullScreen]);
 
   const getTouchDistance = (touches: React.TouchList) => {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -1160,8 +1168,12 @@ if (direction === "back") {
     <>
       <div
         ref={editorShellRef}
-        className="mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-2 md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
-        style={{ height: desktopEditorHeight }}
+        className={
+          fullScreen
+            ? "w-full overflow-hidden bg-white/5 p-2 shadow-2xl md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-2 md:pt-3"
+            : "mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-2 md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
+        }
+        style={{ height: fullScreen ? undefined : desktopEditorHeight }}
       >
       <EditorHeader
         canUndo={canUndo}

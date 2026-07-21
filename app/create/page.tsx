@@ -1,21 +1,15 @@
+import type { Metadata } from "next";
 import EditorPreview from "../../components/EditorPreview";
+
+export const metadata: Metadata = {
+  title: "Genvilo Editor",
+  description: "Create and export designs in the Genvilo editor.",
+};
 
 export default function CreatePage() {
   return (
-    <main className="min-h-screen bg-slate-950 p-3 text-white md:p-6">
-      <section className="mx-auto max-w-[1600px]">
-        <h1 className="text-6xl font-extrabold mb-4">
-          Genvilo Studio
-        </h1>
-
-        <p className="text-xl text-slate-300 mb-12">
-          Create your digital product below.
-        </p>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-0 shadow-xl md:p-3">
-          <EditorPreview />
-        </div>
-      </section>
+    <main className="min-h-dvh bg-slate-950 text-white md:h-dvh md:overflow-hidden">
+      <EditorPreview fullScreen />
     </main>
   );
 }

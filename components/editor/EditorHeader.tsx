@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 type EditorHeaderProps = {
   canUndo: boolean;
   canRedo: boolean;
@@ -20,7 +22,7 @@ export default function EditorHeader({
       data-editor-retain-selection
       className="mb-4 flex items-center justify-between md:mb-1"
     >
-      <div className="flex items-center gap-2">
+      <Link href="/" className="flex items-center gap-2">
   <img
     src="/brand/genvilo-icon-master.png"
     alt="Genvilo"
@@ -30,7 +32,7 @@ export default function EditorHeader({
   <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-lg font-extrabold text-transparent">
     Editor
   </span>
-</div>
+</Link>
 
        <div className="flex items-center gap-2">
   <button

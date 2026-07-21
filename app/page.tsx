@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useRef } from "react";
+import Link from "next/link";
+import { useLayoutEffect } from "react";
 import Navbar from "../components/ui/Navbar";
 import FeatureCard from "../components/FeatureCard";
-import EditorPreview from "../components/EditorPreview";
 
 const LANDING_SCROLL_RESET_SCRIPT = `
   (() => {
@@ -19,14 +19,6 @@ const LANDING_SCROLL_RESET_SCRIPT = `
       root.dataset.landingPreviousScrollRestoration =
         history.scrollRestoration;
       history.scrollRestoration = "manual";
-
-      if (location.hash === "#editor") {
-        history.replaceState(
-          history.state,
-          "",
-          location.pathname + location.search
-        );
-      }
 
       scrollTo(0, 0);
       addEventListener(
@@ -48,8 +40,6 @@ const LANDING_SCROLL_RESET_SCRIPT = `
 `;
 
 export default function Home() {
-  const cancelLandingResetRef = useRef<(() => void) | null>(null);
-
   useLayoutEffect(() => {
     const navigationEntry = performance.getEntriesByType(
       "navigation"
@@ -97,9 +87,6 @@ export default function Home() {
       delete root.dataset.landingScrollResetActive;
       delete root.dataset.landingPreviousScrollRestoration;
 
-      if (cancelLandingResetRef.current === cancelLandingReset) {
-        cancelLandingResetRef.current = null;
-      }
     };
     const scheduleFinalCorrection = () => {
       if (!active) return;
@@ -131,16 +118,7 @@ export default function Home() {
 
     history.scrollRestoration = "manual";
 
-    if (window.location.hash === "#editor") {
-      history.replaceState(
-        history.state,
-        "",
-        `${window.location.pathname}${window.location.search}`
-      );
-    }
-
     root.dataset.landingScrollResetActive = "true";
-    cancelLandingResetRef.current = cancelLandingReset;
     window.addEventListener("pageshow", handlePageShow);
     window.addEventListener("pointerdown", cancelLandingReset, true);
     window.addEventListener("touchstart", cancelLandingReset, true);
@@ -160,15 +138,6 @@ export default function Home() {
       finishInitialization();
     };
   }, []);
-
-  const openEditor = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-    cancelLandingResetRef.current?.();
-    document.getElementById("editor")?.scrollIntoView({
-      block: "start",
-      inline: "nearest",
-    });
-  };
 
   return (
     <>
@@ -202,13 +171,12 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          <a
-            href="#editor"
-            onClick={openEditor}
+          <Link
+            href="/create"
             className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-500"
           >
             Start Creating
-          </a>
+          </Link>
 
           <a
             href="#features"
@@ -255,12 +223,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section
-        id="editor"
-        className="mx-auto flex max-w-[1600px] justify-center px-3 pb-24 md:px-6"
-      >
-        <EditorPreview />
-      </section>
       </main>
     </>
   );
