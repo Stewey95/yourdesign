@@ -1,7 +1,4 @@
-import {
-  LOGICAL_CANVAS_HEIGHT,
-  LOGICAL_CANVAS_WIDTH,
-} from "./editor.constants";
+import type { Size } from "./editor.types";
 
 export const MIN_VIEWPORT_ZOOM = 0.25;
 export const MAX_VIEWPORT_ZOOM = 5;
@@ -31,8 +28,10 @@ export const zoomViewportAtAnchor = (
   };
 };
 
-export const getCanvasDisplayScale = (bounds: DOMRect) =>
-  bounds.width / LOGICAL_CANVAS_WIDTH;
+export const getCanvasDisplayScale = (
+  bounds: DOMRect,
+  canvasSize: Size
+) => bounds.width / canvasSize.width;
 
 export const getCanvasInteractionBounds = (canvas: HTMLElement) => {
   const viewport = canvas.parentElement;
@@ -45,12 +44,13 @@ export const getCanvasInteractionBounds = (canvas: HTMLElement) => {
 export const screenPointToCanvas = (
   clientX: number,
   clientY: number,
-  bounds: DOMRect
+  bounds: DOMRect,
+  canvasSize: Size
 ) => ({
   x:
     ((clientX - bounds.left) / bounds.width) *
-    LOGICAL_CANVAS_WIDTH,
+    canvasSize.width,
   y:
     ((clientY - bounds.top) / bounds.height) *
-    LOGICAL_CANVAS_HEIGHT,
+    canvasSize.height,
 });

@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import EditorCanvas from "./editor/EditorCanvas";
 import type { TextResizeCorner } from "./editor/CanvasTextItem";
 import type { CanvasViewMode } from "./editor/CanvasViewModeControl";
@@ -16,10 +23,10 @@ import {
   DEFAULT_IMAGE_MAX_HEIGHT,
   DEFAULT_IMAGE_MAX_WIDTH,
   DEFAULT_TEXT_FONT_SIZE,
+  DESKTOP_CANVAS_SIZE,
   getBoundedImageSize,
   getInitialImageSize,
-  LOGICAL_CANVAS_HEIGHT,
-  LOGICAL_CANVAS_WIDTH,
+  MOBILE_CANVAS_SIZE,
   SNAP_THRESHOLD,
 } from "./editor/editor.constants";
 import useEditorHistory from "./editor/useEditorHistory";
@@ -69,6 +76,10 @@ export default function EditorPreview({
     panY: 0,
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [canvasSize, setCanvasSize] = useState<{
+    width: number;
+    height: number;
+  }>(DESKTOP_CANVAS_SIZE);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
   "media" | "text" | "arrange" | "effects" | null
 >(null);
@@ -83,6 +94,32 @@ export default function EditorPreview({
   const editorShellRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const exportCanvasRef = useRef<HTMLDivElement | null>(null);
+  const canvasItems = useMemo(
+    () =>
+      items.map((item) => ({
+        ...item,
+        position: {
+          x: Math.min(canvasSize.width, Math.max(0, item.position.x)),
+          y: Math.min(canvasSize.height, Math.max(0, item.position.y)),
+        },
+      })),
+    [canvasSize.height, canvasSize.width, items]
+  );
+
+  useLayoutEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    const updateCanvasSize = () => {
+      setCanvasSize(
+        mobileQuery.matches ? MOBILE_CANVAS_SIZE : DESKTOP_CANVAS_SIZE
+      );
+    };
+
+    updateCanvasSize();
+    mobileQuery.addEventListener("change", updateCanvasSize);
+
+    return () =>
+      mobileQuery.removeEventListener("change", updateCanvasSize);
+  }, []);
   const hideAlignmentGuides = () => {
   setAlignmentGuides({
     vertical: false,
@@ -93,22 +130,23 @@ const getSnappedPosition = (
   event: React.PointerEvent<HTMLDivElement>,
   canvasBounds: DOMRect
 ): Position | null => {
-  const displayScale = getCanvasDisplayScale(canvasBounds);
+  const displayScale = getCanvasDisplayScale(canvasBounds, canvasSize);
 
   if (!Number.isFinite(displayScale) || displayScale <= 0) return null;
 
   const canvasPoint = screenPointToCanvas(
     event.clientX,
     event.clientY,
-    canvasBounds
+    canvasBounds,
+    canvasSize
   );
   const rawX = canvasPoint.x;
   const rawY = canvasPoint.y;
 
   if (!Number.isFinite(rawX) || !Number.isFinite(rawY)) return null;
 
-  const canvasCentreX = LOGICAL_CANVAS_WIDTH / 2;
-  const canvasCentreY = LOGICAL_CANVAS_HEIGHT / 2;
+  const canvasCentreX = canvasSize.width / 2;
+  const canvasCentreY = canvasSize.height / 2;
   const activeSnapThreshold =
   (event.pointerType === "touch" ? 18 : SNAP_THRESHOLD) / displayScale;
 
@@ -130,17 +168,17 @@ const getSnappedPosition = (
 };
   const justPinchedRef = useRef(false);
 
-  const selectedTextItem = items.find(
+  const selectedTextItem = canvasItems.find(
     (item): item is Extract<DesignItem, { type: "text" }> =>
       item.id === selectedItemId && item.type === "text"
   );
 
-  const selectedImageItem = items.find(
+  const selectedImageItem = canvasItems.find(
     (item): item is Extract<DesignItem, { type: "image" }> =>
       item.id === selectedItemId && item.type === "image"
   );
   const selectedItem = selectedTextItem ?? selectedImageItem;
-    const selectedItemIndex = items.findIndex(
+  const selectedItemIndex = canvasItems.findIndex(
     (item) => item.id === selectedItemId
   );
 
@@ -821,8 +859,8 @@ if (direction === "back") {
         type: "image",
         src: imageUrl,
         position: {
-          x: LOGICAL_CANVAS_WIDTH / 2,
-          y: LOGICAL_CANVAS_HEIGHT / 2,
+          x: canvasSize.width / 2,
+          y: canvasSize.height / 2,
         },
         size: getInitialImageSize(
           uploadedImage.naturalWidth,
@@ -856,18 +894,13 @@ if (direction === "back") {
   };
 
   const addText = () => {
-    const canvas = canvasRef.current;
-
-    const canvasWidth = canvas?.clientWidth || LOGICAL_CANVAS_WIDTH;
-    const canvasHeight = canvas?.clientHeight || LOGICAL_CANVAS_HEIGHT;
-
     const newText: DesignItem = {
       id: crypto.randomUUID(),
       type: "text",
       value: "",
       position: {
-        x: canvasWidth / 2,
-        y: canvasHeight / 2,
+        x: canvasSize.width / 2,
+        y: canvasSize.height / 2,
       },
       fontSize: DEFAULT_TEXT_FONT_SIZE,
       color: "#0f172a",
@@ -1025,7 +1058,7 @@ if (direction === "back") {
       ? getCanvasInteractionBounds(canvasRef.current)
       : null;
     const measuredDisplayScale = canvasBounds
-      ? getCanvasDisplayScale(canvasBounds)
+      ? getCanvasDisplayScale(canvasBounds, canvasSize)
       : 1;
     const displayScale =
       Number.isFinite(measuredDisplayScale) && measuredDisplayScale > 0
@@ -1078,7 +1111,7 @@ if (direction === "back") {
       ? getCanvasInteractionBounds(canvasRef.current)
       : null;
     const measuredDisplayScale = canvasBounds
-      ? getCanvasDisplayScale(canvasBounds)
+      ? getCanvasDisplayScale(canvasBounds, canvasSize)
       : 1;
     const displayScale =
       Number.isFinite(measuredDisplayScale) && measuredDisplayScale > 0
@@ -1161,7 +1194,7 @@ if (direction === "back") {
       throw new Error("The design canvas is not ready to export.");
     }
 
-    await exportDesignAsPng(exportCanvas, items, config);
+    await exportDesignAsPng(exportCanvas, canvasItems, config);
   };
 
   return (
@@ -1232,6 +1265,7 @@ if (direction === "back") {
           onViewModeChange={changeCanvasViewMode}
           viewport={editorViewport}
           onViewportChange={setEditorViewport}
+          canvasSize={canvasSize}
           toolbar={selectedItem ? (
             <LayerToolbar
               itemId={selectedItem.id}
@@ -1241,7 +1275,7 @@ if (direction === "back") {
               onMoveItemLayer={moveItemLayer}
             />
           ) : null}
-          items={items}
+          items={canvasItems}
           selectedItemId={selectedItemId}
           editingItemId={editingItemId}
           verticalGuide={alignmentGuides.vertical}
@@ -1350,9 +1384,9 @@ if (direction === "back") {
       >
         <ExportCanvas
           ref={exportCanvasRef}
-          items={items}
-          width={LOGICAL_CANVAS_WIDTH}
-          height={LOGICAL_CANVAS_HEIGHT}
+          items={canvasItems}
+          width={canvasSize.width}
+          height={canvasSize.height}
         />
       </div>
 
@@ -1360,6 +1394,7 @@ if (direction === "back") {
         open={showExportDialog}
         onClose={() => setShowExportDialog(false)}
         onExportPng={exportPng}
+        canvasSize={canvasSize}
       />
     </>
   );

@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  LOGICAL_CANVAS_HEIGHT,
-  LOGICAL_CANVAS_WIDTH,
-} from "./editor.constants";
 import type {
+  ExportCanvasDimensions,
   ExportFormat,
   ExportQualityPreset,
   PdfExportType,
@@ -20,6 +17,7 @@ type ExportDialogProps = {
   open: boolean;
   onClose: () => void;
   onExportPng: (config: PngExportConfig) => Promise<void>;
+  canvasSize: Pick<ExportCanvasDimensions, "width" | "height">;
 };
 
 type ExportStatus = {
@@ -87,6 +85,7 @@ export default function ExportDialog({
   open,
   onClose,
   onExportPng,
+  canvasSize,
 }: ExportDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [filename, setFilename] = useState("genvilo-design");
@@ -109,8 +108,8 @@ export default function ExportDialog({
   const exportScale = getExportScale(quality);
   const exportDimensions = getScaledExportDimensions(
     {
-      width: LOGICAL_CANVAS_WIDTH,
-      height: LOGICAL_CANVAS_HEIGHT,
+      width: canvasSize.width,
+      height: canvasSize.height,
     },
     exportScale
   );
@@ -172,8 +171,8 @@ export default function ExportDialog({
         scale: exportScale,
         transparentBackground,
         canvas: {
-          width: LOGICAL_CANVAS_WIDTH,
-          height: LOGICAL_CANVAS_HEIGHT,
+          width: canvasSize.width,
+          height: canvasSize.height,
           backgroundColor: "#ffffff",
         },
       });

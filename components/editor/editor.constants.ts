@@ -12,8 +12,8 @@ export const fontOptions = [
 
 export const SNAP_THRESHOLD = 8;
 
-export const LOGICAL_CANVAS_WIDTH = 360;
-export const LOGICAL_CANVAS_HEIGHT = 256;
+export const DESKTOP_CANVAS_SIZE = { width: 360, height: 256 } as const;
+export const MOBILE_CANVAS_SIZE = { width: 360, height: 480 } as const;
 
 export const DEFAULT_IMAGE_MAX_WIDTH = 120;
 export const DEFAULT_IMAGE_MAX_HEIGHT = 84;

@@ -19,13 +19,10 @@ import DesktopPanCursor, {
 } from "./DesktopPanCursor";
 import MobileCanvasZoomHud from "./MobileCanvasZoomHud";
 import type { TextResizeCorner } from "./CanvasTextItem";
-import {
-  LOGICAL_CANVAS_HEIGHT,
-  LOGICAL_CANVAS_WIDTH,
-} from "./editor.constants";
 import type {
   DesignItem,
   ImageDesignItem,
+  Size,
   TextDesignItem,
 } from "./editor.types";
 import type { CanvasViewMode } from "./CanvasViewModeControl";
@@ -42,6 +39,7 @@ type EditorCanvasProps = {
   onViewModeChange: (mode: CanvasViewMode) => void;
   viewport: EditorViewport;
   onViewportChange: Dispatch<SetStateAction<EditorViewport>>;
+  canvasSize: Size;
   items: DesignItem[];
   selectedItemId: string | null;
   editingItemId: string | null;
@@ -112,6 +110,7 @@ export default function EditorCanvas({
   onViewModeChange,
   viewport,
   onViewportChange,
+  canvasSize,
   items,
   selectedItemId,
   editingItemId,
@@ -231,12 +230,12 @@ export default function EditorCanvas({
       height: usableHeight,
     };
 
-    const widthScale = usableWidth / LOGICAL_CANVAS_WIDTH;
-    const heightScale = usableHeight / LOGICAL_CANVAS_HEIGHT;
+    const widthScale = usableWidth / canvasSize.width;
+    const heightScale = usableHeight / canvasSize.height;
     const nextScale =
-      isDesktop && viewMode !== "fit"
-        ? widthScale
-        : Math.min(widthScale, heightScale);
+      isDesktop && viewMode === "fit"
+        ? Math.min(widthScale, heightScale)
+        : widthScale;
 
     setIsDesktopLayout(isDesktop);
 
@@ -245,7 +244,7 @@ export default function EditorCanvas({
         ? nextScale
         : currentScale
     );
-  }, [viewMode]);
+  }, [canvasSize.height, canvasSize.width, viewMode]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;
@@ -935,8 +934,8 @@ export default function EditorCanvas({
 
       if (!measurement) return;
 
-      const widthScale = measurement.width / LOGICAL_CANVAS_WIDTH;
-      const heightScale = measurement.height / LOGICAL_CANVAS_HEIGHT;
+      const widthScale = measurement.width / canvasSize.width;
+      const heightScale = measurement.height / canvasSize.height;
       const targetScale =
         mode === "fit" ? Math.min(widthScale, heightScale) : widthScale;
       const targetViewport = {
@@ -958,7 +957,14 @@ export default function EditorCanvas({
         }
       );
     },
-    [animateViewport, baseScale, onViewModeChange, onViewportChange]
+    [
+      animateViewport,
+      baseScale,
+      canvasSize.height,
+      canvasSize.width,
+      onViewModeChange,
+      onViewportChange,
+    ]
   );
 
   const centerCanvas = useCallback(() => {
@@ -1293,7 +1299,7 @@ export default function EditorCanvas({
         style={{
           height: isDesktopLayout
             ? undefined
-            : "clamp(17.5rem, 36dvh, 19rem)",
+            : canvasSize.height * baseScale + 12,
         }}
       >
           <MobileCanvasZoomHud
@@ -1319,14 +1325,14 @@ export default function EditorCanvas({
             style={{
               left: `calc(50% + ${
                 viewport.panX -
-                (LOGICAL_CANVAS_WIDTH * displayScale) / 2
+                (canvasSize.width * displayScale) / 2
               }px)`,
               top: `calc(50% + ${
                 viewport.panY -
-                (LOGICAL_CANVAS_HEIGHT * displayScale) / 2
+                (canvasSize.height * displayScale) / 2
               }px)`,
-              width: LOGICAL_CANVAS_WIDTH * displayScale,
-              height: LOGICAL_CANVAS_HEIGHT * displayScale,
+              width: canvasSize.width * displayScale,
+              height: canvasSize.height * displayScale,
             }}
           >
             <div
@@ -1337,8 +1343,8 @@ export default function EditorCanvas({
               onPointerDown={onPointerDown}
               className="relative touch-pan-y overflow-hidden rounded-xl bg-white text-slate-500 select-none md:touch-none"
               style={{
-                width: LOGICAL_CANVAS_WIDTH,
-                height: LOGICAL_CANVAS_HEIGHT,
+                width: canvasSize.width,
+                height: canvasSize.height,
                 zoom: isDesktopLayout ? displayScale : undefined,
                 transform: isDesktopLayout
                   ? undefined
