@@ -42,7 +42,10 @@ import type {
   DesignItem,
   Position,
 } from "./editor/editor.types";
-import { exportDesign } from "../lib/export/exportDesign";
+import {
+  exportDesign,
+  type ExportDeliveryOptions,
+} from "../lib/export/exportDesign";
 import type { DesignExportConfig } from "../types/export";
 
 type EditorPreviewProps = {
@@ -1201,14 +1204,17 @@ if (direction === "back") {
     beginHistoryTransaction();
   };
 
-  const exportFile = async (config: DesignExportConfig) => {
+  const exportFile = async (
+    config: DesignExportConfig,
+    options?: ExportDeliveryOptions
+  ) => {
     const exportCanvas = exportCanvasRef.current;
 
     if (!exportCanvas) {
       throw new Error("The design canvas is not ready to export.");
     }
 
-    await exportDesign(exportCanvas, canvasItems, config);
+    await exportDesign(exportCanvas, canvasItems, config, options);
   };
 
   return (

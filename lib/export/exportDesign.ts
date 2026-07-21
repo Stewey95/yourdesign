@@ -11,6 +11,10 @@ import {
 } from "./captureDesign";
 import { createSinglePagePdf } from "./createPdf";
 
+export type ExportDeliveryOptions = {
+  onBeforeDownload?: () => void | Promise<void>;
+};
+
 export const sanitizeExportFilename = (filename: string) => {
   const sanitized = filename
     .normalize("NFKC")
@@ -25,10 +29,11 @@ export const sanitizeExportFilename = (filename: string) => {
   return sanitized || "genvilo-design";
 };
 
-const downloadExport = (
+const downloadExport = async (
   blob: Blob,
   filename: string,
-  extension: "png" | "jpg" | "pdf"
+  extension: "png" | "jpg" | "pdf",
+  options?: ExportDeliveryOptions
 ) => {
   const objectUrl = URL.createObjectURL(blob);
   const downloadLink = document.createElement("a");
@@ -39,6 +44,7 @@ const downloadExport = (
   document.body.appendChild(downloadLink);
 
   try {
+    await options?.onBeforeDownload?.();
     downloadLink.click();
   } finally {
     downloadLink.remove();
@@ -49,27 +55,30 @@ const downloadExport = (
 export async function exportDesignAsPng(
   node: HTMLElement,
   items: DesignItem[],
-  config: PngExportConfig
+  config: PngExportConfig,
+  options?: ExportDeliveryOptions
 ) {
   const blob = await captureDesignAsPng(node, items, config);
 
-  downloadExport(blob, config.filename, "png");
+  await downloadExport(blob, config.filename, "png", options);
 }
 
 export async function exportDesignAsJpg(
   node: HTMLElement,
   items: DesignItem[],
-  config: JpgExportConfig
+  config: JpgExportConfig,
+  options?: ExportDeliveryOptions
 ) {
   const blob = await captureDesignAsJpg(node, items, config);
 
-  downloadExport(blob, config.filename, "jpg");
+  await downloadExport(blob, config.filename, "jpg", options);
 }
 
 export async function exportDesignAsPdf(
   node: HTMLElement,
   items: DesignItem[],
-  config: PdfExportConfig
+  config: PdfExportConfig,
+  options?: ExportDeliveryOptions
 ) {
   const jpegConfig: JpgExportConfig = {
     ...config,
@@ -80,21 +89,22 @@ export async function exportDesignAsPdf(
   const jpeg = await captureDesignAsJpg(node, items, jpegConfig);
   const pdf = await createSinglePagePdf(jpeg, config);
 
-  downloadExport(pdf, config.filename, "pdf");
+  await downloadExport(pdf, config.filename, "pdf", options);
 }
 
 export async function exportDesign(
   node: HTMLElement,
   items: DesignItem[],
-  config: DesignExportConfig
+  config: DesignExportConfig,
+  options?: ExportDeliveryOptions
 ) {
   if (config.format === "png") {
-    return exportDesignAsPng(node, items, config);
+    return exportDesignAsPng(node, items, config, options);
   }
 
   if (config.format === "jpg") {
-    return exportDesignAsJpg(node, items, config);
+    return exportDesignAsJpg(node, items, config, options);
   }
 
-  return exportDesignAsPdf(node, items, config);
+  return exportDesignAsPdf(node, items, config, options);
 }

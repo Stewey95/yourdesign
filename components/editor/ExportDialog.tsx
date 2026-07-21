@@ -13,11 +13,16 @@ import {
   getScaledExportDimensions,
 } from "../../lib/export/exportDimensions";
 import { CANVAS_PRESETS } from "./editor.constants";
+import { isMobileSafari } from "../../lib/export/isMobileSafari";
+import type { ExportDeliveryOptions } from "../../lib/export/exportDesign";
 
 type ExportDialogProps = {
   open: boolean;
   onClose: () => void;
-  onExport: (config: DesignExportConfig) => Promise<void>;
+  onExport: (
+    config: DesignExportConfig,
+    options?: ExportDeliveryOptions
+  ) => Promise<void>;
   canvasSize: Pick<ExportCanvasDimensions, "width" | "height">;
 };
 
@@ -25,6 +30,19 @@ type ExportStatus = {
   kind: "progress" | "success" | "error" | "info";
   message: string;
 };
+
+type ExportDeliveryNotice = {
+  title: string;
+  message: string;
+  actions: string[];
+};
+
+const waitForNoticePaint = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
 
 const formatOptions: Array<{
   value: ExportFormat;
@@ -100,6 +118,8 @@ export default function ExportDialog({
     null
   );
   const [isExporting, setIsExporting] = useState(false);
+  const [deliveryNotice, setDeliveryNotice] =
+    useState<ExportDeliveryNotice | null>(null);
 
   const filenameIsValid = filename.trim().length > 0;
   const extension = format.toUpperCase();
@@ -145,18 +165,21 @@ export default function ExportDialog({
 
   const closeDialog = () => {
     setExportStatus(null);
+    setDeliveryNotice(null);
     onClose();
   };
 
   const selectFormat = (nextFormat: ExportFormat) => {
     setFormat(nextFormat);
     setExportStatus(null);
+    setDeliveryNotice(null);
   };
 
   const requestExport = async () => {
     if (!filenameIsValid || isExporting) return;
 
     setIsExporting(true);
+    setDeliveryNotice(null);
     setExportStatus({
       kind: "progress",
       message: `Preparing ${extension} export…`,
@@ -194,13 +217,39 @@ export default function ExportDialog({
                 pdfType,
               };
 
-      await onExport(config);
-      setExportStatus({
-        kind: "success",
-        message: `${extension} export complete`,
-      });
+      const usesSafariPdfPreview =
+        config.format === "pdf" && isMobileSafari();
+
+      await onExport(
+        config,
+        usesSafariPdfPreview
+          ? {
+              onBeforeDownload: async () => {
+                setDeliveryNotice({
+                  title: "Your PDF is ready",
+                  message: "Safari opens PDFs in Preview.",
+                  actions: [
+                    "Save to Files",
+                    "AirDrop",
+                    "Print",
+                    "Share with another app",
+                  ],
+                });
+                setExportStatus(null);
+                await waitForNoticePaint();
+              },
+            }
+          : undefined
+      );
+
+      if (!usesSafariPdfPreview) {
+        setExportStatus({
+          kind: "success",
+          message: `${extension} export complete`,
+        });
+      }
     } catch (error) {
-      console.error("PNG export failed", error);
+      console.error("Export failed", error);
       setExportStatus({
         kind: "error",
         message:
@@ -563,6 +612,44 @@ export default function ExportDialog({
           </details>
 
         </div>
+
+        {deliveryNotice && (
+          <section
+            aria-labelledby="export-delivery-title"
+            className="shrink-0 border-t border-emerald-400/15 bg-slate-900/95 px-5 pt-3 md:hidden"
+          >
+            <div className="relative rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3.5 text-emerald-50 shadow-lg shadow-emerald-950/10">
+              <button
+                type="button"
+                onClick={() => setDeliveryNotice(null)}
+                aria-label="Dismiss export guidance"
+                className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full text-lg text-emerald-200 transition hover:bg-emerald-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              >
+                ×
+              </button>
+              <h3
+                id="export-delivery-title"
+                className="pr-8 text-sm font-bold text-white"
+              >
+                {deliveryNotice.title}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-emerald-100/80">
+                {deliveryNotice.message} Tap the Share button to:
+              </p>
+              <ul className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs font-medium text-emerald-100">
+                {deliveryNotice.actions.map((action) => (
+                  <li key={action} className="flex items-center gap-1.5">
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300"
+                    />
+                    {action}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
 
         {exportStatus && (
           <div className="shrink-0 border-t border-white/10 bg-slate-900/95 px-5 pt-3 md:px-6">
