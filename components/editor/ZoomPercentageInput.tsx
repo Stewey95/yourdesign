@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   MAX_VIEWPORT_ZOOM,
   MIN_VIEWPORT_ZOOM,
@@ -10,6 +11,9 @@ type ZoomPercentageInputProps = {
   zoom: number;
   onApply: (zoom: number) => void;
   className: string;
+  buttonClassName?: string;
+  inputClassName?: string;
+  focusOnPointerDown?: boolean;
 };
 
 const formatZoom = (zoom: number) => `${Math.round(zoom * 100)}%`;
@@ -18,14 +22,29 @@ export default function ZoomPercentageInput({
   zoom,
   onApply,
   className,
+  buttonClassName = "",
+  inputClassName = "",
+  focusOnPointerDown = false,
 }: ZoomPercentageInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cancelBlurRef = useRef(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(formatZoom(zoom));
 
-  const startEditing = () => {
-    setDraft(String(Math.round(zoom * 100)));
+  const startEditing = (focusSynchronously = false) => {
+    const nextDraft = String(Math.round(zoom * 100));
+
+    if (focusSynchronously) {
+      flushSync(() => {
+        setDraft(nextDraft);
+        setIsEditing(true);
+      });
+      inputRef.current?.focus({ preventScroll: true });
+      inputRef.current?.select();
+      return;
+    }
+
+    setDraft(nextDraft);
     setIsEditing(true);
     requestAnimationFrame(() => inputRef.current?.select());
   };
@@ -60,9 +79,17 @@ export default function ZoomPercentageInput({
         aria-label={`Set canvas zoom, currently ${formatZoom(zoom)}`}
         aria-live="polite"
         title="Set exact zoom percentage"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={startEditing}
-        className={className}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+
+          if (focusOnPointerDown && event.isPrimary) {
+            startEditing(true);
+          }
+        }}
+        onClick={() => {
+          if (!focusOnPointerDown) startEditing();
+        }}
+        className={`${className} ${buttonClassName}`}
       >
         {formatZoom(zoom)}
       </button>
@@ -89,7 +116,7 @@ export default function ZoomPercentageInput({
           event.currentTarget.blur();
         }
       }}
-      className={className}
+      className={`${className} ${inputClassName}`}
     />
   );
 }

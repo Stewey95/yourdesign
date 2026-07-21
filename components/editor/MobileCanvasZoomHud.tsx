@@ -102,7 +102,10 @@ export default function MobileCanvasZoomHud({
             <ZoomPercentageInput
               zoom={zoom}
               onApply={onZoomChange}
-              className="h-9 w-16 rounded-full bg-slate-700 px-2 text-center text-xs font-bold tabular-nums text-white outline-none focus:ring-2 focus:ring-blue-400"
+              focusOnPointerDown
+              buttonClassName="text-xs"
+              inputClassName="text-base"
+              className="h-9 w-16 rounded-full bg-slate-700 px-2 text-center font-bold tabular-nums text-white outline-none focus:ring-2 focus:ring-blue-400"
             />
             <button
               type="button"
