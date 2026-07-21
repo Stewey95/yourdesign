@@ -161,7 +161,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Gripix",
-  description: "Create, customise and export beautiful designs with Gripix.",
+  description:
+    "Create beautiful graphics anywhere and export high-quality PNG, JPG and PDF files with Gripix.",
 };
 
 export default function RootLayout({
