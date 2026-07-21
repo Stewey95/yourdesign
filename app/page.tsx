@@ -202,7 +202,7 @@ export default function Home() {
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: LANDING_SCROLL_RESET_SCRIPT }} />
-      <main className="min-h-screen overflow-hidden bg-white font-[family-name:var(--font-geist-sans)] text-slate-950">
+      <main className="min-h-screen overflow-x-clip bg-white font-[family-name:var(--font-geist-sans)] text-slate-950">
         <Navbar />
 
         <section id="home" className="relative px-5 pb-20 pt-20 sm:px-6 sm:pb-28 sm:pt-28 lg:px-8">
