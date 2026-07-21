@@ -463,18 +463,33 @@ export default function EditorCanvas({
         return;
       }
 
-      if (!event.ctrlKey && !event.metaKey) return;
-
       event.preventDefault();
       cancelZoomAnimation();
       discreteZoomTargetRef.current = null;
-      const zoomFactor = Math.exp(-event.deltaY * 0.002);
 
-      zoomAtPoint(
-        (currentZoom) => currentZoom * zoomFactor,
-        event.clientX,
-        event.clientY
-      );
+      if (event.ctrlKey || event.metaKey) {
+        const zoomFactor = Math.exp(-event.deltaY * 0.002);
+
+        zoomAtPoint(
+          (currentZoom) => currentZoom * zoomFactor,
+          event.clientX,
+          event.clientY
+        );
+        return;
+      }
+
+      const deltaUnit =
+        event.deltaMode === WheelEvent.DOM_DELTA_LINE
+          ? 16
+          : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+            ? workspace.clientHeight
+            : 1;
+
+      onViewportChange((currentViewport) => ({
+        ...currentViewport,
+        panX: currentViewport.panX - event.deltaX * deltaUnit,
+        panY: currentViewport.panY - event.deltaY * deltaUnit,
+      }));
     };
 
     workspace.addEventListener("wheel", handleWheel, {
@@ -482,7 +497,7 @@ export default function EditorCanvas({
     });
 
     return () => workspace.removeEventListener("wheel", handleWheel);
-  }, [cancelZoomAnimation, zoomAtPoint]);
+  }, [cancelZoomAnimation, onViewportChange, zoomAtPoint]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;
@@ -946,6 +961,20 @@ export default function EditorCanvas({
     [animateViewport, baseScale, onViewModeChange, onViewportChange]
   );
 
+  const centerCanvas = useCallback(() => {
+    cancelZoomAnimation();
+    discreteZoomTargetRef.current = null;
+
+    animateViewport(
+      {
+        ...viewportRef.current,
+        panX: 0,
+        panY: 0,
+      },
+      "Centered"
+    );
+  }, [animateViewport, cancelZoomAnimation]);
+
   useEffect(() => {
     const handleViewportShortcut = (event: KeyboardEvent) => {
       if (
@@ -1183,8 +1212,7 @@ export default function EditorCanvas({
             onZoomIn={() => runZoomStep(1)}
             onZoomOut={() => runZoomStep(-1)}
             onZoomChange={(zoom) => runDiscreteZoom(zoom)}
-            onFit={() => runViewMode("fit")}
-            onFill={() => runViewMode("fill")}
+            onCenter={centerCanvas}
           />
         </div>
       </div>
@@ -1209,7 +1237,7 @@ export default function EditorCanvas({
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}
         onTouchCancelCapture={cancelTouchGesture}
-        className={`relative w-full touch-pan-y overflow-hidden md:min-h-0 md:flex-1 md:touch-auto md:overflow-x-hidden md:px-2 md:pb-2 ${
+        className={`relative w-full touch-pan-y overflow-hidden md:min-h-0 md:flex-1 md:touch-auto md:overscroll-none md:overflow-x-hidden md:px-2 md:pb-2 ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
             : "md:overflow-y-hidden"

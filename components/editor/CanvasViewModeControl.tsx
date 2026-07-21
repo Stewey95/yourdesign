@@ -10,8 +10,7 @@ type CanvasViewModeControlProps = {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomChange: (zoom: number) => void;
-  onFit: () => void;
-  onFill: () => void;
+  onCenter: () => void;
 };
 
 const zoomPresets = [25, 50, 75, 100, 150, 200, 300, 500];
@@ -21,8 +20,7 @@ export default function CanvasViewModeControl({
   onZoomIn,
   onZoomOut,
   onZoomChange,
-  onFit,
-  onFill,
+  onCenter,
 }: CanvasViewModeControlProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -124,6 +122,16 @@ export default function CanvasViewModeControl({
       </button>
       <div className="mx-1 h-5 w-px bg-white/10" aria-hidden="true" />
       <button
+        type="button"
+        aria-label="Centre canvas"
+        title="Centre canvas"
+        onPointerDown={protectPointer}
+        onClick={onCenter}
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-base font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        <span aria-hidden="true">⌖</span>
+      </button>
+      <button
         ref={triggerRef}
         type="button"
         aria-label="Open canvas zoom options"
@@ -145,23 +153,6 @@ export default function CanvasViewModeControl({
           <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
             Canvas zoom
           </div>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => selectMenuAction(onFit)}
-            className="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            Fit
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => selectMenuAction(onFill)}
-            className="block w-full rounded-lg px-3 py-2 text-left font-semibold hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            Fill
-          </button>
-          <div className="my-1 h-px bg-white/10" aria-hidden="true" />
           {zoomPresets.map((percentage) => (
             <button
               key={percentage}
