@@ -441,28 +441,41 @@ const getSnappedPosition = (
   useEffect(() => {
     const handleHistoryShortcut = (event: KeyboardEvent) => {
       const target = event.target;
+      const activeElement = document.activeElement;
+      const isEditableElement = (element: EventTarget | null) =>
+        element instanceof Element &&
+        Boolean(
+          element.closest(
+            "input, textarea, select, [contenteditable='true'], [contenteditable=''], [role='textbox']"
+          )
+        );
 
       if (
-        target instanceof HTMLElement &&
-        (target.matches("input, textarea, select") ||
-          target.isContentEditable ||
-          Boolean(target.closest("[contenteditable='true']")))
+        isEditableElement(target) ||
+        isEditableElement(activeElement)
       ) {
         return;
       }
 
       const key = event.key.toLowerCase();
       const usesCommandModifier = event.metaKey || event.ctrlKey;
+      const usesApplePlatform = /Mac|iPhone|iPad|iPod/.test(
+        navigator.platform
+      );
+      const usesDuplicateModifier = usesApplePlatform
+        ? event.metaKey && !event.ctrlKey
+        : event.ctrlKey && !event.metaKey;
       const requestsUndo =
         usesCommandModifier && key === "z" && !event.shiftKey;
       const requestsRedo =
         (usesCommandModifier && key === "z" && event.shiftKey) ||
         (event.ctrlKey && key === "y");
       const requestsDuplicate =
-        usesCommandModifier &&
+        usesDuplicateModifier &&
         key === "d" &&
         !event.shiftKey &&
-        !event.altKey;
+        !event.altKey &&
+        !event.repeat;
 
       if (requestsUndo && canUndo) {
         event.preventDefault();
@@ -473,26 +486,32 @@ const getSnappedPosition = (
       } else if (
         requestsDuplicate &&
         selectedItemId &&
-        !editingItemId
+        !editingItemId &&
+        !showExportDialog &&
+        !showNewDesignDialog &&
+        items.some((item) => item.id === selectedItemId)
       ) {
         event.preventDefault();
         duplicateSelectedItem();
       }
     };
 
-    window.addEventListener("keydown", handleHistoryShortcut);
+    window.addEventListener("keydown", handleHistoryShortcut, true);
 
     return () => {
-      window.removeEventListener("keydown", handleHistoryShortcut);
+      window.removeEventListener("keydown", handleHistoryShortcut, true);
     };
   }, [
     canRedo,
     canUndo,
     duplicateSelectedItem,
     editingItemId,
+    items,
     performRedo,
     performUndo,
     selectedItemId,
+    showExportDialog,
+    showNewDesignDialog,
   ]);
 
   useEffect(() => {
