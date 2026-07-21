@@ -7,6 +7,7 @@ type EditorHeaderProps = {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  onNewDesign: () => void;
   onExport: () => void;
 };
 
@@ -15,6 +16,7 @@ export default function EditorHeader({
   canRedo,
   onUndo,
   onRedo,
+  onNewDesign,
   onExport,
 }: EditorHeaderProps) {
   return (
@@ -35,6 +37,16 @@ export default function EditorHeader({
 </Link>
 
        <div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={onNewDesign}
+    aria-label="New Design"
+    title="New Design"
+    className="cursor-pointer whitespace-nowrap rounded-lg border border-purple-400/40 bg-purple-500/10 px-2 py-1 text-xs font-semibold text-purple-200 transition hover:border-purple-300/60 hover:bg-purple-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 sm:px-3 sm:text-sm"
+  >
+    New Design
+  </button>
+
   <button
     type="button"
     onClick={onUndo}

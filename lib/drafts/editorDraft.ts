@@ -147,6 +147,36 @@ export const saveEditorDraft = (draft: EditorDraft) => {
   return saveQueue;
 };
 
+export const resetEditorDraft = (draft: EditorDraft) => {
+  const signature = createSignature(draft);
+
+  pendingSignatures.add(signature);
+  saveQueue = saveQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const database = await openDraftDatabase();
+      const storedDraft: StoredEditorDraft = {
+        key: CURRENT_DRAFT_KEY,
+        version: DRAFT_VERSION,
+        presetId: draft.presetId,
+        items: [],
+        savedAt: Date.now(),
+      };
+      const transaction = database.transaction(DRAFT_STORE, "readwrite");
+      const store = transaction.objectStore(DRAFT_STORE);
+
+      store.delete(CURRENT_DRAFT_KEY);
+      store.put(storedDraft);
+      await completeTransaction(transaction);
+      lastSavedSignature = signature;
+    })
+    .finally(() => {
+      pendingSignatures.delete(signature);
+    });
+
+  return saveQueue;
+};
+
 export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
   const database = await openDraftDatabase();
   const transaction = database.transaction(DRAFT_STORE, "readonly");

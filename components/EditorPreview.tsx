@@ -18,6 +18,7 @@ import ExportCanvas from "./editor/ExportCanvas";
 import ExportDialog from "./editor/ExportDialog";
 import LayerToolbar from "./editor/LayerToolbar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
+import NewDesignDialog from "./editor/NewDesignDialog";
 import {
   clampFontSize,
   DEFAULT_IMAGE_MAX_HEIGHT,
@@ -49,6 +50,7 @@ import {
 import type { DesignExportConfig } from "../types/export";
 import {
   loadEditorDraft,
+  resetEditorDraft,
   saveEditorDraft,
 } from "../lib/drafts/editorDraft";
 
@@ -86,6 +88,9 @@ export default function EditorPreview({
     panY: 0,
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showNewDesignDialog, setShowNewDesignDialog] = useState(false);
+  const [isStartingNewDesign, setIsStartingNewDesign] = useState(false);
+  const [newDesignError, setNewDesignError] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [selectedCanvasPresetId, setSelectedCanvasPresetId] =
     useState<CanvasPresetId>(DEFAULT_DESKTOP_CANVAS_PRESET_ID);
@@ -107,6 +112,8 @@ export default function EditorPreview({
   const exportCanvasRef = useRef<HTMLDivElement | null>(null);
   const hasUserSelectedCanvasPresetRef = useRef(false);
   const restoredDraftReleaseRef = useRef<(() => void) | null>(null);
+  const draftSaveTimerRef = useRef<number | null>(null);
+  const draftSaveGenerationRef = useRef(0);
   const latestItemsRef = useRef(items);
   const canvasSize = getCanvasPreset(selectedCanvasPresetId);
   const canvasItems = useMemo(
@@ -190,16 +197,25 @@ export default function EditorPreview({
   useEffect(() => {
     if (!draftReady) return;
 
+    const saveGeneration = draftSaveGenerationRef.current;
     const draft = {
       presetId: selectedCanvasPresetId,
       items,
     };
     const saveDraft = () => {
+      if (saveGeneration !== draftSaveGenerationRef.current) return;
+
       void saveEditorDraft(draft).catch((error) => {
         console.warn("The local editor draft could not be saved.", error);
       });
     };
-    const saveTimer = window.setTimeout(saveDraft, 400);
+    const saveTimer = window.setTimeout(() => {
+      if (draftSaveTimerRef.current === saveTimer) {
+        draftSaveTimerRef.current = null;
+      }
+      saveDraft();
+    }, 400);
+    draftSaveTimerRef.current = saveTimer;
     const saveWhenHidden = () => {
       if (document.visibilityState === "hidden") saveDraft();
     };
@@ -209,6 +225,9 @@ export default function EditorPreview({
 
     return () => {
       window.clearTimeout(saveTimer);
+      if (draftSaveTimerRef.current === saveTimer) {
+        draftSaveTimerRef.current = null;
+      }
       document.removeEventListener("visibilitychange", saveWhenHidden);
       window.removeEventListener("pagehide", saveDraft);
     };
@@ -462,6 +481,62 @@ const getSnappedPosition = (
       horizontal: false,
     });
   }, [commitItems, selectedItemId]);
+
+  const startNewDesign = async () => {
+    if (isStartingNewDesign) return;
+
+    setIsStartingNewDesign(true);
+    setNewDesignError(null);
+    draftSaveGenerationRef.current += 1;
+
+    if (draftSaveTimerRef.current !== null) {
+      window.clearTimeout(draftSaveTimerRef.current);
+      draftSaveTimerRef.current = null;
+    }
+
+    try {
+      await resetEditorDraft({
+        presetId: selectedCanvasPresetId,
+        items: [],
+      });
+
+      activeResizeCleanupRef.current?.();
+      activeResizeCleanupRef.current = null;
+      pendingDragRef.current = null;
+      pinchRef.current = null;
+      canvasTapRef.current = null;
+      pageInteractionRef.current = null;
+      justPinchedRef.current = false;
+      restoredDraftReleaseRef.current?.();
+      restoredDraftReleaseRef.current = null;
+      latestItemsRef.current = [];
+
+      restoreItems([]);
+      setSelectedItemId(null);
+      setDraggingItemId(null);
+      setEditingItemId(null);
+      setShowMobileContextToolbar(false);
+      setShowImageAdjustments(false);
+      setAlignmentGuides({
+        vertical: false,
+        horizontal: false,
+      });
+      setShowNewDesignDialog(false);
+    } catch (error) {
+      console.error("The new design could not be started.", error);
+      void saveEditorDraft({
+        presetId: selectedCanvasPresetId,
+        items,
+      }).catch((saveError) => {
+        console.warn("The local editor draft could not be saved.", saveError);
+      });
+      setNewDesignError(
+        "Your saved draft could not be cleared. Please try again."
+      );
+    } finally {
+      setIsStartingNewDesign(false);
+    }
+  };
 
   useEffect(() => {
     const isMobileViewport = () =>
@@ -1309,6 +1384,10 @@ if (direction === "back") {
         canRedo={canRedo}
         onUndo={performUndo}
         onRedo={performRedo}
+        onNewDesign={() => {
+          setNewDesignError(null);
+          setShowNewDesignDialog(true);
+        }}
         onExport={() => setShowExportDialog(true)}
       />
 
@@ -1494,6 +1573,17 @@ if (direction === "back") {
         onClose={() => setShowExportDialog(false)}
         onExport={exportFile}
         canvasSize={canvasSize}
+      />
+
+      <NewDesignDialog
+        open={showNewDesignDialog}
+        isStarting={isStartingNewDesign}
+        errorMessage={newDesignError}
+        onCancel={() => {
+          setNewDesignError(null);
+          setShowNewDesignDialog(false);
+        }}
+        onConfirm={() => void startNewDesign()}
       />
     </>
   );
