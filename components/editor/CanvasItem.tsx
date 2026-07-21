@@ -25,6 +25,7 @@ type TextCanvasItemProps = {
   editing: boolean;
   mobileLayout: boolean;
   displayScale: number;
+  canvasWidth: number;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -52,6 +53,20 @@ type CanvasItemProps =
 export default function CanvasItem(props: CanvasItemProps) {
   const { item } = props;
   const selected = "selected" in props && props.selected;
+  const textMaximumWidth =
+    item.type === "text" && "canvasWidth" in props
+      ? Math.max(
+          1,
+          Math.min(
+            props.canvasWidth,
+            2 *
+              Math.min(
+                item.position.x,
+                props.canvasWidth - item.position.x
+              )
+          )
+        )
+      : undefined;
 
   return (
     <div
@@ -67,6 +82,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         left: item.position.x,
         top: item.position.y,
         width: item.type === "text" ? "max-content" : undefined,
+        maxWidth: textMaximumWidth,
         transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
         touchAction: "none",
         WebkitUserSelect: "none",
@@ -88,6 +104,7 @@ export default function CanvasItem(props: CanvasItemProps) {
           editing={props.editing}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
+          maximumWidth={textMaximumWidth ?? props.canvasWidth}
           onRequestAutoFit={props.onRequestAutoFit}
           onValueChange={props.onValueChange}
           onRemoveEmptyText={props.onRemoveEmptyText}

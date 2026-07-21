@@ -15,6 +15,7 @@ type CanvasTextItemProps = {
   editing: boolean;
   mobileLayout: boolean;
   displayScale: number;
+  maximumWidth: number;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -41,6 +42,7 @@ export default function CanvasTextItem({
   editing,
   mobileLayout,
   displayScale,
+  maximumWidth,
   onRequestAutoFit,
   onValueChange,
   onRemoveEmptyText,
@@ -174,17 +176,22 @@ export default function CanvasTextItem({
   const measurementValue = item.value.endsWith("\n")
     ? `${item.value}\u200b`
     : item.value || "Type here";
+  const constrainedWidth = `min(76vw, 460px, ${maximumWidth}px)`;
 
   return (
-    <div className="relative md:inline-grid md:max-w-full">
+    <div
+      className="relative md:inline-grid md:max-w-full"
+      style={{ maxWidth: maximumWidth }}
+    >
         <span
           aria-hidden="true"
-          className="invisible hidden min-h-[1.2em] w-fit max-w-[min(76vw,460px)] whitespace-pre-wrap break-words text-center font-bold md:block"
+          className="invisible hidden min-h-[1.2em] w-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-center font-bold md:block"
           style={{
             fontSize: item.fontSize,
             fontFamily: item.fontFamily,
             textShadow: "0 1px 4px rgba(0,0,0,0.35)",
             lineHeight: 1.15,
+            maxWidth: maximumWidth,
           }}
         >
           {measurementValue}
@@ -245,7 +252,7 @@ onValueChange(item.id, value);
 }}
             placeholder="Type here"
          rows={1}
-            className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent text-center font-bold outline-none touch-none md:absolute md:inset-0 md:h-full md:!w-full md:!max-w-full"
+            className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap [overflow-wrap:anywhere] bg-transparent text-center font-bold outline-none touch-none md:absolute md:inset-0 md:h-full md:!w-full md:!max-w-full"
             style={{
               fontSize: item.fontSize,
               color: item.color,
@@ -256,8 +263,8 @@ onValueChange(item.id, value);
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",
-             width: "min(76vw, 460px)",
-maxWidth: "100%",
+             width: constrainedWidth,
+maxWidth: maximumWidth,
             }}
           />
         ) : (
@@ -271,7 +278,7 @@ maxWidth: "100%",
                 event.clientY
               );
             }}
-            className="cursor-move select-none whitespace-pre-wrap break-words text-center font-bold touch-none md:absolute md:inset-0 md:!w-full md:!max-w-full"
+            className="cursor-move select-none whitespace-pre-wrap [overflow-wrap:anywhere] text-center font-bold touch-none md:absolute md:inset-0 md:!w-full md:!max-w-full"
             style={{
               fontSize: item.fontSize,
               color: item.color,
@@ -279,8 +286,8 @@ maxWidth: "100%",
               textShadow:
                 "0 1px 4px rgba(0,0,0,0.35)",
               lineHeight: 1.15,
-              width: "min(76vw, 460px)",
-maxWidth: "100%",
+              width: constrainedWidth,
+maxWidth: maximumWidth,
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",

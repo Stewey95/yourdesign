@@ -1298,6 +1298,24 @@ export default function EditorCanvas({
         </div>
       </div>
 
+      <MobileCanvasZoomHud
+        zoom={viewport.zoom}
+        onZoomOut={() => zoomAtPoint(viewport.zoom / 1.25)}
+        onZoomIn={() => zoomAtPoint(viewport.zoom * 1.25)}
+        onZoomChange={(zoom) => zoomAtPoint(zoom)}
+        onReset={() => {
+          cancelZoomAnimation();
+          discreteZoomTargetRef.current = null;
+          onViewportChange({ zoom: 1, panX: 0, panY: 0 });
+        }}
+        onFit={() => {
+          cancelZoomAnimation();
+          discreteZoomTargetRef.current = null;
+          onViewModeChange("fit");
+          onViewportChange({ zoom: 1, panX: 0, panY: 0 });
+        }}
+      />
+
       <div
         ref={workspaceRef}
         data-editor-retain-selection
@@ -1329,23 +1347,6 @@ export default function EditorCanvas({
             : canvasSize.height * baseScale + 12,
         }}
       >
-          <MobileCanvasZoomHud
-            zoom={viewport.zoom}
-            onZoomOut={() => zoomAtPoint(viewport.zoom / 1.25)}
-            onZoomIn={() => zoomAtPoint(viewport.zoom * 1.25)}
-            onZoomChange={(zoom) => zoomAtPoint(zoom)}
-            onReset={() => {
-              cancelZoomAnimation();
-              discreteZoomTargetRef.current = null;
-              onViewportChange({ zoom: 1, panX: 0, panY: 0 });
-            }}
-            onFit={() => {
-              cancelZoomAnimation();
-              discreteZoomTargetRef.current = null;
-              onViewModeChange("fit");
-              onViewportChange({ zoom: 1, panX: 0, panY: 0 });
-            }}
-          />
           <div
             data-canvas-viewport
             className="absolute"
@@ -1409,6 +1410,7 @@ export default function EditorCanvas({
                   editing={editingItemId === item.id}
                   mobileLayout={!isDesktopLayout}
                   displayScale={displayScale}
+                  canvasWidth={canvasSize.width}
                   onRequestAutoFit={onRequestAutoFit}
                   onValueChange={onTextValueChange}
                   onRemoveEmptyText={onRemoveEmptyText}

@@ -74,7 +74,7 @@ export default function MobileCanvasZoomHud({
       onPointerDown={protectPointer}
       onPointerMove={(event) => event.stopPropagation()}
       onPointerUp={(event) => event.stopPropagation()}
-      className="absolute right-2 top-2 z-[60] md:hidden"
+      className="relative z-[60] flex min-h-11 justify-end pb-2 pl-2 pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden"
     >
       {!expanded ? (
         <button
