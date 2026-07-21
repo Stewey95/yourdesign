@@ -35,7 +35,7 @@ export const viewport = {
 };
 
 /*
-  This remains Genvilo's normal website font.
+  This remains Gripix's normal website font.
   Keeping --font-sans restores the previous layout appearance.
 */
 const inter = Inter({
@@ -160,8 +160,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Genvilo",
-  description: "Create, customise and export beautiful designs with Genvilo.",
+  title: "Gripix",
+  description: "Create, customise and export beautiful designs with Gripix.",
 };
 
 export default function RootLayout({

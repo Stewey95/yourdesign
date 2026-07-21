@@ -153,7 +153,7 @@ export default function Home() {
 
     <Image
       src="/brand/genvilo-icon-master.png"
-      alt="Genvilo"
+      alt="Gripix"
       width={1536}
       height={1024}
       priority
@@ -193,7 +193,7 @@ export default function Home() {
       >
         <div className="mb-10 text-center">
           <h2 className="text-3xl font-bold md:text-4xl">
-            Why Genvilo?
+            Why Gripix?
           </h2>
 
           <p className="mt-3 text-slate-300">

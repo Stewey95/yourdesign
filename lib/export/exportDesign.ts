@@ -31,7 +31,7 @@ export const sanitizeExportFilename = (filename: string) => {
     .replace(/^[. -]+|[. -]+$/g, "")
     .slice(0, 120);
 
-  return sanitized || "genvilo-design";
+  return sanitized || "gripix-design";
 };
 
 const downloadExport = async (

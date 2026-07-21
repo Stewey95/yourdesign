@@ -34,7 +34,7 @@ export async function createSinglePagePdf(
     append(`${objectNumber} 0 obj\n`);
   };
 
-  append("%PDF-1.4\n%Genvilo\n");
+  append("%PDF-1.4\n%Gripix\n");
 
   startObject(1);
   append("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");

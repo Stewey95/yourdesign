@@ -23,7 +23,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-md">
       <nav className="relative mx-auto flex min-h-[112px] max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Genvilo logo and company name */}
+        {/* Gripix logo and company name */}
         <Link
           href="/"
           onClick={handleLogoClick}
@@ -31,7 +31,7 @@ export default function Navbar() {
         >
           <Image
             src="/brand/genvilo-icon-master.png"
-            alt="Genvilo"
+            alt="Gripix"
             width={1536}
             height={1024}
             priority
@@ -39,7 +39,7 @@ export default function Navbar() {
           />
 
           <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-xl font-extrabold tracking-tight text-transparent sm:text-3xl">
-            Genvilo
+            Gripix
           </span>
         </Link>
 

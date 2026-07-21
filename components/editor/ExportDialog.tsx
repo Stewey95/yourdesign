@@ -104,7 +104,7 @@ export default function ExportDialog({
 }: ExportDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const preparedDeliveryRef = useRef<PreparedExportDelivery | null>(null);
-  const [filename, setFilename] = useState("genvilo-design");
+  const [filename, setFilename] = useState("gripix-design");
   const [format, setFormat] = useState<ExportFormat>("png");
   const [quality, setQuality] = useState<ExportQualityPreset>("high");
   const [transparentBackground, setTransparentBackground] =

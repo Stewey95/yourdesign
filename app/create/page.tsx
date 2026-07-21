@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import EditorPreview from "../../components/EditorPreview";
 
 export const metadata: Metadata = {
-  title: "Genvilo Editor",
-  description: "Create and export designs in the Genvilo editor.",
+  title: "Gripix Editor",
+  description: "Create and export designs in the Gripix editor.",
 };
 
 export default function CreatePage() {

@@ -25,7 +25,7 @@ export default function EditorHeader({
       <Link href="/" className="flex items-center gap-2">
   <img
     src="/brand/genvilo-icon-master.png"
-    alt="Genvilo"
+    alt="Gripix"
     className="h-9 w-9 object-contain"
   />
 

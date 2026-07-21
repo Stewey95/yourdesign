@@ -1,8 +1,8 @@
-# Genvilo Development Instructions
+# Gripix Development Instructions
 
 ## Project overview
 
-Genvilo is a Next.js TypeScript design platform with a Canva-style editor.
+Gripix is a Next.js TypeScript design platform with a Canva-style editor.
 
 The project uses:
 - Next.js App Router
@@ -17,7 +17,7 @@ The project uses:
 - Preserve all existing working features unless explicitly asked to change them.
 - Treat desktop and mobile behaviour as equally important.
 - Never redesign the UI without explicit approval.
-- Keep Genvilo's premium, friendly, Canva-style visual language.
+- Keep Gripix's premium, friendly, Canva-style visual language.
 - Prefer small, reviewable changes over large rewrites.
 - Do not combine refactoring, visual redesign, and new functionality in the same step.
 - Do not commit or push to GitHub unless explicitly instructed.
@@ -98,11 +98,11 @@ When practical, preserve compatibility with:
 - Prefer one safe task at a time.
 - Ask for approval before beginning the next task.
 
-# Genvilo Product Vision
+# Gripix Product Vision
 
 ## Mission
 
-Genvilo exists to become the easiest and most enjoyable place to create, organise and sell digital products online.
+Gripix exists to become the easiest and most enjoyable place to create, organise and sell digital products online.
 
 Every feature should help creators spend less time fighting software and more time creating products that make money.
 
@@ -141,7 +141,7 @@ Instead, adopt their principles:
 
 ## Editor Philosophy
 
-The editor is the heart of Genvilo.
+The editor is the heart of Gripix.
 
 Every improvement should make creating designs feel:
 
@@ -173,13 +173,13 @@ Every feature should answer at least one of these questions:
 - Does this help people create?
 - Does this help people sell?
 - Does this save people time?
-- Does this make Genvilo feel more premium?
+- Does this make Gripix feel more premium?
 
 If the answer is no, question whether the feature should exist.
 
 ## Future Vision
 
-Genvilo should eventually become more than a design editor.
+Gripix should eventually become more than a design editor.
 
 It should become an entire creator platform including:
 
@@ -206,7 +206,7 @@ Small improvements made consistently create exceptional software.
 
 ## The 1% Rule
 
-When working on Genvilo, always look for an opportunity to make the product 1% better than requested.
+When working on Gripix, always look for an opportunity to make the product 1% better than requested.
 
 Small improvements are encouraged when they:
 
@@ -217,5 +217,4 @@ Small improvements are encouraged when they:
 - improve visual polish
 
 Over hundreds of iterations, these small improvements create an exceptional product.
-
 
