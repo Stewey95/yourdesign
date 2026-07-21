@@ -32,10 +32,15 @@ export default function MobileCanvasZoomHud({
 
     const closeOnOutsidePointer = (event: PointerEvent) => {
       const target = event.target;
+      const container = containerRef.current;
+      const startedInsideHud = Boolean(
+        container && event.composedPath().includes(container)
+      );
 
       if (
+        !startedInsideHud &&
         target instanceof Node &&
-        !containerRef.current?.contains(target) &&
+        !container?.contains(target) &&
         !(
           target instanceof Element &&
           target.closest("[data-editor-keep-zoom-hud-open]")
@@ -65,6 +70,7 @@ export default function MobileCanvasZoomHud({
     <div
       ref={containerRef}
       data-editor-retain-selection
+      data-editor-keep-zoom-hud-open
       onPointerDown={protectPointer}
       onPointerMove={(event) => event.stopPropagation()}
       onPointerUp={(event) => event.stopPropagation()}
