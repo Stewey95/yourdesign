@@ -975,6 +975,19 @@ export default function EditorCanvas({
     );
   }, [animateViewport, cancelZoomAnimation]);
 
+  const resetZoom = useCallback(() => {
+    cancelZoomAnimation();
+    discreteZoomTargetRef.current = 1;
+
+    animateViewport(
+      {
+        ...viewportRef.current,
+        zoom: 1,
+      },
+      "100%"
+    );
+  }, [animateViewport, cancelZoomAnimation]);
+
   useEffect(() => {
     const handleViewportShortcut = (event: KeyboardEvent) => {
       if (
@@ -1212,6 +1225,7 @@ export default function EditorCanvas({
             onZoomIn={() => runZoomStep(1)}
             onZoomOut={() => runZoomStep(-1)}
             onZoomChange={(zoom) => runDiscreteZoom(zoom)}
+            onResetZoom={resetZoom}
             onCenter={centerCanvas}
           />
         </div>

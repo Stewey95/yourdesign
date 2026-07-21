@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LocateFixed } from "lucide-react";
 import ZoomPercentageInput from "./ZoomPercentageInput";
 
 export type CanvasViewMode = "fit" | "fill";
@@ -10,6 +11,7 @@ type CanvasViewModeControlProps = {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomChange: (zoom: number) => void;
+  onResetZoom: () => void;
   onCenter: () => void;
 };
 
@@ -20,6 +22,7 @@ export default function CanvasViewModeControl({
   onZoomIn,
   onZoomOut,
   onZoomChange,
+  onResetZoom,
   onCenter,
 }: CanvasViewModeControlProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -123,13 +126,23 @@ export default function CanvasViewModeControl({
       <div className="mx-1 h-5 w-px bg-white/10" aria-hidden="true" />
       <button
         type="button"
-        aria-label="Centre canvas"
-        title="Centre canvas"
+        aria-label="Reset Zoom to 100%"
+        title="Reset Zoom to 100%"
+        onPointerDown={protectPointer}
+        onClick={onResetZoom}
+        className="flex h-8 items-center justify-center rounded-lg px-2 text-[11px] font-bold tabular-nums text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        100%
+      </button>
+      <button
+        type="button"
+        aria-label="Centre Canvas"
+        title="Centre Canvas"
         onPointerDown={protectPointer}
         onClick={onCenter}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-base font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
-        <span aria-hidden="true">⌖</span>
+        <LocateFixed aria-hidden="true" className="h-4 w-4" />
       </button>
       <button
         ref={triggerRef}
