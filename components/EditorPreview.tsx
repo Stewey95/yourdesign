@@ -47,6 +47,10 @@ import {
   type ExportDeliveryOptions,
 } from "../lib/export/exportDesign";
 import type { DesignExportConfig } from "../types/export";
+import {
+  loadEditorDraft,
+  saveEditorDraft,
+} from "../lib/drafts/editorDraft";
 
 type EditorPreviewProps = {
   fullScreen?: boolean;
@@ -61,6 +65,7 @@ export default function EditorPreview({
     canRedo,
     commit: commitItems,
     updateTransaction: updateItems,
+    restore: restoreItems,
     beginTransaction: beginHistoryTransaction,
     commitTransaction: commitHistoryTransaction,
     isTransactionActive,
@@ -81,6 +86,7 @@ export default function EditorPreview({
     panY: 0,
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
   const [selectedCanvasPresetId, setSelectedCanvasPresetId] =
     useState<CanvasPresetId>(DEFAULT_DESKTOP_CANVAS_PRESET_ID);
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
@@ -100,6 +106,8 @@ export default function EditorPreview({
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const exportCanvasRef = useRef<HTMLDivElement | null>(null);
   const hasUserSelectedCanvasPresetRef = useRef(false);
+  const restoredDraftReleaseRef = useRef<(() => void) | null>(null);
+  const latestItemsRef = useRef(items);
   const canvasSize = getCanvasPreset(selectedCanvasPresetId);
   const canvasItems = useMemo(
     () =>
@@ -112,6 +120,10 @@ export default function EditorPreview({
       })),
     [canvasSize.height, canvasSize.width, items]
   );
+
+  useEffect(() => {
+    latestItemsRef.current = items;
+  }, [items]);
 
   useLayoutEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 767px)");
@@ -137,6 +149,70 @@ export default function EditorPreview({
     setSelectedCanvasPresetId(presetId);
     setCanvasPresetFitRequest((request) => request + 1);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const restoreDraft = async () => {
+      try {
+        const draft = await loadEditorDraft();
+
+        if (cancelled || !draft) return;
+
+        if (
+          latestItemsRef.current.length > 0 ||
+          hasUserSelectedCanvasPresetRef.current
+        ) {
+          draft.release();
+          return;
+        }
+
+        restoredDraftReleaseRef.current = draft.release;
+        hasUserSelectedCanvasPresetRef.current = true;
+        setSelectedCanvasPresetId(draft.presetId);
+        restoreItems(draft.items);
+      } catch (error) {
+        console.warn("The local editor draft could not be restored.", error);
+      } finally {
+        if (!cancelled) setDraftReady(true);
+      }
+    };
+
+    void restoreDraft();
+
+    return () => {
+      cancelled = true;
+      restoredDraftReleaseRef.current?.();
+      restoredDraftReleaseRef.current = null;
+    };
+  }, [restoreItems]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+
+    const draft = {
+      presetId: selectedCanvasPresetId,
+      items,
+    };
+    const saveDraft = () => {
+      void saveEditorDraft(draft).catch((error) => {
+        console.warn("The local editor draft could not be saved.", error);
+      });
+    };
+    const saveTimer = window.setTimeout(saveDraft, 400);
+    const saveWhenHidden = () => {
+      if (document.visibilityState === "hidden") saveDraft();
+    };
+
+    document.addEventListener("visibilitychange", saveWhenHidden);
+    window.addEventListener("pagehide", saveDraft);
+
+    return () => {
+      window.clearTimeout(saveTimer);
+      document.removeEventListener("visibilitychange", saveWhenHidden);
+      window.removeEventListener("pagehide", saveDraft);
+    };
+  }, [draftReady, items, selectedCanvasPresetId]);
   const hideAlignmentGuides = () => {
   setAlignmentGuides({
     vertical: false,

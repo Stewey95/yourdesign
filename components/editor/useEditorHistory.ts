@@ -89,6 +89,16 @@ export default function useEditorHistory<T>(initialState: T) {
     [replacePresent]
   );
 
+  const restore = useCallback(
+    (restoredState: T) => {
+      transactionStartRef.current = null;
+      replacePast([]);
+      replaceFuture([]);
+      replacePresent(restoredState);
+    },
+    [replaceFuture, replacePast, replacePresent]
+  );
+
   const undo = useCallback(() => {
     const transactionStart = transactionStartRef.current;
 
@@ -143,6 +153,7 @@ export default function useEditorHistory<T>(initialState: T) {
     canRedo: future.length > 0,
     commit,
     updateTransaction,
+    restore,
     beginTransaction,
     commitTransaction,
     isTransactionActive,
