@@ -221,7 +221,7 @@ export default function EditorCanvas({
 
     if (
       usableWidth <= 0 ||
-      (isDesktop && usableHeight <= 0)
+      usableHeight <= 0
     ) {
       return;
     }
@@ -234,9 +234,9 @@ export default function EditorCanvas({
     const widthScale = usableWidth / LOGICAL_CANVAS_WIDTH;
     const heightScale = usableHeight / LOGICAL_CANVAS_HEIGHT;
     const nextScale =
-      isDesktop && viewMode === "fit" && heightScale > 0
-        ? Math.min(widthScale, heightScale)
-        : widthScale;
+      isDesktop && viewMode !== "fit"
+        ? widthScale
+        : Math.min(widthScale, heightScale);
 
     setIsDesktopLayout(isDesktop);
 
@@ -1285,7 +1285,7 @@ export default function EditorCanvas({
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}
         onTouchCancelCapture={cancelTouchGesture}
-        className={`relative w-full touch-pan-y overflow-hidden md:min-h-0 md:flex-1 md:touch-auto md:overscroll-none md:overflow-x-hidden md:px-2 md:pb-2 ${
+        className={`relative -mx-2 w-[calc(100%+1rem)] touch-pan-y overflow-hidden md:mx-0 md:min-h-0 md:w-full md:flex-1 md:touch-auto md:overscroll-none md:overflow-x-hidden md:px-2 md:pb-2 ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
             : "md:overflow-y-hidden"
@@ -1293,7 +1293,7 @@ export default function EditorCanvas({
         style={{
           height: isDesktopLayout
             ? undefined
-            : `max(${LOGICAL_CANVAS_HEIGHT * baseScale}px, clamp(22rem, 52dvh, 32rem))`,
+            : "clamp(17.5rem, 36dvh, 19rem)",
         }}
       >
           <MobileCanvasZoomHud
