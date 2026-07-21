@@ -1,5 +1,8 @@
 import type { DesignItem, TextDesignItem } from "../../components/editor/editor.types";
-import type { PngExportConfig } from "../../types/export";
+import type {
+  JpgExportConfig,
+  PngExportConfig,
+} from "../../types/export";
 import { getScaledExportDimensions } from "./exportDimensions";
 
 const TEXT_MAX_WIDTH = 460;
@@ -149,20 +152,26 @@ const addRoundedRectangle = (
   context.closePath();
 };
 
-const canvasToPngBlob = (canvas: HTMLCanvasElement) =>
+const canvasToBlob = (
+  canvas: HTMLCanvasElement,
+  type: "image/png" | "image/jpeg",
+  quality?: number
+) =>
   new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) {
         resolve(blob);
       } else {
-        reject(new Error("Safari could not create the PNG image."));
+        reject(new Error("Safari could not create the exported image."));
       }
-    }, "image/png");
+    }, type, quality);
   });
 
-export async function renderDesignToPng(
+async function renderDesignToImage(
   items: DesignItem[],
-  config: PngExportConfig
+  config: PngExportConfig | JpgExportConfig,
+  type: "image/png" | "image/jpeg",
+  quality?: number
 ) {
   if (document.fonts) {
     await Promise.all([
@@ -265,7 +274,7 @@ export async function renderDesignToPng(
       context.restore();
     }
 
-    return await canvasToPngBlob(canvas);
+    return await canvasToBlob(canvas, type, quality);
   } finally {
     loadedImages.clear();
     context.setTransform(1, 0, 0, 1, 0, 0);
@@ -274,3 +283,13 @@ export async function renderDesignToPng(
     canvas.height = 1;
   }
 }
+
+export const renderDesignToPng = (
+  items: DesignItem[],
+  config: PngExportConfig
+) => renderDesignToImage(items, config, "image/png");
+
+export const renderDesignToJpg = (
+  items: DesignItem[],
+  config: JpgExportConfig
+) => renderDesignToImage(items, config, "image/jpeg", config.quality);

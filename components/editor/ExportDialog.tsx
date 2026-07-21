@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import type {
   ExportCanvasDimensions,
+  DesignExportConfig,
   ExportFormat,
   ExportQualityPreset,
   PdfExportType,
-  PngExportConfig,
 } from "../../types/export";
 import {
   getExportScale,
@@ -17,7 +17,7 @@ import { CANVAS_PRESETS } from "./editor.constants";
 type ExportDialogProps = {
   open: boolean;
   onClose: () => void;
-  onExportPng: (config: PngExportConfig) => Promise<void>;
+  onExport: (config: DesignExportConfig) => Promise<void>;
   canvasSize: Pick<ExportCanvasDimensions, "width" | "height">;
 };
 
@@ -85,7 +85,7 @@ const futureOptions = [
 export default function ExportDialog({
   open,
   onClose,
-  onExportPng,
+  onExport,
   canvasSize,
 }: ExportDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -156,36 +156,48 @@ export default function ExportDialog({
   const requestExport = async () => {
     if (!filenameIsValid || isExporting) return;
 
-    if (format !== "png") {
-      setExportStatus({
-        kind: "info",
-        message: `${extension} export is coming soon. Your settings are ready.`,
-      });
-      return;
-    }
-
     setIsExporting(true);
     setExportStatus({
       kind: "progress",
-      message: "Preparing export…",
+      message: `Preparing ${extension} export…`,
     });
 
     try {
-      await onExportPng({
-        format: "png",
+      const baseConfig = {
         filename,
         qualityPreset: quality,
         scale: exportScale,
-        transparentBackground,
         canvas: {
           width: canvasSize.width,
           height: canvasSize.height,
           backgroundColor: "#ffffff",
         },
-      });
+      };
+      const config: DesignExportConfig =
+        format === "png"
+          ? {
+              ...baseConfig,
+              format: "png",
+              transparentBackground,
+            }
+          : format === "jpg"
+            ? {
+                ...baseConfig,
+                format: "jpg",
+                transparentBackground: false,
+                quality: jpgQuality / 100,
+              }
+            : {
+                ...baseConfig,
+                format: "pdf",
+                transparentBackground: false,
+                pdfType,
+              };
+
+      await onExport(config);
       setExportStatus({
         kind: "success",
-        message: "Export complete",
+        message: `${extension} export complete`,
       });
     } catch (error) {
       console.error("PNG export failed", error);
@@ -593,7 +605,7 @@ export default function ExportDialog({
               aria-busy={isExporting}
               className="flex-1 cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:from-blue-500 hover:to-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40 md:flex-none"
             >
-              {isExporting ? "Preparing export…" : "Export design"}
+              {isExporting ? "Preparing export…" : `Download ${extension}`}
             </button>
           </div>
         </footer>

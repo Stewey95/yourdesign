@@ -1,9 +1,15 @@
-import { toBlob } from "html-to-image";
-import type { PngExportConfig } from "../../types/export";
+import { toBlob, toJpeg } from "html-to-image";
+import type {
+  JpgExportConfig,
+  PngExportConfig,
+} from "../../types/export";
 import type { DesignItem } from "../../components/editor/editor.types";
 import { getScaledExportDimensions } from "./exportDimensions";
 import { isMobileSafari } from "./isMobileSafari";
-import { renderDesignToPng } from "./renderDesignToCanvas";
+import {
+  renderDesignToJpg,
+  renderDesignToPng,
+} from "./renderDesignToCanvas";
 
 const waitForNextPaint = () =>
   new Promise<void>((resolve) => {
@@ -151,6 +157,46 @@ export async function captureDesignAsPng(
     }
 
     return blob;
+  } finally {
+    restoreBlobImages();
+  }
+}
+
+export async function captureDesignAsJpg(
+  node: HTMLElement,
+  items: DesignItem[],
+  config: JpgExportConfig
+) {
+  if (isMobileSafari()) {
+    return renderDesignToJpg(items, config);
+  }
+
+  const restoreBlobImages = await embedBlobImages(node);
+
+  try {
+    await waitForDesignAssets(node);
+
+    const dimensions = getScaledExportDimensions(
+      config.canvas,
+      config.scale
+    );
+    const dataUrl = await toJpeg(node, {
+      width: config.canvas.width,
+      height: config.canvas.height,
+      canvasWidth: dimensions.width,
+      canvasHeight: dimensions.height,
+      pixelRatio: 1,
+      quality: config.quality,
+      backgroundColor: config.canvas.backgroundColor || "#ffffff",
+      cacheBust: false,
+    });
+    const response = await fetch(dataUrl);
+
+    if (!response.ok) {
+      throw new Error("The browser could not create the JPG image.");
+    }
+
+    return await response.blob();
   } finally {
     restoreBlobImages();
   }

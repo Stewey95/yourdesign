@@ -20,3 +20,18 @@ export type ExportConfig = {
 export type PngExportConfig = ExportConfig & {
   format: "png";
 };
+
+export type JpgExportConfig = ExportConfig & {
+  format: "jpg";
+  quality: number;
+};
+
+export type PdfExportConfig = ExportConfig & {
+  format: "pdf";
+  pdfType: PdfExportType;
+};
+
+export type DesignExportConfig =
+  | PngExportConfig
+  | JpgExportConfig
+  | PdfExportConfig;

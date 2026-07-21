@@ -42,8 +42,8 @@ import type {
   DesignItem,
   Position,
 } from "./editor/editor.types";
-import { exportDesignAsPng } from "../lib/export/exportDesign";
-import type { PngExportConfig } from "../types/export";
+import { exportDesign } from "../lib/export/exportDesign";
+import type { DesignExportConfig } from "../types/export";
 
 type EditorPreviewProps = {
   fullScreen?: boolean;
@@ -1201,14 +1201,14 @@ if (direction === "back") {
     beginHistoryTransaction();
   };
 
-  const exportPng = async (config: PngExportConfig) => {
+  const exportFile = async (config: DesignExportConfig) => {
     const exportCanvas = exportCanvasRef.current;
 
     if (!exportCanvas) {
       throw new Error("The design canvas is not ready to export.");
     }
 
-    await exportDesignAsPng(exportCanvas, canvasItems, config);
+    await exportDesign(exportCanvas, canvasItems, config);
   };
 
   return (
@@ -1410,7 +1410,7 @@ if (direction === "back") {
       <ExportDialog
         open={showExportDialog}
         onClose={() => setShowExportDialog(false)}
-        onExportPng={exportPng}
+        onExport={exportFile}
         canvasSize={canvasSize}
       />
     </>
