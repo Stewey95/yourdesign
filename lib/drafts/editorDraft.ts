@@ -193,16 +193,17 @@ export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
   const objectUrls: string[] = [];
   const items = storedDraft.items.map((item): DesignItem => {
     const hidden = item.hidden === true;
+    const locked = item.locked === true;
 
     if (item.type !== "image" || typeof item.src === "string") {
-      return { ...item, hidden } as DesignItem;
+      return { ...item, hidden, locked } as DesignItem;
     }
 
     const source = URL.createObjectURL(item.src);
 
     objectUrls.push(source);
     blobCache.set(source, item.src);
-    return { ...item, hidden, src: source };
+    return { ...item, hidden, locked, src: source };
   });
 
   lastSavedSignature = createSignature({

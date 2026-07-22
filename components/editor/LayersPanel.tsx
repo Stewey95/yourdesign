@@ -5,6 +5,8 @@ import {
   EyeOff,
   GripVertical,
   ImageIcon,
+  Lock,
+  LockOpen,
   Type,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -16,6 +18,7 @@ type LayersPanelProps = {
   onSelectItem: (id: string) => void;
   onReorderLayers: (orderedIds: string[]) => void;
   onToggleVisibility: (id: string) => void;
+  onToggleLock: (id: string) => void;
 };
 
 const getTextLayerName = (value: string) => {
@@ -34,6 +37,7 @@ export default function LayersPanel({
   onSelectItem,
   onReorderLayers,
   onToggleVisibility,
+  onToggleLock,
 }: LayersPanelProps) {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
@@ -99,6 +103,7 @@ export default function LayersPanel({
           {visibleItems.map((layer) => {
             const selected = layer.id === selectedItemId;
             const hidden = layer.hidden === true;
+            const locked = layer.locked === true;
             const dragging = layer.id === draggedItemId;
             const dropTarget = layer.id === dropTargetId;
             const name =
@@ -155,7 +160,7 @@ export default function LayersPanel({
                   type="button"
                   aria-pressed={selected}
                   aria-label={`Select layer ${name}`}
-                  disabled={hidden}
+                  disabled={hidden || locked}
                   onClick={() => onSelectItem(layer.id)}
                   className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-default"
                 >
@@ -173,13 +178,33 @@ export default function LayersPanel({
                     className={`truncate text-xs font-semibold ${
                       selected
                         ? "text-white"
-                        : hidden
+                        : hidden || locked
                           ? "text-slate-400"
                           : "text-slate-300"
                     }`}
                   >
                     {name}
                   </span>
+                </button>
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggleLock(layer.id);
+                  }}
+                  onDragStart={(event) => event.preventDefault()}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+                    locked ? "text-slate-300" : "text-slate-500"
+                  }`}
+                  aria-label={`${locked ? "Unlock" : "Lock"} layer ${name}`}
+                  title={locked ? "Unlock layer" : "Lock layer"}
+                >
+                  {locked ? (
+                    <Lock size={14} aria-hidden="true" />
+                  ) : (
+                    <LockOpen size={14} aria-hidden="true" />
+                  )}
                 </button>
                 <button
                   type="button"

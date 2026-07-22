@@ -85,6 +85,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         maxWidth: textMaximumWidth,
         transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
         touchAction: "none",
+        pointerEvents: item.locked ? "none" : undefined,
         WebkitUserSelect: "none",
         userSelect: "none",
       }}

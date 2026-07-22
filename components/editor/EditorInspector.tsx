@@ -17,6 +17,7 @@ type EditorInspectorProps = {
   onSelectItem: (id: string) => void;
   onReorderLayers: (orderedIds: string[]) => void;
   onToggleLayerVisibility: (id: string) => void;
+  onToggleLayerLock: (id: string) => void;
   onChangeTextSize: (id: string, amount: number) => void;
   onChangeTextColor: (id: string, color: string) => void;
   onChangeTextFont: (id: string, fontFamily: string) => void;
@@ -38,6 +39,7 @@ export default function EditorInspector({
   onSelectItem,
   onReorderLayers,
   onToggleLayerVisibility,
+  onToggleLayerLock,
   onChangeTextSize,
   onChangeTextColor,
   onChangeTextFont,
@@ -58,6 +60,7 @@ export default function EditorInspector({
         onSelectItem={onSelectItem}
         onReorderLayers={onReorderLayers}
         onToggleVisibility={onToggleLayerVisibility}
+        onToggleLock={onToggleLayerLock}
       />
 
       <div className="my-4 border-t border-white/10" />

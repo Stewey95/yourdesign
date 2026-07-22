@@ -5,6 +5,7 @@ export type ImageDesignItem = {
   id: string;
   type: "image";
   hidden: boolean;
+  locked: boolean;
   src: string;
   position: Position;
   size: Size;
@@ -19,6 +20,7 @@ export type TextDesignItem = {
   id: string;
   type: "text";
   hidden: boolean;
+  locked: boolean;
   value: string;
   position: Position;
   fontSize: number;

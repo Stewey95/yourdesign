@@ -286,12 +286,16 @@ const getSnappedPosition = (
 
   const selectedTextItem = visibleCanvasItems.find(
     (item): item is Extract<DesignItem, { type: "text" }> =>
-      item.id === selectedItemId && item.type === "text"
+      item.id === selectedItemId &&
+      item.type === "text" &&
+      item.locked !== true
   );
 
   const selectedImageItem = visibleCanvasItems.find(
     (item): item is Extract<DesignItem, { type: "image" }> =>
-      item.id === selectedItemId && item.type === "image"
+      item.id === selectedItemId &&
+      item.type === "image" &&
+      item.locked !== true
   );
   const selectedItem = selectedTextItem ?? selectedImageItem;
   const selectedItemIndex = canvasItems.findIndex(
@@ -353,7 +357,10 @@ const getSnappedPosition = (
     const selectedItemSurvives =
       selectedItemId !== null &&
       restoredItems.some(
-        (item) => item.id === selectedItemId && item.hidden !== true
+        (item) =>
+          item.id === selectedItemId &&
+          item.hidden !== true &&
+          item.locked !== true
       );
 
     if (!selectedItemSurvives) {
@@ -933,7 +940,12 @@ const getSnappedPosition = (
   };
   const selectItemFromLayers = (id: string) => {
     if (
-      !items.some((item) => item.id === id && item.hidden !== true)
+      !items.some(
+        (item) =>
+          item.id === id &&
+          item.hidden !== true &&
+          item.locked !== true
+      )
     ) {
       return;
     }
@@ -1008,6 +1020,35 @@ const getSnappedPosition = (
     );
 
     if (!willHide || selectedItemId !== id) return;
+
+    activeResizeCleanupRef.current?.();
+    activeResizeCleanupRef.current = null;
+    pendingDragRef.current = null;
+    pinchRef.current = null;
+    canvasTapRef.current = null;
+    pageInteractionRef.current = null;
+    justPinchedRef.current = false;
+    setSelectedItemId(null);
+    setDraggingItemId(null);
+    setEditingItemId(null);
+    setShowMobileContextToolbar(false);
+    setShowImageAdjustments(false);
+    hideAlignmentGuides();
+  };
+  const toggleLayerLock = (id: string) => {
+    const layer = items.find((item) => item.id === id);
+
+    if (!layer) return;
+
+    const willLock = layer.locked !== true;
+
+    commitItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id ? { ...item, locked: willLock } : item
+      )
+    );
+
+    if (!willLock || selectedItemId !== id) return;
 
     activeResizeCleanupRef.current?.();
     activeResizeCleanupRef.current = null;
@@ -1261,6 +1302,7 @@ if (direction === "back") {
         id: crypto.randomUUID(),
         type: "image",
         hidden: false,
+        locked: false,
         src: imageUrl,
         position: {
           x: canvasSize.width / 2,
@@ -1302,6 +1344,7 @@ if (direction === "back") {
       id: crypto.randomUUID(),
       type: "text",
       hidden: false,
+      locked: false,
       value: "",
       position: {
         x: canvasSize.width / 2,
@@ -1788,6 +1831,7 @@ if (direction === "back") {
           onSelectItem={selectItemFromLayers}
           onReorderLayers={reorderLayers}
           onToggleLayerVisibility={toggleLayerVisibility}
+          onToggleLayerLock={toggleLayerLock}
           onChangeTextSize={changeTextSize}
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}
