@@ -136,7 +136,7 @@ export default function LayersPanel({
                   setDraggedItemId(null);
                   setDropTargetId(null);
                 }}
-                className={`group flex items-center gap-1 rounded-lg border transition ${
+                className={`group grid grid-cols-[20px_24px_minmax(0,1fr)] grid-rows-[24px_28px] items-center gap-x-1 rounded-lg border px-1 transition ${
                   dropTarget
                     ? "border-blue-400/70 bg-blue-500/15"
                     : selected
@@ -152,19 +152,9 @@ export default function LayersPanel({
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-8 w-5 shrink-0 cursor-grab items-center justify-center text-slate-500 group-hover:text-slate-300 active:cursor-grabbing"
+                  className="row-span-2 flex h-full w-5 shrink-0 cursor-grab items-center justify-center text-slate-500 group-hover:text-slate-300 active:cursor-grabbing"
                 >
                   <GripVertical size={13} />
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
-                    selected
-                      ? "bg-blue-500/20 text-cyan-300"
-                      : "bg-white/5 text-slate-400"
-                  }`}
-                >
-                  <LayerIcon size={13} />
                 </span>
                 <button
                   type="button"
@@ -172,8 +162,18 @@ export default function LayersPanel({
                   aria-label={`Select layer ${name}`}
                   disabled={hidden || locked}
                   onClick={() => onSelectItem(layer.id)}
-                  className="min-w-0 flex-1 rounded-md py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-default"
+                  className="col-span-2 grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-x-1 self-stretch rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-default"
                 >
+                  <span
+                    aria-hidden="true"
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
+                      selected
+                        ? "bg-blue-500/20 text-cyan-300"
+                        : "bg-white/5 text-slate-400"
+                    }`}
+                  >
+                    <LayerIcon size={13} />
+                  </span>
                   <span
                     className={`block truncate text-xs font-semibold ${
                       selected
@@ -186,7 +186,7 @@ export default function LayersPanel({
                     {name}
                   </span>
                 </button>
-                <div className="ml-auto mr-1 flex shrink-0 items-center">
+                <div className="col-start-3 row-start-2 flex shrink-0 items-center justify-self-end">
                   <button
                     type="button"
                     onPointerDown={(event) => event.stopPropagation()}
@@ -195,7 +195,7 @@ export default function LayersPanel({
                       onToggleVisibility(layer.id);
                     }}
                     onDragStart={(event) => event.preventDefault()}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                     aria-label={`${hidden ? "Show" : "Hide"} layer ${name}`}
                     title={hidden ? "Show layer" : "Hide layer"}
                   >
@@ -213,7 +213,7 @@ export default function LayersPanel({
                       onToggleLock(layer.id);
                     }}
                     onDragStart={(event) => event.preventDefault()}
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                       locked ? "text-slate-300" : "text-slate-500"
                     }`}
                     aria-label={`${locked ? "Unlock" : "Lock"} layer ${name}`}

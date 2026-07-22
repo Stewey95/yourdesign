@@ -2,8 +2,6 @@
 
 import {
   Copy,
-  Eye,
-  EyeOff,
   Lock,
   LockOpen,
 } from "lucide-react";
@@ -28,7 +26,6 @@ type MobileContextToolbarProps = {
   onRotate: (id: string, amount: number) => void;
   onMoveBackward: (id: string) => void;
   onMoveForward: (id: string) => void;
-  onToggleVisibility: (id: string) => void;
   onToggleLock: (id: string) => void;
   canUndo: boolean;
   canRedo: boolean;
@@ -65,7 +62,6 @@ export default function MobileContextToolbar({
   onRotate,
   onMoveBackward,
   onMoveForward,
-  onToggleVisibility,
   onToggleLock,
   canUndo,
   canRedo,
@@ -140,7 +136,7 @@ export default function MobileContextToolbar({
         userSelect: "none",
       }}
     >
-      {item.type === "image" && showImageAdjustments && (
+      {!item.locked && item.type === "image" && showImageAdjustments && (
         <div className="max-h-[44vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-white shadow-2xl backdrop-blur-xl">
           <div className="grid grid-cols-2 gap-3">
             <MobileAdjustmentSlider
@@ -223,7 +219,7 @@ export default function MobileContextToolbar({
           onScroll={updateScrollControls}
           className="flex min-w-0 items-center gap-2 overflow-x-auto px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {item.type === "text" && (
+          {!item.locked && item.type === "text" && (
             <>
               <button
                 type="button"
@@ -288,94 +284,87 @@ export default function MobileContextToolbar({
             </>
           )}
 
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={() => onRotate(item.id, -15)}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-xl font-bold text-white"
-            aria-label="Rotate left"
-            title="Rotate left"
-          >
-            ↺
-          </button>
+          {!item.locked && (
+            <>
+              <button
+                type="button"
+                onPointerDown={protectButtonPointer}
+                onClick={() => onRotate(item.id, -15)}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-xl font-bold text-white"
+                aria-label="Rotate left"
+                title="Rotate left"
+              >
+                ↺
+              </button>
 
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={() => onRotate(item.id, 15)}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-xl font-bold text-white"
-            aria-label="Rotate right"
-            title="Rotate right"
-          >
-            ↻
-          </button>
+              <button
+                type="button"
+                onPointerDown={protectButtonPointer}
+                onClick={() => onRotate(item.id, 15)}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-xl font-bold text-white"
+                aria-label="Rotate right"
+                title="Rotate right"
+              >
+                ↻
+              </button>
 
-          {item.type === "image" && (
-            <button
-              type="button"
-              onPointerDown={protectButtonPointer}
-              onClick={onToggleImageAdjustments}
-              className="h-9 shrink-0 cursor-pointer rounded-full bg-blue-600 px-3 text-xs font-bold text-white"
-              aria-label={
-                showImageAdjustments
-                  ? "Hide image adjustments"
-                  : "Show image adjustments"
-              }
-              title={
-                showImageAdjustments
-                  ? "Hide Adjustments"
-                  : "Adjust Image"
-              }
-            >
-              {showImageAdjustments ? "Done" : "Adjust"}
-            </button>
+              {item.type === "image" && (
+                <button
+                  type="button"
+                  onPointerDown={protectButtonPointer}
+                  onClick={onToggleImageAdjustments}
+                  className="h-9 shrink-0 cursor-pointer rounded-full bg-blue-600 px-3 text-xs font-bold text-white"
+                  aria-label={
+                    showImageAdjustments
+                      ? "Hide image adjustments"
+                      : "Show image adjustments"
+                  }
+                  title={
+                    showImageAdjustments
+                      ? "Hide Adjustments"
+                      : "Adjust Image"
+                  }
+                >
+                  {showImageAdjustments ? "Done" : "Adjust"}
+                </button>
+              )}
+
+              <button
+                type="button"
+                disabled={!canSendBackward}
+                onPointerDown={protectButtonPointer}
+                onClick={() => onMoveBackward(item.id)}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Send Backward"
+                title="Send Backward"
+              >
+                ⬇️
+              </button>
+
+              <button
+                type="button"
+                disabled={!canBringForward}
+                onPointerDown={protectButtonPointer}
+                onClick={() => onMoveForward(item.id)}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Bring Forward"
+                title="Bring Forward"
+              >
+                ⬆️
+              </button>
+            </>
           )}
-
-          <button
-            type="button"
-            disabled={!canSendBackward}
-            onPointerDown={protectButtonPointer}
-            onClick={() => onMoveBackward(item.id)}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Send Backward"
-            title="Send Backward"
-          >
-            ⬇️
-          </button>
-
-          <button
-            type="button"
-            disabled={!canBringForward}
-            onPointerDown={protectButtonPointer}
-            onClick={() => onMoveForward(item.id)}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Bring Forward"
-            title="Bring Forward"
-          >
-            ⬆️
-          </button>
-
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={() => onToggleVisibility(item.id)}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-            aria-label={item.hidden ? "Show selected item" : "Hide selected item"}
-            title={item.hidden ? "Show" : "Hide"}
-          >
-            {item.hidden ? (
-              <EyeOff size={16} aria-hidden="true" />
-            ) : (
-              <Eye size={16} aria-hidden="true" />
-            )}
-          </button>
 
           <button
             type="button"
             onPointerDown={protectButtonPointer}
             onClick={() => onToggleLock(item.id)}
             className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-            aria-label={item.locked ? "Unlock selected item" : "Lock selected item"}
+            aria-label={
+              item.locked
+                ? "Unlock selected item"
+                : "Lock selected item"
+            }
             title={item.locked ? "Unlock" : "Lock"}
           >
             {item.locked ? (
@@ -409,27 +398,31 @@ export default function MobileContextToolbar({
             ↷
           </button>
 
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={onDuplicate}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-            aria-label="Duplicate selected item"
-            title="Duplicate"
-          >
-            <Copy size={16} aria-hidden="true" />
-          </button>
+          {!item.locked && (
+            <>
+              <button
+                type="button"
+                onPointerDown={protectButtonPointer}
+                onClick={onDuplicate}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                aria-label="Duplicate selected item"
+                title="Duplicate"
+              >
+                <Copy size={16} aria-hidden="true" />
+              </button>
 
-          <button
-            type="button"
-            onPointerDown={protectButtonPointer}
-            onClick={onDelete}
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white transition hover:bg-red-500"
-            aria-label="Delete selected item"
-            title="Delete selected item"
-          >
-            🗑
-          </button>
+              <button
+                type="button"
+                onPointerDown={protectButtonPointer}
+                onClick={onDelete}
+                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white transition hover:bg-red-500"
+                aria-label="Delete selected item"
+                title="Delete selected item"
+              >
+                🗑
+              </button>
+            </>
+          )}
         </div>
 
         <button

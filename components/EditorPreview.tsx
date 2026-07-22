@@ -297,6 +297,9 @@ const getSnappedPosition = (
       item.type === "image" &&
       item.locked !== true
   );
+  const selectedVisibleItem = visibleCanvasItems.find(
+    (item) => item.id === selectedItemId
+  );
   const selectedItem = selectedTextItem ?? selectedImageItem;
   const selectedItemIndex = canvasItems.findIndex(
     (item) => item.id === selectedItemId
@@ -1035,7 +1038,10 @@ const getSnappedPosition = (
     setShowImageAdjustments(false);
     hideAlignmentGuides();
   };
-  const toggleLayerLock = (id: string) => {
+  const toggleLayerLock = (
+    id: string,
+    preserveMobileSelection = false
+  ) => {
     const layer = items.find((item) => item.id === id);
 
     if (!layer) return;
@@ -1057,12 +1063,17 @@ const getSnappedPosition = (
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
     justPinchedRef.current = false;
-    setSelectedItemId(null);
     setDraggingItemId(null);
     setEditingItemId(null);
-    setShowMobileContextToolbar(false);
     setShowImageAdjustments(false);
     hideAlignmentGuides();
+
+    if (preserveMobileSelection) {
+      setShowMobileContextToolbar(true);
+    } else {
+      setSelectedItemId(null);
+      setShowMobileContextToolbar(false);
+    }
   };
     const moveItemLayer = (
     id: string,
@@ -1676,9 +1687,9 @@ if (direction === "back") {
         onExport={() => setShowExportDialog(true)}
       />
 
-      {selectedItem && showMobileContextToolbar && (
+      {selectedVisibleItem && showMobileContextToolbar && (
         <MobileContextToolbar
-          item={selectedItem}
+          item={selectedVisibleItem}
           canSendBackward={canSendBackward}
           canBringForward={canBringForward}
           showImageAdjustments={showImageAdjustments}
@@ -1692,8 +1703,7 @@ if (direction === "back") {
           onMoveForward={(id) =>
             moveItemLayer(id, "forward")
           }
-          onToggleVisibility={toggleLayerVisibility}
-          onToggleLock={toggleLayerLock}
+          onToggleLock={(id) => toggleLayerLock(id, true)}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={performUndo}
