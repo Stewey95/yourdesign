@@ -1,21 +1,24 @@
 "use client";
 
 import CanvasImageItem from "./CanvasImageItem";
+import CanvasShapeItem from "./CanvasShapeItem";
 import CanvasTextItem from "./CanvasTextItem";
 import type { TextResizeCorner } from "./CanvasTextItem";
 import type {
   ImageDesignItem,
+  ResizableDesignItem,
+  ShapeDesignItem,
   TextDesignItem,
 } from "./editor.types";
 
 type ImageCanvasItemProps = {
-  item: ImageDesignItem;
+  item: ImageDesignItem | ShapeDesignItem;
   selected: boolean;
   displayScale: number;
   onPointerDown: (id: string) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
-    item: ImageDesignItem
+    item: ResizableDesignItem
   ) => void;
 };
 
@@ -81,7 +84,13 @@ export default function CanvasItem(props: CanvasItemProps) {
       style={{
         left: item.position.x,
         top: item.position.y,
-        width: item.type === "text" ? "max-content" : undefined,
+        width:
+          item.type === "text"
+            ? "max-content"
+            : item.type === "shape"
+              ? item.size.width
+              : undefined,
+        height: item.type === "shape" ? item.size.height : undefined,
         maxWidth: textMaximumWidth,
         transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
         touchAction: "none",
@@ -92,6 +101,14 @@ export default function CanvasItem(props: CanvasItemProps) {
     >
       {item.type === "image" && "onPointerDown" in props ? (
         <CanvasImageItem
+          item={item}
+          selected={props.selected}
+          displayScale={props.displayScale}
+          onPointerDown={props.onPointerDown}
+          onResizeStart={props.onResizeStart}
+        />
+      ) : item.type === "shape" && "onPointerDown" in props ? (
+        <CanvasShapeItem
           item={item}
           selected={props.selected}
           displayScale={props.displayScale}

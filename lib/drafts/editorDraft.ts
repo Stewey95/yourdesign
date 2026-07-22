@@ -1,8 +1,13 @@
 import type {
   DesignItem,
   ImageDesignItem,
+  ShapeKind,
 } from "../../components/editor/editor.types";
 import type { CanvasPresetId } from "../../components/editor/editor.constants";
+import {
+  getDefaultShapeStyle,
+  SHAPE_DEFAULT_SIZES,
+} from "../../components/editor/shape.constants";
 
 const DATABASE_NAME = "genvilo-editor";
 const DATABASE_VERSION = 1;
@@ -99,6 +104,15 @@ const prepareItems = (items: DesignItem[]) =>
 const isCanvasPresetId = (value: unknown): value is CanvasPresetId =>
   value === "landscape" || value === "portrait" || value === "square";
 
+const isShapeKind = (value: unknown): value is ShapeKind =>
+  value === "rectangle" ||
+  value === "roundedRectangle" ||
+  value === "circle" ||
+  value === "triangle" ||
+  value === "star" ||
+  value === "line" ||
+  value === "arrow";
+
 const isStoredDraft = (value: unknown): value is StoredEditorDraft => {
   if (!value || typeof value !== "object") return false;
 
@@ -194,6 +208,37 @@ export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
   const items = storedDraft.items.map((item): DesignItem => {
     const hidden = item.hidden === true;
     const locked = item.locked === true;
+
+    if (item.type === "shape") {
+      const shapeKind = isShapeKind(item.shapeKind)
+        ? item.shapeKind
+        : "rectangle";
+      const defaults = getDefaultShapeStyle(shapeKind);
+      const size = item.size ?? SHAPE_DEFAULT_SIZES[shapeKind];
+
+      return {
+        ...item,
+        type: "shape",
+        shapeKind,
+        hidden,
+        locked,
+        size,
+        fill:
+          typeof item.fill === "string" || item.fill === null
+            ? item.fill
+            : defaults.fill,
+        stroke:
+          typeof item.stroke === "string" || item.stroke === null
+            ? item.stroke
+            : defaults.stroke,
+        strokeWidth:
+          typeof item.strokeWidth === "number" &&
+          Number.isFinite(item.strokeWidth) &&
+          item.strokeWidth >= 0
+            ? item.strokeWidth
+            : defaults.strokeWidth,
+      };
+    }
 
     if (item.type !== "image" || typeof item.src === "string") {
       return { ...item, hidden, locked } as DesignItem;

@@ -1,4 +1,9 @@
-import type { DesignItem, TextDesignItem } from "../../components/editor/editor.types";
+import type {
+  DesignItem,
+  ShapeDesignItem,
+  TextDesignItem,
+} from "../../components/editor/editor.types";
+import { getShapePath } from "../../components/editor/shape.geometry";
 import type {
   JpgExportConfig,
   PngExportConfig,
@@ -124,6 +129,37 @@ const drawTextItem = (
   context.restore();
 };
 
+const drawShapeItem = (
+  context: CanvasRenderingContext2D,
+  item: ShapeDesignItem
+) => {
+  const path = new Path2D(getShapePath(item));
+
+  context.save();
+  context.translate(
+    item.position.x - item.size.width / 2,
+    item.position.y - item.size.height / 2
+  );
+  context.translate(item.size.width / 2, item.size.height / 2);
+  context.rotate((item.rotation * Math.PI) / 180);
+  context.translate(-item.size.width / 2, -item.size.height / 2);
+  context.lineCap = "round";
+  context.lineJoin = "round";
+
+  if (item.fill) {
+    context.fillStyle = item.fill;
+    context.fill(path);
+  }
+
+  if (item.stroke && item.strokeWidth > 0) {
+    context.strokeStyle = item.stroke;
+    context.lineWidth = item.strokeWidth;
+    context.stroke(path);
+  }
+
+  context.restore();
+};
+
 const addRoundedRectangle = (
   context: CanvasRenderingContext2D,
   x: number,
@@ -238,6 +274,11 @@ async function renderDesignToImage(
     for (const item of items) {
       if (item.type === "text") {
         drawTextItem(context, item);
+        continue;
+      }
+
+      if (item.type === "shape") {
+        drawShapeItem(context, item);
         continue;
       }
 

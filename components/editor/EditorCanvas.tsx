@@ -21,7 +21,7 @@ import MobileCanvasZoomHud from "./MobileCanvasZoomHud";
 import type { TextResizeCorner } from "./CanvasTextItem";
 import type {
   DesignItem,
-  ImageDesignItem,
+  ResizableDesignItem,
   Size,
   TextDesignItem,
 } from "./editor.types";
@@ -57,7 +57,7 @@ type EditorCanvasProps = {
   onImagePointerDown: (id: string) => void;
   onImageResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
-    item: ImageDesignItem
+    item: ResizableDesignItem
   ) => void;
   onTextResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
@@ -1393,7 +1393,7 @@ export default function EditorCanvas({
             />
 
             {items.map((item) =>
-              item.type === "image" ? (
+              item.type !== "text" ? (
                 <CanvasItem
                   key={item.id}
                   item={item}

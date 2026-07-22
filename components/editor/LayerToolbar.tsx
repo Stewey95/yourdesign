@@ -2,7 +2,7 @@
 
 type LayerToolbarProps = {
   itemId: string;
-  itemType: "image" | "text";
+  itemType: "image" | "text" | "shape";
   canSendBackward: boolean;
   canBringForward: boolean;
   onMoveItemLayer: (

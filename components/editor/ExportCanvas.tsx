@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import type { DesignItem } from "./editor.types";
+import ShapeSvg from "./ShapeSvg";
 
 type ExportCanvasProps = {
   items: DesignItem[];
@@ -31,7 +32,13 @@ const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
               position: "absolute",
               left: item.position.x,
               top: item.position.y,
-              width: item.type === "text" ? "max-content" : undefined,
+              width:
+                item.type === "text"
+                  ? "max-content"
+                  : item.type === "shape"
+                    ? item.size.width
+                    : undefined,
+              height: item.type === "shape" ? item.size.height : undefined,
               transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
               transformOrigin: "center",
             }}
@@ -60,6 +67,11 @@ const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
                   }}
                 />
               </div>
+            ) : item.type === "shape" ? (
+              <ShapeSvg
+                item={item}
+                className="block h-full w-full overflow-visible"
+              />
             ) : (
               <div
                 style={{

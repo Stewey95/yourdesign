@@ -1,4 +1,5 @@
 import type { Size } from "../editor.types";
+import type { ShapeKind } from "../editor.types";
 
 export type ElementAssetMetadataValue =
   | string
@@ -13,6 +14,9 @@ export type ElementAsset = {
   tags: readonly string[];
   svg: string;
   defaultSize: Size;
+  insertion:
+    | { kind: "shape"; shapeKind: ShapeKind }
+    | { kind: "graphic" };
   favourite: boolean;
   recent: boolean;
   metadata?: Readonly<Record<string, ElementAssetMetadataValue>>;

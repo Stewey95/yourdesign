@@ -7,10 +7,12 @@ import {
   ImageIcon,
   Lock,
   LockOpen,
+  Shapes,
   Type,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DesignItem } from "./editor.types";
+import { SHAPE_LABELS } from "./shape.constants";
 
 type LayersPanelProps = {
   items: DesignItem[];
@@ -53,6 +55,22 @@ export default function LayersPanel({
         item.id,
         imageNumber === 1 ? "Image" : `Image ${imageNumber}`
       );
+    });
+
+    return names;
+  }, [items]);
+  const shapeNames = useMemo(() => {
+    const names = new Map<string, string>();
+    const counts = new Map<string, number>();
+
+    items.forEach((item) => {
+      if (item.type !== "shape") return;
+
+      const label = SHAPE_LABELS[item.shapeKind];
+      const count = (counts.get(item.shapeKind) ?? 0) + 1;
+
+      counts.set(item.shapeKind, count);
+      names.set(item.id, count === 1 ? label : `${label} ${count}`);
     });
 
     return names;
@@ -109,8 +127,15 @@ export default function LayersPanel({
             const name =
               layer.type === "text"
                 ? getTextLayerName(layer.value)
-                : imageNames.get(layer.id) ?? "Image";
-            const LayerIcon = layer.type === "text" ? Type : ImageIcon;
+                : layer.type === "shape"
+                  ? shapeNames.get(layer.id) ?? SHAPE_LABELS[layer.shapeKind]
+                  : imageNames.get(layer.id) ?? "Image";
+            const LayerIcon =
+              layer.type === "text"
+                ? Type
+                : layer.type === "shape"
+                  ? Shapes
+                  : ImageIcon;
 
             return (
               <div

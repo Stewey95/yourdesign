@@ -42,9 +42,16 @@ import {
 import type {
   DesignItem,
   Position,
+  ResizableDesignItem,
 } from "./editor/editor.types";
 import type { ElementAsset } from "./editor/elements/element.types";
 import { getElementSvgDataUrl } from "./editor/elements/elements.catalog";
+import { getDefaultShapeStyle } from "./editor/shape.constants";
+import {
+  DEFAULT_SHAPE_STROKE_WIDTH,
+  MAX_SHAPE_STROKE_WIDTH,
+  MIN_SHAPE_STROKE_WIDTH,
+} from "./editor/shape.constants";
 import {
   exportDesign,
   type ExportDeliveryOptions,
@@ -299,10 +306,17 @@ const getSnappedPosition = (
       item.type === "image" &&
       item.locked !== true
   );
+  const selectedShapeItem = visibleCanvasItems.find(
+    (item): item is Extract<DesignItem, { type: "shape" }> =>
+      item.id === selectedItemId &&
+      item.type === "shape" &&
+      item.locked !== true
+  );
   const selectedVisibleItem = visibleCanvasItems.find(
     (item) => item.id === selectedItemId
   );
-  const selectedItem = selectedTextItem ?? selectedImageItem;
+  const selectedItem =
+    selectedTextItem ?? selectedImageItem ?? selectedShapeItem;
   const selectedItemIndex = canvasItems.findIndex(
     (item) => item.id === selectedItemId
   );
@@ -322,7 +336,7 @@ const getSnappedPosition = (
 
   const pinchRef = useRef<{
     itemId: string;
-    itemType: "image" | "text";
+    itemType: DesignItem["type"];
     startDistance: number;
     startWidth?: number;
     startHeight?: number;
@@ -1200,6 +1214,52 @@ if (direction === "back") {
     );
   };
 
+  const changeShapeFill = (id: string, fill: string | null) => {
+    commitItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "shape"
+          ? { ...item, fill }
+          : item
+      )
+    );
+  };
+
+  const changeShapeStroke = (id: string, stroke: string | null) => {
+    commitItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "shape"
+          ? {
+              ...item,
+              stroke,
+              strokeWidth:
+                stroke && item.strokeWidth < MIN_SHAPE_STROKE_WIDTH
+                  ? DEFAULT_SHAPE_STROKE_WIDTH
+                  : item.strokeWidth,
+            }
+          : item
+      )
+    );
+  };
+
+  const changeShapeStrokeWidth = (id: string, strokeWidth: number) => {
+    const nextStrokeWidth = Math.max(
+      MIN_SHAPE_STROKE_WIDTH,
+      Math.min(MAX_SHAPE_STROKE_WIDTH, strokeWidth)
+    );
+    const updateShape = (currentItems: DesignItem[]) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "shape"
+          ? { ...item, strokeWidth: nextStrokeWidth }
+          : item
+      );
+
+    if (isTransactionActive()) {
+      updateItems(updateShape);
+    } else {
+      commitItems(updateShape);
+    }
+  };
+
   const startCanvasPinch = (
     event: React.TouchEvent<HTMLDivElement>
   ) => {
@@ -1209,7 +1269,7 @@ if (direction === "back") {
       (item) => item.id === selectedItemId
     );
 
-    if (!selectedItem) return;
+    if (!selectedItem || selectedItem.locked) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -1222,11 +1282,11 @@ if (direction === "back") {
       itemType: selectedItem.type,
       startDistance: getTouchDistance(event.touches),
       startWidth:
-        selectedItem.type === "image"
+        selectedItem.type === "image" || selectedItem.type === "shape"
           ? selectedItem.size.width
           : undefined,
       startHeight:
-        selectedItem.type === "image"
+        selectedItem.type === "image" || selectedItem.type === "shape"
           ? selectedItem.size.height
           : undefined,
       startFontSize:
@@ -1239,7 +1299,7 @@ if (direction === "back") {
     pendingDragRef.current = null;
     setDraggingItemId(null);
 
-    if (selectedItem.type === "image") {
+    if (selectedItem.type !== "text") {
       setEditingItemId(null);
     }
   };
@@ -1262,7 +1322,7 @@ if (direction === "back") {
           return item;
         }
 
-        if (item.type === "image") {
+        if (item.type === "image" || item.type === "shape") {
           const width =
             (pinchRef.current.startWidth || DEFAULT_IMAGE_MAX_WIDTH) *
             scale;
@@ -1388,12 +1448,10 @@ if (direction === "back") {
   };
 
   const addElement = (element: ElementAsset) => {
-    const newElement: DesignItem = {
+    const commonProperties = {
       id: crypto.randomUUID(),
-      type: "image",
       hidden: false,
       locked: false,
-      src: getElementSvgDataUrl(element),
       position: {
         x: canvasSize.width / 2,
         y: canvasSize.height / 2,
@@ -1403,11 +1461,24 @@ if (direction === "back") {
         element.defaultSize.height
       ),
       rotation: 0,
-      brightness: 100,
-      contrast: 100,
-      saturation: 100,
-      opacity: 100,
     };
+    const newElement: DesignItem =
+      element.insertion.kind === "shape"
+        ? {
+            ...commonProperties,
+            type: "shape",
+            shapeKind: element.insertion.shapeKind,
+            ...getDefaultShapeStyle(element.insertion.shapeKind),
+          }
+        : {
+            ...commonProperties,
+            type: "image",
+            src: getElementSvgDataUrl(element),
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+            opacity: 100,
+          };
 
     commitItems((currentItems) => [...currentItems, newElement]);
     setSelectedItemId(newElement.id);
@@ -1538,7 +1609,7 @@ if (direction === "back") {
 
   const startImageResize = (
     event: React.PointerEvent<HTMLDivElement>,
-    item: Extract<DesignItem, { type: "image" }>
+    item: ResizableDesignItem
   ) => {
     const startX = event.clientX;
     const startY = event.clientY;
@@ -1572,7 +1643,7 @@ if (direction === "back") {
       updateItems((currentItems) =>
         currentItems.map((currentItem) =>
           currentItem.id === item.id &&
-          currentItem.type === "image"
+          currentItem.type === item.type
             ? {
                 ...currentItem,
                 size: nextSize,
@@ -1880,6 +1951,9 @@ if (direction === "back") {
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}
           onRotate={rotateItem}
+          onChangeShapeFill={changeShapeFill}
+          onChangeShapeStroke={changeShapeStroke}
+          onChangeShapeStrokeWidth={changeShapeStrokeWidth}
           onAdjustmentStart={startImageAdjustment}
           onAdjustmentEnd={commitHistoryTransaction}
           onAdjustmentChange={changeImageAdjustment}

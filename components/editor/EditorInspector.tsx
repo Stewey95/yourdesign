@@ -9,6 +9,12 @@ import type {
   ImageAdjustment,
 } from "./editor.types";
 import LayersPanel from "./LayersPanel";
+import {
+  DEFAULT_SHAPE_COLOUR,
+  MAX_SHAPE_STROKE_WIDTH,
+  MIN_SHAPE_STROKE_WIDTH,
+  isStrokeOnlyShape,
+} from "./shape.constants";
 
 type EditorInspectorProps = {
   items: DesignItem[];
@@ -22,6 +28,9 @@ type EditorInspectorProps = {
   onChangeTextColor: (id: string, color: string) => void;
   onChangeTextFont: (id: string, fontFamily: string) => void;
   onRotate: (id: string, amount: number) => void;
+  onChangeShapeFill: (id: string, fill: string | null) => void;
+  onChangeShapeStroke: (id: string, stroke: string | null) => void;
+  onChangeShapeStrokeWidth: (id: string, strokeWidth: number) => void;
   onAdjustmentStart: () => void;
   onAdjustmentEnd: () => void;
   onResetImageAdjustments: (id: string) => void;
@@ -44,6 +53,9 @@ export default function EditorInspector({
   onChangeTextColor,
   onChangeTextFont,
   onRotate,
+  onChangeShapeFill,
+  onChangeShapeStroke,
+  onChangeShapeStrokeWidth,
   onAdjustmentStart,
   onAdjustmentEnd,
   onResetImageAdjustments,
@@ -199,7 +211,111 @@ export default function EditorInspector({
           </button>
         </div>
       )}
+
+      {item?.type === "shape" && (
+        <div className="space-y-4">
+          {!isStrokeOnlyShape(item.shapeKind) && (
+            <ShapeColourControl
+              label="Fill"
+              value={item.fill}
+              fallback={DEFAULT_SHAPE_COLOUR}
+              emptyLabel="No fill"
+              restoreLabel="Add fill"
+              onChange={(fill) => onChangeShapeFill(item.id, fill)}
+            />
+          )}
+
+          <ShapeColourControl
+            label={isStrokeOnlyShape(item.shapeKind) ? "Stroke" : "Border"}
+            value={item.stroke}
+            fallback={DEFAULT_SHAPE_COLOUR}
+            emptyLabel={
+              isStrokeOnlyShape(item.shapeKind) ? "No stroke" : "No border"
+            }
+            restoreLabel={
+              isStrokeOnlyShape(item.shapeKind) ? "Add stroke" : "Add border"
+            }
+            onChange={(stroke) => onChangeShapeStroke(item.id, stroke)}
+          />
+
+          {item.stroke && (
+            <label className="block">
+              <span className="mb-2 flex items-center justify-between text-xs font-bold text-slate-400">
+                <span>
+                  {isStrokeOnlyShape(item.shapeKind)
+                    ? "Stroke width"
+                    : "Border width"}
+                </span>
+                <span>{Math.round(item.strokeWidth)} px</span>
+              </span>
+              <input
+                type="range"
+                min={MIN_SHAPE_STROKE_WIDTH}
+                max={MAX_SHAPE_STROKE_WIDTH}
+                step={1}
+                value={item.strokeWidth}
+                onFocus={onAdjustmentStart}
+                onPointerDown={onAdjustmentStart}
+                onPointerUp={onAdjustmentEnd}
+                onPointerCancel={onAdjustmentEnd}
+                onBlur={onAdjustmentEnd}
+                onChange={(event) =>
+                  onChangeShapeStrokeWidth(
+                    item.id,
+                    Number(event.target.value)
+                  )
+                }
+                className="w-full cursor-pointer accent-blue-500"
+                aria-label={
+                  isStrokeOnlyShape(item.shapeKind)
+                    ? "Stroke width"
+                    : "Border width"
+                }
+              />
+            </label>
+          )}
+
+          <RotationControls itemId={item.id} onRotate={onRotate} />
+        </div>
+      )}
     </aside>
+  );
+}
+
+function ShapeColourControl({
+  label,
+  value,
+  fallback,
+  emptyLabel,
+  restoreLabel,
+  onChange,
+}: {
+  label: string;
+  value: string | null;
+  fallback: string;
+  emptyLabel: string;
+  restoreLabel: string;
+  onChange: (value: string | null) => void;
+}) {
+  return (
+    <InspectorField label={label}>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value ?? fallback}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-9 min-w-0 flex-1 cursor-pointer rounded-lg border border-white/10 bg-slate-800 p-1"
+          aria-label={`${label} colour`}
+        />
+        <button
+          type="button"
+          onClick={() => onChange(value ? null : fallback)}
+          className="h-9 shrink-0 rounded-lg bg-slate-800 px-2 text-[10px] font-bold text-slate-200 transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+        >
+          {value ? emptyLabel : restoreLabel}
+        </button>
+      </div>
+    </InspectorField>
   );
 }
 

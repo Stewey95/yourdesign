@@ -53,6 +53,7 @@ export default function EditorSidebar({
   canDelete,
   onDelete,
 }: EditorSidebarProps) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const mediaPanelRef = useRef<HTMLDivElement | null>(null);
   const textPanelRef = useRef<HTMLDivElement | null>(null);
   const arrangePanelRef = useRef<HTMLDivElement | null>(null);
@@ -64,12 +65,7 @@ export default function EditorSidebar({
   ) => {
     onToolbarPanelChange(isActive ? null : panel);
 
-    if (
-      isActive ||
-      window.matchMedia("(min-width: 768px)").matches
-    ) {
-      return;
-    }
+    if (isActive) return;
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -82,8 +78,24 @@ export default function EditorSidebar({
                 ? arrangePanelRef.current
                 : elementsPanelRef.current;
 
-        panelElement?.scrollIntoView({
-          behavior: "smooth",
+        if (!panelElement) return;
+
+        const behavior = window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches
+          ? "auto"
+          : "smooth";
+
+        if (window.matchMedia("(min-width: 768px)").matches) {
+          scrollContainerRef.current?.scrollTo({
+            top: panelElement.offsetTop - 8,
+            behavior,
+          });
+          return;
+        }
+
+        panelElement.scrollIntoView({
+          behavior,
           block: "start",
           inline: "nearest",
         });
@@ -97,7 +109,10 @@ export default function EditorSidebar({
       data-editor-keep-zoom-hud-open
       className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
     >
-    <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
+    <div
+      ref={scrollContainerRef}
+      className="md:min-h-0 md:flex-1 md:overflow-y-auto"
+    >
     <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-4 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-2 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
 {[
   { id: "media", icon: "🖼️", label: "Media" },
@@ -246,7 +261,7 @@ export default function EditorSidebar({
       {activeToolbarPanel === "elements" && (
         <div
           ref={elementsPanelRef}
-          className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+          className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:flex md:h-[calc(100%_-_0.75rem)] md:min-h-[420px] md:flex-col md:scroll-mt-0"
         >
           <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
             Elements
