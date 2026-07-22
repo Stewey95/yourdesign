@@ -6,12 +6,14 @@ import {
   CANVAS_PRESETS,
   type CanvasPresetId,
 } from "./editor.constants";
+import ElementsPanel from "./ElementsPanel";
+import type { ElementAsset } from "./elements/element.types";
 
 type ToolbarPanel =
   | "media"
   | "text"
   | "arrange"
-  | "effects"
+  | "elements"
   | null;
 
 type EditorSidebarProps = {
@@ -21,6 +23,7 @@ type EditorSidebarProps = {
     event: React.ChangeEvent<HTMLInputElement>
   ) => void;
   onAddText: () => void;
+  onAddElement: (element: ElementAsset) => void;
   selectedCanvasPresetId: CanvasPresetId;
   onCanvasPresetChange: (presetId: CanvasPresetId) => void;
   canUndo: boolean;
@@ -38,6 +41,7 @@ export default function EditorSidebar({
   onToolbarPanelChange,
   onImageUpload,
   onAddText,
+  onAddElement,
   selectedCanvasPresetId,
   onCanvasPresetChange,
   canUndo,
@@ -52,6 +56,7 @@ export default function EditorSidebar({
   const mediaPanelRef = useRef<HTMLDivElement | null>(null);
   const textPanelRef = useRef<HTMLDivElement | null>(null);
   const arrangePanelRef = useRef<HTMLDivElement | null>(null);
+  const elementsPanelRef = useRef<HTMLDivElement | null>(null);
 
   const openToolbarPanel = (
     panel: Exclude<ToolbarPanel, null>,
@@ -61,7 +66,6 @@ export default function EditorSidebar({
 
     if (
       isActive ||
-      panel === "effects" ||
       window.matchMedia("(min-width: 768px)").matches
     ) {
       return;
@@ -74,7 +78,9 @@ export default function EditorSidebar({
             ? mediaPanelRef.current
             : panel === "text"
               ? textPanelRef.current
-              : arrangePanelRef.current;
+              : panel === "arrange"
+                ? arrangePanelRef.current
+                : elementsPanelRef.current;
 
         panelElement?.scrollIntoView({
           behavior: "smooth",
@@ -97,7 +103,7 @@ export default function EditorSidebar({
   { id: "media", icon: "🖼️", label: "Media" },
   { id: "text", icon: "T", label: "Text" },
   { id: "arrange", icon: "▱", label: "Arrange" },
-  { id: "effects", icon: "✨", label: "Effects" },
+  { id: "elements", icon: "✦", label: "Elements" },
 ].map((tool) => {
   const isActive = activeToolbarPanel === tool.id;
 
@@ -234,6 +240,18 @@ export default function EditorSidebar({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {activeToolbarPanel === "elements" && (
+        <div
+          ref={elementsPanelRef}
+          className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+        >
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
+            Elements
+          </p>
+          <ElementsPanel onInsertElement={onAddElement} />
         </div>
       )}
     </div>

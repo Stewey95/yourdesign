@@ -43,6 +43,8 @@ import type {
   DesignItem,
   Position,
 } from "./editor/editor.types";
+import type { ElementAsset } from "./editor/elements/element.types";
+import { getElementSvgDataUrl } from "./editor/elements/elements.catalog";
 import {
   exportDesign,
   type ExportDeliveryOptions,
@@ -97,7 +99,7 @@ export default function EditorPreview({
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
     useState(0);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
-  "media" | "text" | "arrange" | "effects" | null
+  "media" | "text" | "arrange" | "elements" | null
 >(null);
   const [alignmentGuides, setAlignmentGuides] = useState({
   vertical: false,
@@ -1385,6 +1387,35 @@ if (direction === "back") {
     }, 100);
   };
 
+  const addElement = (element: ElementAsset) => {
+    const newElement: DesignItem = {
+      id: crypto.randomUUID(),
+      type: "image",
+      hidden: false,
+      locked: false,
+      src: getElementSvgDataUrl(element),
+      position: {
+        x: canvasSize.width / 2,
+        y: canvasSize.height / 2,
+      },
+      size: getBoundedImageSize(
+        element.defaultSize.width,
+        element.defaultSize.height
+      ),
+      rotation: 0,
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      opacity: 100,
+    };
+
+    commitItems((currentItems) => [...currentItems, newElement]);
+    setSelectedItemId(newElement.id);
+    setEditingItemId(null);
+    setShowMobileContextToolbar(true);
+    setShowImageAdjustments(false);
+  };
+
   const deleteSelected = () => {
     if (!selectedItemId) return;
 
@@ -1724,6 +1755,7 @@ if (direction === "back") {
           onToolbarPanelChange={setActiveToolbarPanel}
           onImageUpload={handleImageUpload}
           onAddText={addText}
+          onAddElement={addElement}
           selectedCanvasPresetId={selectedCanvasPresetId}
           onCanvasPresetChange={selectCanvasPreset}
           canUndo={canUndo}
