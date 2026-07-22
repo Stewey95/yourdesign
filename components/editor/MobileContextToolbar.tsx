@@ -1,6 +1,12 @@
 "use client";
 
-import { Copy } from "lucide-react";
+import {
+  Copy,
+  Eye,
+  EyeOff,
+  Lock,
+  LockOpen,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fontOptions,
@@ -22,6 +28,8 @@ type MobileContextToolbarProps = {
   onRotate: (id: string, amount: number) => void;
   onMoveBackward: (id: string) => void;
   onMoveForward: (id: string) => void;
+  onToggleVisibility: (id: string) => void;
+  onToggleLock: (id: string) => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -57,6 +65,8 @@ export default function MobileContextToolbar({
   onRotate,
   onMoveBackward,
   onMoveForward,
+  onToggleVisibility,
+  onToggleLock,
   canUndo,
   canRedo,
   onUndo,
@@ -343,6 +353,36 @@ export default function MobileContextToolbar({
             title="Bring Forward"
           >
             ⬆️
+          </button>
+
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={() => onToggleVisibility(item.id)}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            aria-label={item.hidden ? "Show selected item" : "Hide selected item"}
+            title={item.hidden ? "Show" : "Hide"}
+          >
+            {item.hidden ? (
+              <EyeOff size={16} aria-hidden="true" />
+            ) : (
+              <Eye size={16} aria-hidden="true" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={() => onToggleLock(item.id)}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            aria-label={item.locked ? "Unlock selected item" : "Lock selected item"}
+            title={item.locked ? "Unlock" : "Lock"}
+          >
+            {item.locked ? (
+              <Lock size={16} aria-hidden="true" />
+            ) : (
+              <LockOpen size={16} aria-hidden="true" />
+            )}
           </button>
 
           <button

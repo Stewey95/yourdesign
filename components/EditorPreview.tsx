@@ -1692,6 +1692,8 @@ if (direction === "back") {
           onMoveForward={(id) =>
             moveItemLayer(id, "forward")
           }
+          onToggleVisibility={toggleLayerVisibility}
+          onToggleLock={toggleLayerLock}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={performUndo}

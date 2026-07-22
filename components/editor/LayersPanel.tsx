@@ -152,9 +152,19 @@ export default function LayersPanel({
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center text-slate-500 group-hover:text-slate-300 active:cursor-grabbing"
+                  className="flex h-8 w-5 shrink-0 cursor-grab items-center justify-center text-slate-500 group-hover:text-slate-300 active:cursor-grabbing"
                 >
                   <GripVertical size={13} />
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
+                    selected
+                      ? "bg-blue-500/20 text-cyan-300"
+                      : "bg-white/5 text-slate-400"
+                  }`}
+                >
+                  <LayerIcon size={13} />
                 </span>
                 <button
                   type="button"
@@ -162,20 +172,10 @@ export default function LayersPanel({
                   aria-label={`Select layer ${name}`}
                   disabled={hidden || locked}
                   onClick={() => onSelectItem(layer.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-default"
+                  className="min-w-0 flex-1 rounded-md py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-default"
                 >
                   <span
-                    aria-hidden="true"
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
-                      selected
-                        ? "bg-blue-500/20 text-cyan-300"
-                        : "bg-white/5 text-slate-400"
-                    }`}
-                  >
-                    <LayerIcon size={13} />
-                  </span>
-                  <span
-                    className={`truncate text-xs font-semibold ${
+                    className={`block truncate text-xs font-semibold ${
                       selected
                         ? "text-white"
                         : hidden || locked
@@ -186,44 +186,46 @@ export default function LayersPanel({
                     {name}
                   </span>
                 </button>
-                <button
-                  type="button"
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onToggleLock(layer.id);
-                  }}
-                  onDragStart={(event) => event.preventDefault()}
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
-                    locked ? "text-slate-300" : "text-slate-500"
-                  }`}
-                  aria-label={`${locked ? "Unlock" : "Lock"} layer ${name}`}
-                  title={locked ? "Unlock layer" : "Lock layer"}
-                >
-                  {locked ? (
-                    <Lock size={14} aria-hidden="true" />
-                  ) : (
-                    <LockOpen size={14} aria-hidden="true" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onToggleVisibility(layer.id);
-                  }}
-                  onDragStart={(event) => event.preventDefault()}
-                  className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-                  aria-label={`${hidden ? "Show" : "Hide"} layer ${name}`}
-                  title={hidden ? "Show layer" : "Hide layer"}
-                >
-                  {hidden ? (
-                    <EyeOff size={14} aria-hidden="true" />
-                  ) : (
-                    <Eye size={14} aria-hidden="true" />
-                  )}
-                </button>
+                <div className="ml-auto mr-1 flex shrink-0 items-center">
+                  <button
+                    type="button"
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onToggleVisibility(layer.id);
+                    }}
+                    onDragStart={(event) => event.preventDefault()}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    aria-label={`${hidden ? "Show" : "Hide"} layer ${name}`}
+                    title={hidden ? "Show layer" : "Hide layer"}
+                  >
+                    {hidden ? (
+                      <EyeOff size={14} aria-hidden="true" />
+                    ) : (
+                      <Eye size={14} aria-hidden="true" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onToggleLock(layer.id);
+                    }}
+                    onDragStart={(event) => event.preventDefault()}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+                      locked ? "text-slate-300" : "text-slate-500"
+                    }`}
+                    aria-label={`${locked ? "Unlock" : "Lock"} layer ${name}`}
+                    title={locked ? "Unlock layer" : "Lock layer"}
+                  >
+                    {locked ? (
+                      <Lock size={14} aria-hidden="true" />
+                    ) : (
+                      <LockOpen size={14} aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
               </div>
             );
           })}
