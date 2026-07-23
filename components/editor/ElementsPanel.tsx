@@ -3,9 +3,7 @@
 import { Clock3, Heart, Search, Shapes } from "lucide-react";
 import {
   useDeferredValue,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import {
@@ -25,7 +23,6 @@ export default function ElementsPanel({
 }: ElementsPanelProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | undefined>();
-  const resultsRef = useRef<HTMLDivElement | null>(null);
   const deferredQuery = useDeferredValue(query);
   const searchResult = useMemo(
     () =>
@@ -44,12 +41,8 @@ export default function ElementsPanel({
     []
   );
 
-  useEffect(() => {
-    resultsRef.current?.scrollTo({ top: 0 });
-  }, [category, query]);
-
   return (
-    <div className="space-y-4 md:flex md:min-h-0 md:flex-1 md:flex-col md:gap-4 md:space-y-0">
+    <div className="space-y-4">
       <label className="relative block">
         <span className="sr-only">Search elements</span>
         <Search
@@ -112,7 +105,6 @@ export default function ElementsPanel({
 
       <section
         aria-labelledby="element-results-heading"
-        className="md:flex md:min-h-0 md:flex-1 md:flex-col"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
           <h3
@@ -142,8 +134,7 @@ export default function ElementsPanel({
           </div>
         ) : (
           <div
-            ref={resultsRef}
-            className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto pr-1 [scrollbar-width:thin] md:min-h-0 md:max-h-none md:flex-1 md:grid-cols-2 md:overflow-y-scroll md:[scrollbar-color:rgba(100,116,139,0.85)_rgba(15,23,42,0.45)] md:[&::-webkit-scrollbar]:w-1.5 md:[&::-webkit-scrollbar-track]:rounded-full md:[&::-webkit-scrollbar-track]:bg-slate-900/50 md:[&::-webkit-scrollbar-thumb]:rounded-full md:[&::-webkit-scrollbar-thumb]:bg-slate-500/80"
+            className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto pr-1 [scrollbar-width:thin] md:max-h-none md:grid-cols-2 md:overflow-visible md:pr-0"
           >
             {searchResult.items.map((element) => (
               <button

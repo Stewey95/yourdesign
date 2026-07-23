@@ -69,6 +69,11 @@ export default function EditorSidebar({
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        if (window.matchMedia("(min-width: 768px)").matches) {
+          scrollContainerRef.current?.scrollTo({ top: 0 });
+          return;
+        }
+
         const panelElement =
           panel === "media"
             ? mediaPanelRef.current
@@ -86,14 +91,6 @@ export default function EditorSidebar({
           ? "auto"
           : "smooth";
 
-        if (window.matchMedia("(min-width: 768px)").matches) {
-          scrollContainerRef.current?.scrollTo({
-            top: panelElement.offsetTop - 8,
-            behavior,
-          });
-          return;
-        }
-
         panelElement.scrollIntoView({
           behavior,
           block: "start",
@@ -109,11 +106,7 @@ export default function EditorSidebar({
       data-editor-keep-zoom-hud-open
       className="rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
     >
-    <div
-      ref={scrollContainerRef}
-      className="md:min-h-0 md:flex-1 md:overflow-y-auto"
-    >
-    <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-4 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-2 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
+    <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-4 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-2 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:shrink-0 md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
 {[
   { id: "media", icon: "🖼️", label: "Media" },
   { id: "text", icon: "T", label: "Text" },
@@ -155,10 +148,15 @@ export default function EditorSidebar({
   );
 })}
 </div>
+
+    <div
+      ref={scrollContainerRef}
+      className="md:min-h-0 md:flex-1 md:overflow-y-auto md:pr-1 md:[scrollbar-color:rgba(100,116,139,0.75)_rgba(15,23,42,0.35)] md:[scrollbar-width:thin] md:[&::-webkit-scrollbar]:w-1.5 md:[&::-webkit-scrollbar-track]:rounded-full md:[&::-webkit-scrollbar-track]:bg-slate-900/40 md:[&::-webkit-scrollbar-thumb]:rounded-full md:[&::-webkit-scrollbar-thumb]:bg-slate-500/70"
+    >
        {activeToolbarPanel === "media" && (
 <div
   ref={mediaPanelRef}
-  className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+  className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
 >
   <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
     Media
@@ -179,7 +177,7 @@ export default function EditorSidebar({
       {activeToolbarPanel === "text" && (
 <div
   ref={textPanelRef}
-  className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+  className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
 >
   <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
     Text
@@ -196,7 +194,7 @@ export default function EditorSidebar({
       {activeToolbarPanel === "arrange" && (
         <div
           ref={arrangePanelRef}
-          className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:scroll-mt-0"
+          className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
         >
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-cyan-400">
             Canvas size
@@ -261,7 +259,7 @@ export default function EditorSidebar({
       {activeToolbarPanel === "elements" && (
         <div
           ref={elementsPanelRef}
-          className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:flex md:h-[calc(100%_-_0.75rem)] md:min-h-[420px] md:flex-col md:scroll-mt-0"
+          className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
         >
           <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
             Elements
