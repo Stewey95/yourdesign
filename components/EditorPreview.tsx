@@ -299,21 +299,18 @@ const getSnappedPosition = (
   const selectedTextItem = visibleCanvasItems.find(
     (item): item is Extract<DesignItem, { type: "text" }> =>
       item.id === selectedItemId &&
-      item.type === "text" &&
-      item.locked !== true
+      item.type === "text"
   );
 
   const selectedImageItem = visibleCanvasItems.find(
     (item): item is Extract<DesignItem, { type: "image" }> =>
       item.id === selectedItemId &&
-      item.type === "image" &&
-      item.locked !== true
+      item.type === "image"
   );
   const selectedShapeItem = visibleCanvasItems.find(
     (item): item is Extract<DesignItem, { type: "shape" }> =>
       item.id === selectedItemId &&
-      item.type === "shape" &&
-      item.locked !== true
+      item.type === "shape"
   );
   const selectedVisibleItem = visibleCanvasItems.find(
     (item) => item.id === selectedItemId
@@ -381,14 +378,21 @@ const getSnappedPosition = (
       restoredItems.some(
         (item) =>
           item.id === selectedItemId &&
-          item.hidden !== true &&
-          item.locked !== true
+          item.hidden !== true
       );
 
     if (!selectedItemSurvives) {
       setShapeStyleItemId(null);
       setSelectedItemId(null);
       setShowMobileContextToolbar(false);
+    } else {
+      const restoredSelectedItem = restoredItems.find(
+        (item) => item.id === selectedItemId
+      );
+
+      if (restoredSelectedItem?.locked) {
+        setShapeStyleItemId(null);
+      }
     }
   }, [selectedItemId]);
 
@@ -431,7 +435,7 @@ const getSnappedPosition = (
         (item) => item.id === selectedItemId
       );
 
-      if (!sourceItem) return currentItems;
+      if (!sourceItem || sourceItem.locked) return currentItems;
 
       const duplicate = structuredClone(sourceItem);
       const horizontalOffset =
@@ -969,8 +973,7 @@ const getSnappedPosition = (
       !items.some(
         (item) =>
           item.id === id &&
-          item.hidden !== true &&
-          item.locked !== true
+          item.hidden !== true
       )
     ) {
       return;
@@ -1063,10 +1066,7 @@ const getSnappedPosition = (
     setShowImageAdjustments(false);
     hideAlignmentGuides();
   };
-  const toggleLayerLock = (
-    id: string,
-    preserveMobileSelection = false
-  ) => {
+  const toggleLayerLock = (id: string) => {
     const layer = items.find((item) => item.id === id);
 
     if (!layer) return;
@@ -1093,13 +1093,7 @@ const getSnappedPosition = (
     setShowImageAdjustments(false);
     setShapeStyleItemId(null);
     hideAlignmentGuides();
-
-    if (preserveMobileSelection) {
-      setShowMobileContextToolbar(true);
-    } else {
-      setSelectedItemId(null);
-      setShowMobileContextToolbar(false);
-    }
+    setShowMobileContextToolbar(true);
   };
     const moveItemLayer = (
     id: string,
@@ -1839,7 +1833,7 @@ if (direction === "back") {
           onMoveForward={(id) =>
             moveItemLayer(id, "forward")
           }
-          onToggleLock={(id) => toggleLayerLock(id, true)}
+          onToggleLock={toggleLayerLock}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={performUndo}
@@ -1871,9 +1865,9 @@ if (direction === "back") {
           canRedo={canRedo}
           onUndo={performUndo}
           onRedo={performRedo}
-          canDuplicate={Boolean(selectedItem)}
+          canDuplicate={Boolean(selectedItem && !selectedItem.locked)}
           onDuplicate={duplicateSelectedItem}
-          canDelete={Boolean(selectedItemId)}
+          canDelete={Boolean(selectedItem && !selectedItem.locked)}
           onDelete={deleteSelected}
         />
 
@@ -1885,7 +1879,7 @@ if (direction === "back") {
           onViewportChange={setEditorViewport}
           canvasSize={canvasSize}
           canvasPresetFitRequest={canvasPresetFitRequest}
-          toolbar={selectedItem ? (
+          toolbar={selectedItem && !selectedItem.locked ? (
             <LayerToolbar
               itemId={selectedItem.id}
               itemType={selectedItem.type}
@@ -1925,6 +1919,19 @@ if (direction === "back") {
             setEditingItemId(null);
             setShowMobileContextToolbar(true);
             setShowImageAdjustments(false);
+          }}
+          onLockedItemPointerDown={(id) => {
+            commitHistoryTransaction();
+            pendingDragRef.current = null;
+            pinchRef.current = null;
+            canvasTapRef.current = null;
+            setDraggingItemId(null);
+            setEditingItemId(null);
+            setSelectedItemId(id);
+            setShapeStyleItemId(null);
+            setShowMobileContextToolbar(true);
+            setShowImageAdjustments(false);
+            hideAlignmentGuides();
           }}
           onImageResizeStart={startImageResize}
           onTextResizeStart={startTextResize}

@@ -185,7 +185,7 @@ export default function LayersPanel({
                   type="button"
                   aria-pressed={selected}
                   aria-label={`Select layer ${name}`}
-                  disabled={hidden || locked}
+                  disabled={hidden}
                   onClick={() => onSelectItem(layer.id)}
                   className="col-span-2 grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-x-1 self-stretch rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-default"
                 >

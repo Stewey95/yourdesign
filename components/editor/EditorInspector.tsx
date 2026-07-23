@@ -87,7 +87,25 @@ export default function EditorInspector({
         </p>
       )}
 
-      {item?.type === "text" && (
+      {item?.locked && (
+        <div className="rounded-xl border border-white/10 bg-slate-800/60 p-3">
+          <p className="text-sm font-bold text-white">
+            🔒 This object is locked.
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">
+            Unlock to edit this object.
+          </p>
+          <button
+            type="button"
+            onClick={() => onToggleLayerLock(item.id)}
+            className="mt-3 h-9 w-full rounded-lg bg-blue-600 px-3 text-xs font-bold text-white transition hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+          >
+            Unlock
+          </button>
+        </div>
+      )}
+
+      {item?.type === "text" && !item.locked && (
         <div className="space-y-4">
           <InspectorField label="Font">
             <select
@@ -154,7 +172,7 @@ export default function EditorInspector({
         </div>
       )}
 
-      {item?.type === "image" && (
+      {item?.type === "image" && !item.locked && (
         <div className="space-y-4">
           <InspectorSlider
             label="Brightness"
@@ -212,7 +230,7 @@ export default function EditorInspector({
         </div>
       )}
 
-      {item?.type === "shape" && (
+      {item?.type === "shape" && !item.locked && (
         <div className="space-y-4">
           {!isStrokeOnlyShape(item.shapeKind) && (
             <ShapeColourControl

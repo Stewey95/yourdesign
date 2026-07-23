@@ -16,6 +16,7 @@ type ImageCanvasItemProps = {
   selected: boolean;
   displayScale: number;
   onPointerDown: (id: string) => void;
+  onLockedPointerDown: (id: string) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: ResizableDesignItem
@@ -42,6 +43,7 @@ type TextCanvasItemProps = {
     startX: number,
     startY: number
   ) => void;
+  onLockedPointerDown: (id: string) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: TextDesignItem,
@@ -77,7 +79,9 @@ export default function CanvasItem(props: CanvasItemProps) {
       className={`absolute ${
         selected
           ? item.type === "text"
-            ? "md:ring-2 md:ring-blue-500"
+            ? item.locked
+              ? "ring-2 ring-blue-500"
+              : "md:ring-2 md:ring-blue-500"
             : "ring-2 ring-blue-500"
           : ""
       }`}
@@ -94,7 +98,6 @@ export default function CanvasItem(props: CanvasItemProps) {
         maxWidth: textMaximumWidth,
         transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
         touchAction: "none",
-        pointerEvents: item.locked ? "none" : undefined,
         WebkitUserSelect: "none",
         userSelect: "none",
       }}
@@ -102,7 +105,7 @@ export default function CanvasItem(props: CanvasItemProps) {
       {item.type === "image" && "onPointerDown" in props ? (
         <CanvasImageItem
           item={item}
-          selected={props.selected}
+          selected={props.selected && !item.locked}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
@@ -110,7 +113,7 @@ export default function CanvasItem(props: CanvasItemProps) {
       ) : item.type === "shape" && "onPointerDown" in props ? (
         <CanvasShapeItem
           item={item}
-          selected={props.selected}
+          selected={props.selected && !item.locked}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
@@ -118,8 +121,8 @@ export default function CanvasItem(props: CanvasItemProps) {
       ) : item.type === "text" && "editing" in props ? (
         <CanvasTextItem
           item={item}
-          selected={props.selected}
-          editing={props.editing}
+          selected={props.selected && !item.locked}
+          editing={props.editing && !item.locked}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           maximumWidth={textMaximumWidth ?? props.canvasWidth}
@@ -132,6 +135,17 @@ export default function CanvasItem(props: CanvasItemProps) {
           onResizeStart={props.onResizeStart}
         />
       ) : null}
+
+      {item.locked && (
+        <div
+          className="absolute inset-0 z-20 cursor-default"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            props.onLockedPointerDown(item.id);
+          }}
+        />
+      )}
     </div>
   );
 }

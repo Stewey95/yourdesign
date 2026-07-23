@@ -5,7 +5,7 @@ import type {
 } from "./editor.types";
 
 export const DEFAULT_SHAPE_COLOUR = "#2563eb";
-export const DEFAULT_SHAPE_STROKE_WIDTH = 4;
+export const DEFAULT_SHAPE_STROKE_WIDTH = 2;
 export const MIN_SHAPE_STROKE_WIDTH = 1;
 export const MAX_SHAPE_STROKE_WIDTH = 20;
 
@@ -34,15 +34,12 @@ export const isStrokeOnlyShape = (shapeKind: ShapeKind) =>
 
 export const getDefaultShapeStyle = (
   shapeKind: ShapeKind
-): Pick<ShapeDesignItem, "fill" | "stroke" | "strokeWidth"> =>
-  isStrokeOnlyShape(shapeKind)
-    ? {
-        fill: null,
-        stroke: DEFAULT_SHAPE_COLOUR,
-        strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH,
-      }
-    : {
-        fill: DEFAULT_SHAPE_COLOUR,
-        stroke: null,
-        strokeWidth: 0,
-      };
+): Pick<ShapeDesignItem, "fill" | "stroke" | "strokeWidth"> => {
+  void shapeKind;
+
+  return {
+    fill: null,
+    stroke: DEFAULT_SHAPE_COLOUR,
+    strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH,
+  };
+};

@@ -55,6 +55,7 @@ type EditorCanvasProps = {
   onPointerCancel: React.PointerEventHandler<HTMLDivElement>;
   onPointerDown: React.PointerEventHandler<HTMLDivElement>;
   onImagePointerDown: (id: string) => void;
+  onLockedItemPointerDown: (id: string) => void;
   onImageResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: ResizableDesignItem
@@ -127,6 +128,7 @@ export default function EditorCanvas({
   onPointerCancel,
   onPointerDown,
   onImagePointerDown,
+  onLockedItemPointerDown,
   onImageResizeStart,
   onTextResizeStart,
   onRequestAutoFit,
@@ -1400,6 +1402,7 @@ export default function EditorCanvas({
                   selected={selectedItemId === item.id}
                   displayScale={displayScale}
                   onPointerDown={onImagePointerDown}
+                  onLockedPointerDown={onLockedItemPointerDown}
                   onResizeStart={onImageResizeStart}
                 />
               ) : (
@@ -1417,6 +1420,7 @@ export default function EditorCanvas({
                   onFinishEditing={onFinishEditing}
                   onEditingPointerDown={onEditingPointerDown}
                   onPendingDragStart={onPendingDragStart}
+                  onLockedPointerDown={onLockedItemPointerDown}
                   onResizeStart={onTextResizeStart}
                 />
               )
