@@ -87,6 +87,9 @@ export default function EditorPreview({
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showImageAdjustments, setShowImageAdjustments] = useState(false);
+  const [shapeStyleItemId, setShapeStyleItemId] = useState<string | null>(
+    null
+  );
   const [showMobileContextToolbar, setShowMobileContextToolbar] =
     useState(false);
   const [canvasViewMode, setCanvasViewMode] =
@@ -383,6 +386,7 @@ const getSnappedPosition = (
       );
 
     if (!selectedItemSurvives) {
+      setShapeStyleItemId(null);
       setSelectedItemId(null);
       setShowMobileContextToolbar(false);
     }
@@ -454,6 +458,7 @@ const getSnappedPosition = (
     if (!duplicateId) return;
 
     setSelectedItemId(duplicateId);
+    setShapeStyleItemId(null);
     setDraggingItemId(null);
     setEditingItemId(null);
     setShowMobileContextToolbar(true);
@@ -642,6 +647,7 @@ const getSnappedPosition = (
     }
 
     setSelectedItemId(null);
+    setShapeStyleItemId(null);
     setEditingItemId(null);
     setShowMobileContextToolbar(false);
     setShowImageAdjustments(false);
@@ -682,6 +688,7 @@ const getSnappedPosition = (
 
       restoreItems([]);
       setSelectedItemId(null);
+      setShapeStyleItemId(null);
       setDraggingItemId(null);
       setEditingItemId(null);
       setShowMobileContextToolbar(false);
@@ -977,6 +984,7 @@ const getSnappedPosition = (
     setDraggingItemId(null);
     setEditingItemId(null);
     setSelectedItemId(id);
+    setShapeStyleItemId(null);
     setShowMobileContextToolbar(true);
     setShowImageAdjustments(false);
     hideAlignmentGuides();
@@ -1048,6 +1056,7 @@ const getSnappedPosition = (
     pageInteractionRef.current = null;
     justPinchedRef.current = false;
     setSelectedItemId(null);
+    setShapeStyleItemId(null);
     setDraggingItemId(null);
     setEditingItemId(null);
     setShowMobileContextToolbar(false);
@@ -1082,6 +1091,7 @@ const getSnappedPosition = (
     setDraggingItemId(null);
     setEditingItemId(null);
     setShowImageAdjustments(false);
+    setShapeStyleItemId(null);
     hideAlignmentGuides();
 
     if (preserveMobileSelection) {
@@ -1398,6 +1408,7 @@ if (direction === "back") {
       ]);
 
       setSelectedItemId(newImage.id);
+      setShapeStyleItemId(null);
       setEditingItemId(null);
       setShowMobileContextToolbar(true);
       setShowImageAdjustments(false);
@@ -1435,6 +1446,7 @@ if (direction === "back") {
     ]);
 
     setSelectedItemId(newText.id);
+    setShapeStyleItemId(null);
     setEditingItemId(null);
     setShowMobileContextToolbar(true);
     setShowImageAdjustments(false);
@@ -1482,6 +1494,7 @@ if (direction === "back") {
 
     commitItems((currentItems) => [...currentItems, newElement]);
     setSelectedItemId(newElement.id);
+    setShapeStyleItemId(null);
     setEditingItemId(null);
     setShowMobileContextToolbar(true);
     setShowImageAdjustments(false);
@@ -1497,6 +1510,7 @@ if (direction === "back") {
     );
 
     setSelectedItemId(null);
+    setShapeStyleItemId(null);
     setEditingItemId(null);
     setShowMobileContextToolbar(false);
     setShowImageAdjustments(false);
@@ -1724,6 +1738,7 @@ if (direction === "back") {
     setCanvasViewMode(mode);
   };
   const toggleImageAdjustments = () => {
+  setShapeStyleItemId(null);
   setShowImageAdjustments((currentValue) => {
     const nextValue = !currentValue;
 
@@ -1742,6 +1757,23 @@ if (direction === "back") {
     return nextValue;
   });
 };
+
+  const toggleShapeStyle = () => {
+    if (
+      !selectedVisibleItem ||
+      selectedVisibleItem.type !== "shape" ||
+      selectedVisibleItem.locked
+    ) {
+      return;
+    }
+
+    setShowImageAdjustments(false);
+    setShapeStyleItemId((currentItemId) =>
+      currentItemId === selectedVisibleItem.id
+        ? null
+        : selectedVisibleItem.id
+    );
+  };
 
   const startImageAdjustment = () => {
     commitHistoryTransaction();
@@ -1784,6 +1816,7 @@ if (direction === "back") {
         onRedo={performRedo}
         onNewDesign={() => {
           setNewDesignError(null);
+          setShapeStyleItemId(null);
           setShowNewDesignDialog(true);
         }}
         onExport={() => setShowExportDialog(true)}
@@ -1795,6 +1828,7 @@ if (direction === "back") {
           canSendBackward={canSendBackward}
           canBringForward={canBringForward}
           showImageAdjustments={showImageAdjustments}
+          showShapeStyle={shapeStyleItemId === selectedVisibleItem.id}
           onChangeTextSize={changeTextSize}
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}
@@ -1813,6 +1847,10 @@ if (direction === "back") {
           onDuplicate={duplicateSelectedItem}
           onDelete={deleteSelected}
           onToggleImageAdjustments={toggleImageAdjustments}
+          onToggleShapeStyle={toggleShapeStyle}
+          onChangeShapeFill={changeShapeFill}
+          onChangeShapeStroke={changeShapeStroke}
+          onChangeShapeStrokeWidth={changeShapeStrokeWidth}
           onAdjustmentStart={startImageAdjustment}
           onAdjustmentEnd={commitHistoryTransaction}
           onAdjustmentChange={changeImageAdjustment}
@@ -1883,6 +1921,7 @@ if (direction === "back") {
             beginHistoryTransaction();
             setDraggingItemId(id);
             setSelectedItemId(id);
+            setShapeStyleItemId(null);
             setEditingItemId(null);
             setShowMobileContextToolbar(true);
             setShowImageAdjustments(false);
@@ -1909,6 +1948,7 @@ if (direction === "back") {
 
             if (selectedItemId === id) {
               setSelectedItemId(null);
+              setShapeStyleItemId(null);
               setShowMobileContextToolbar(false);
               setShowImageAdjustments(false);
             }
@@ -1921,6 +1961,7 @@ if (direction === "back") {
             pendingDragRef.current = null;
             setDraggingItemId(null);
             setSelectedItemId(id);
+            setShapeStyleItemId(null);
             setShowMobileContextToolbar(true);
           }}
           onPendingDragStart={(id, startX, startY) => {
@@ -1934,6 +1975,7 @@ if (direction === "back") {
             };
 
             setSelectedItemId(id);
+            setShapeStyleItemId(null);
             setShowMobileContextToolbar(true);
           }}
           onTwoFingerGestureStart={cancelPendingCanvasGesture}
