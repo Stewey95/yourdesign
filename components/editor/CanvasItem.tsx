@@ -1,5 +1,6 @@
 "use client";
 
+import { Lock } from "lucide-react";
 import CanvasImageItem from "./CanvasImageItem";
 import CanvasShapeItem from "./CanvasShapeItem";
 import CanvasTextItem from "./CanvasTextItem";
@@ -145,6 +146,16 @@ export default function CanvasItem(props: CanvasItemProps) {
             props.onLockedPointerDown(item.id);
           }}
         />
+      )}
+
+      {selected && item.locked && (
+        <span
+          aria-label="Locked item"
+          title="Locked"
+          className="pointer-events-none absolute -right-3 -top-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-blue-300/60 bg-slate-900 text-cyan-300 shadow-lg"
+        >
+          <Lock size={13} strokeWidth={2.25} aria-hidden="true" />
+        </span>
       )}
     </div>
   );

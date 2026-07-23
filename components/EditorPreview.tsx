@@ -889,17 +889,20 @@ const getSnappedPosition = (
     setDraggingItemId(null);
   }, []);
 
-  const changeTextSize = (id: string, amount: number) => {
-    commitItems((currentItems) =>
+  const changeTextFontSize = (id: string, fontSize: number) => {
+    const nextFontSize = clampFontSize(fontSize);
+    const updateText = (currentItems: DesignItem[]) =>
       currentItems.map((item) =>
         item.id === id && item.type === "text"
-          ? {
-              ...item,
-              fontSize: clampFontSize(item.fontSize + amount),
-            }
+          ? { ...item, fontSize: nextFontSize }
           : item
-      )
-    );
+      );
+
+    if (isTransactionActive()) {
+      updateItems(updateText);
+    } else {
+      commitItems(updateText);
+    }
   };
 
   const changeTextColor = (id: string, color: string) => {
@@ -1823,7 +1826,7 @@ if (direction === "back") {
           canBringForward={canBringForward}
           showImageAdjustments={showImageAdjustments}
           showShapeStyle={shapeStyleItemId === selectedVisibleItem.id}
-          onChangeTextSize={changeTextSize}
+          onChangeTextFontSize={changeTextFontSize}
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}
           onRotate={rotateItem}
@@ -1996,7 +1999,7 @@ if (direction === "back") {
           onReorderLayers={reorderLayers}
           onToggleLayerVisibility={toggleLayerVisibility}
           onToggleLayerLock={toggleLayerLock}
-          onChangeTextSize={changeTextSize}
+          onChangeTextFontSize={changeTextFontSize}
           onChangeTextColor={changeTextColor}
           onChangeTextFont={changeTextFont}
           onRotate={rotateItem}

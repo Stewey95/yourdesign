@@ -2,6 +2,8 @@
 
 import {
   fontOptions,
+  TEXT_MAX_FONT_SIZE,
+  TEXT_MIN_FONT_SIZE,
   TEXT_FONT_SIZE_STEP,
 } from "./editor.constants";
 import type {
@@ -9,6 +11,7 @@ import type {
   ImageAdjustment,
 } from "./editor.types";
 import LayersPanel from "./LayersPanel";
+import PropertyStepper from "./PropertyStepper";
 import {
   DEFAULT_SHAPE_COLOUR,
   MAX_SHAPE_STROKE_WIDTH,
@@ -24,7 +27,7 @@ type EditorInspectorProps = {
   onReorderLayers: (orderedIds: string[]) => void;
   onToggleLayerVisibility: (id: string) => void;
   onToggleLayerLock: (id: string) => void;
-  onChangeTextSize: (id: string, amount: number) => void;
+  onChangeTextFontSize: (id: string, fontSize: number) => void;
   onChangeTextColor: (id: string, color: string) => void;
   onChangeTextFont: (id: string, fontFamily: string) => void;
   onRotate: (id: string, amount: number) => void;
@@ -49,7 +52,7 @@ export default function EditorInspector({
   onReorderLayers,
   onToggleLayerVisibility,
   onToggleLayerLock,
-  onChangeTextSize,
+  onChangeTextFontSize,
   onChangeTextColor,
   onChangeTextFont,
   onRotate,
@@ -124,33 +127,24 @@ export default function EditorInspector({
           </InspectorField>
 
           <InspectorField label="Size">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  onChangeTextSize(item.id, -TEXT_FONT_SIZE_STEP)
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 font-bold text-white transition hover:bg-slate-700"
-                aria-label="Decrease font size"
-                title="Decrease font size"
-              >
-                A−
-              </button>
-              <span className="flex h-9 min-w-0 flex-1 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-xs font-semibold text-white">
-                {Math.round(item.fontSize)} px
-              </span>
-              <button
-                type="button"
-                onClick={() =>
-                  onChangeTextSize(item.id, TEXT_FONT_SIZE_STEP)
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 font-bold text-white transition hover:bg-slate-700"
-                aria-label="Increase font size"
-                title="Increase font size"
-              >
-                A+
-              </button>
-            </div>
+            <PropertyStepper
+              key={item.id}
+              label="Font size"
+              value={item.fontSize}
+              min={TEXT_MIN_FONT_SIZE}
+              max={TEXT_MAX_FONT_SIZE}
+              step={TEXT_FONT_SIZE_STEP}
+              keyboardStep={1}
+              largeStep={10}
+              suffix="px"
+              decrementLabel="A−"
+              incrementLabel="A+"
+              onCommit={(fontSize) =>
+                onChangeTextFontSize(item.id, fontSize)
+              }
+              onEditStart={onAdjustmentStart}
+              onEditEnd={onAdjustmentEnd}
+            />
           </InspectorField>
 
           <InspectorField label="Colour">
@@ -257,40 +251,23 @@ export default function EditorInspector({
           />
 
           {item.stroke && (
-            <label className="block">
-              <span className="mb-2 flex items-center justify-between text-xs font-bold text-slate-400">
-                <span>
-                  {isStrokeOnlyShape(item.shapeKind)
-                    ? "Stroke width"
-                    : "Border width"}
-                </span>
-                <span>{Math.round(item.strokeWidth)} px</span>
-              </span>
-              <input
-                type="range"
-                min={MIN_SHAPE_STROKE_WIDTH}
-                max={MAX_SHAPE_STROKE_WIDTH}
-                step={1}
-                value={item.strokeWidth}
-                onFocus={onAdjustmentStart}
-                onPointerDown={onAdjustmentStart}
-                onPointerUp={onAdjustmentEnd}
-                onPointerCancel={onAdjustmentEnd}
-                onBlur={onAdjustmentEnd}
-                onChange={(event) =>
-                  onChangeShapeStrokeWidth(
-                    item.id,
-                    Number(event.target.value)
-                  )
-                }
-                className="w-full cursor-pointer accent-blue-500"
-                aria-label={
-                  isStrokeOnlyShape(item.shapeKind)
-                    ? "Stroke width"
-                    : "Border width"
-                }
-              />
-            </label>
+            <PropertyStepper
+              key={item.id}
+              label={
+                isStrokeOnlyShape(item.shapeKind)
+                  ? "Stroke width"
+                  : "Border width"
+              }
+              value={item.strokeWidth}
+              min={MIN_SHAPE_STROKE_WIDTH}
+              max={MAX_SHAPE_STROKE_WIDTH}
+              suffix="px"
+              onCommit={(strokeWidth) =>
+                onChangeShapeStrokeWidth(item.id, strokeWidth)
+              }
+              onEditStart={onAdjustmentStart}
+              onEditEnd={onAdjustmentEnd}
+            />
           )}
 
           <RotationControls itemId={item.id} onRotate={onRotate} />

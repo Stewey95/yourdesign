@@ -9,6 +9,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fontOptions,
+  TEXT_MAX_FONT_SIZE,
+  TEXT_MIN_FONT_SIZE,
   TEXT_FONT_SIZE_STEP,
 } from "./editor.constants";
 import type {
@@ -23,6 +25,7 @@ import {
   isStrokeOnlyShape,
 } from "./shape.constants";
 import MobileStylePanel from "./MobileStylePanel";
+import PropertyStepper from "./PropertyStepper";
 
 type MobileContextToolbarProps = {
   item: DesignItem;
@@ -30,7 +33,7 @@ type MobileContextToolbarProps = {
   canBringForward: boolean;
   showImageAdjustments: boolean;
   showShapeStyle: boolean;
-  onChangeTextSize: (id: string, amount: number) => void;
+  onChangeTextFontSize: (id: string, fontSize: number) => void;
   onChangeTextColor: (id: string, color: string) => void;
   onChangeTextFont: (id: string, fontFamily: string) => void;
   onRotate: (id: string, amount: number) => void;
@@ -71,7 +74,7 @@ export default function MobileContextToolbar({
   canBringForward,
   showImageAdjustments,
   showShapeStyle,
-  onChangeTextSize,
+  onChangeTextFontSize,
   onChangeTextColor,
   onChangeTextFont,
   onRotate,
@@ -252,31 +255,25 @@ export default function MobileContextToolbar({
         >
           {!item.locked && item.type === "text" && (
             <>
-              <button
-                type="button"
-                onPointerDown={protectButtonPointer}
-                onClick={() =>
-                  onChangeTextSize(item.id, -TEXT_FONT_SIZE_STEP)
+              <PropertyStepper
+                key={item.id}
+                compact
+                label="Font size"
+                value={item.fontSize}
+                min={TEXT_MIN_FONT_SIZE}
+                max={TEXT_MAX_FONT_SIZE}
+                step={TEXT_FONT_SIZE_STEP}
+                keyboardStep={1}
+                largeStep={10}
+                suffix="px"
+                decrementLabel="A−"
+                incrementLabel="A+"
+                onCommit={(fontSize) =>
+                  onChangeTextFontSize(item.id, fontSize)
                 }
-                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white"
-                aria-label="Decrease font size"
-                title="Decrease font size"
-              >
-                A−
-              </button>
-
-              <button
-                type="button"
-                onPointerDown={protectButtonPointer}
-                onClick={() =>
-                  onChangeTextSize(item.id, TEXT_FONT_SIZE_STEP)
-                }
-                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white"
-                aria-label="Increase font size"
-                title="Increase font size"
-              >
-                A+
-              </button>
+                onEditStart={onAdjustmentStart}
+                onEditEnd={onAdjustmentEnd}
+              />
 
               <label
                 className="flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full bg-slate-700 px-2 text-sm font-bold text-white"
@@ -603,6 +600,26 @@ function MobileShapeStylePanel({
             </span>
           )}
         </label>
+
+        <div className="rounded-xl border border-white/10 bg-slate-800/70 p-3">
+          <PropertyStepper
+            key={item.id}
+            label={`${strokeLabel} width`}
+            value={Math.max(
+              MIN_SHAPE_STROKE_WIDTH,
+              item.strokeWidth
+            )}
+            min={MIN_SHAPE_STROKE_WIDTH}
+            max={MAX_SHAPE_STROKE_WIDTH}
+            suffix="px"
+            disabled={!hasVisibleStroke}
+            onCommit={(strokeWidth) =>
+              onChangeStrokeWidth(item.id, strokeWidth)
+            }
+            onEditStart={onAdjustmentStart}
+            onEditEnd={onAdjustmentEnd}
+          />
+        </div>
       </div>
     </MobileStylePanel>
   );
