@@ -16,7 +16,12 @@ type ImageCanvasItemProps = {
   item: ImageDesignItem | ShapeDesignItem;
   selected: boolean;
   displayScale: number;
-  onPointerDown: (id: string) => void;
+  onPointerDown: (
+    id: string,
+    clientX: number,
+    clientY: number,
+    pointerId: number
+  ) => void;
   onLockedPointerDown: (id: string) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
@@ -42,7 +47,8 @@ type TextCanvasItemProps = {
   onPendingDragStart: (
     id: string,
     startX: number,
-    startY: number
+    startY: number,
+    pointerId: number
   ) => void;
   onLockedPointerDown: (id: string) => void;
   onResizeStart: (

@@ -6,7 +6,12 @@ type CanvasImageItemProps = {
   item: ImageDesignItem;
   selected: boolean;
   displayScale: number;
-  onPointerDown: (id: string) => void;
+  onPointerDown: (
+    id: string,
+    clientX: number,
+    clientY: number,
+    pointerId: number
+  ) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: ImageDesignItem
@@ -38,8 +43,14 @@ export default function CanvasImageItem({
         draggable={false}
         onPointerDown={(event) => {
           event.stopPropagation();
+          event.currentTarget.setPointerCapture(event.pointerId);
 
-          onPointerDown(item.id);
+          onPointerDown(
+            item.id,
+            event.clientX,
+            event.clientY,
+            event.pointerId
+          );
         }}
         className="h-full w-full cursor-move select-none rounded-lg object-contain"
         style={{

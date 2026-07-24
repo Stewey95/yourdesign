@@ -7,7 +7,12 @@ type CanvasShapeItemProps = {
   item: ShapeDesignItem;
   selected: boolean;
   displayScale: number;
-  onPointerDown: (id: string) => void;
+  onPointerDown: (
+    id: string,
+    clientX: number,
+    clientY: number,
+    pointerId: number
+  ) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: ShapeDesignItem
@@ -33,7 +38,13 @@ export default function CanvasShapeItem({
         className="absolute inset-0 cursor-move"
         onPointerDown={(event) => {
           event.stopPropagation();
-          onPointerDown(item.id);
+          event.currentTarget.setPointerCapture(event.pointerId);
+          onPointerDown(
+            item.id,
+            event.clientX,
+            event.clientY,
+            event.pointerId
+          );
         }}
       />
 

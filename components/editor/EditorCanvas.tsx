@@ -54,7 +54,12 @@ type EditorCanvasProps = {
   onPointerUp: React.PointerEventHandler<HTMLDivElement>;
   onPointerCancel: React.PointerEventHandler<HTMLDivElement>;
   onPointerDown: React.PointerEventHandler<HTMLDivElement>;
-  onImagePointerDown: (id: string) => void;
+  onImagePointerDown: (
+    id: string,
+    clientX: number,
+    clientY: number,
+    pointerId: number
+  ) => void;
   onLockedItemPointerDown: (id: string) => void;
   onImageResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
@@ -76,7 +81,8 @@ type EditorCanvasProps = {
   onPendingDragStart: (
     id: string,
     startX: number,
-    startY: number
+    startY: number,
+    pointerId: number
   ) => void;
   onTwoFingerGestureStart: () => void;
 };
@@ -1370,6 +1376,7 @@ export default function EditorCanvas({
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerCancel}
+              onLostPointerCapture={onPointerCancel}
               onPointerDown={onPointerDown}
               className="relative touch-pan-y overflow-hidden rounded-xl bg-white text-slate-500 select-none md:touch-none"
               style={{

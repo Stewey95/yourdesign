@@ -84,7 +84,7 @@ export default function EditorPreview({
     redo: redoHistory,
   } = useEditorHistory<DesignItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showImageAdjustments, setShowImageAdjustments] = useState(false);
   const [shapeStyleItemId, setShapeStyleItemId] = useState<string | null>(
@@ -256,7 +256,8 @@ export default function EditorPreview({
 };
 const getSnappedPosition = (
   event: React.PointerEvent<HTMLDivElement>,
-  canvasBounds: DOMRect
+  canvasBounds: DOMRect,
+  grabOffset: Position
 ): Position | null => {
   const displayScale = getCanvasDisplayScale(canvasBounds, canvasSize);
 
@@ -268,8 +269,8 @@ const getSnappedPosition = (
     canvasBounds,
     canvasSize
   );
-  const rawX = canvasPoint.x;
-  const rawY = canvasPoint.y;
+  const rawX = canvasPoint.x - grabOffset.x;
+  const rawY = canvasPoint.y - grabOffset.y;
 
   if (!Number.isFinite(rawX) || !Number.isFinite(rawY)) return null;
 
@@ -329,9 +330,19 @@ const getSnappedPosition = (
 
   const pendingDragRef = useRef<{
     itemId: string;
+    itemType: DesignItem["type"];
+    pointerId: number;
     startX: number;
     startY: number;
     moved: boolean;
+  } | null>(null);
+  const activeDragRef = useRef<{
+    itemId: string;
+    pointerId: number;
+  } | null>(null);
+  const dragGrabOffsetRef = useRef<{
+    itemId: string;
+    offset: Position;
   } | null>(null);
 
   const pinchRef = useRef<{
@@ -361,6 +372,8 @@ const getSnappedPosition = (
 
   const reconcileAfterHistoryNavigation = useCallback((restoredItems: DesignItem[]) => {
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
@@ -423,6 +436,8 @@ const getSnappedPosition = (
     activeResizeCleanupRef.current = null;
     commitHistoryTransaction();
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
@@ -682,6 +697,8 @@ const getSnappedPosition = (
       activeResizeCleanupRef.current?.();
       activeResizeCleanupRef.current = null;
       pendingDragRef.current = null;
+      activeDragRef.current = null;
+      dragGrabOffsetRef.current = null;
       pinchRef.current = null;
       canvasTapRef.current = null;
       pageInteractionRef.current = null;
@@ -886,6 +903,8 @@ const getSnappedPosition = (
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     setDraggingItemId(null);
   }, []);
 
@@ -984,6 +1003,8 @@ const getSnappedPosition = (
 
     commitHistoryTransaction();
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
@@ -1057,6 +1078,8 @@ const getSnappedPosition = (
     activeResizeCleanupRef.current?.();
     activeResizeCleanupRef.current = null;
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
@@ -1087,6 +1110,8 @@ const getSnappedPosition = (
     activeResizeCleanupRef.current?.();
     activeResizeCleanupRef.current = null;
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
     pageInteractionRef.current = null;
@@ -1304,6 +1329,8 @@ if (direction === "back") {
 
     justPinchedRef.current = true;
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     setDraggingItemId(null);
 
     if (selectedItem.type !== "text") {
@@ -1513,12 +1540,52 @@ if (direction === "back") {
     setShowImageAdjustments(false);
   };
 
+  const captureDragGrabOffset = (
+    itemId: string,
+    clientX: number,
+    clientY: number
+  ) => {
+    const canvas = canvasRef.current;
+    const item = latestItemsRef.current.find(
+      (currentItem) => currentItem.id === itemId
+    );
+
+    if (!canvas || !item) {
+      dragGrabOffsetRef.current = null;
+      return;
+    }
+
+    const canvasBounds = getCanvasInteractionBounds(canvas);
+    const canvasPoint = screenPointToCanvas(
+      clientX,
+      clientY,
+      canvasBounds,
+      canvasSize
+    );
+
+    dragGrabOffsetRef.current = {
+      itemId,
+      offset: {
+        x: canvasPoint.x - item.position.x,
+        y: canvasPoint.y - item.position.y,
+      },
+    };
+  };
+
   const updateDraggedItemPosition = (
     itemId: string,
     event: React.PointerEvent<HTMLDivElement>,
     canvasBounds: DOMRect
   ) => {
-    const position = getSnappedPosition(event, canvasBounds);
+    const grabOffset =
+      dragGrabOffsetRef.current?.itemId === itemId
+        ? dragGrabOffsetRef.current.offset
+        : { x: 0, y: 0 };
+    const position = getSnappedPosition(
+      event,
+      canvasBounds,
+      grabOffset
+    );
 
     if (!position) return;
 
@@ -1537,7 +1604,7 @@ if (direction === "back") {
     const pending = pendingDragRef.current;
     const canvas = getCanvasInteractionBounds(event.currentTarget);
 
-    if (pending) {
+    if (pending && pending.pointerId === event.pointerId) {
       const movedEnough =
         Math.abs(event.clientX - pending.startX) > 5 ||
         Math.abs(event.clientY - pending.startY) > 5;
@@ -1545,6 +1612,10 @@ if (direction === "back") {
       if (movedEnough || pending.moved) {
         pending.moved = true;
 
+        activeDragRef.current = {
+          itemId: pending.itemId,
+          pointerId: pending.pointerId,
+        };
         setDraggingItemId(pending.itemId);
         setEditingItemId(null);
 
@@ -1554,11 +1625,18 @@ if (direction === "back") {
       return;
     }
 
-    if (!draggingItemId) return;
+    const activeDrag = activeDragRef.current;
+
+    if (
+      !activeDrag ||
+      activeDrag.pointerId !== event.pointerId
+    ) {
+      return;
+    }
 
     setEditingItemId(null);
 
-    updateDraggedItemPosition(draggingItemId, event, canvas);
+    updateDraggedItemPosition(activeDrag.itemId, event, canvas);
   };
 
   const stopDragging = () => {
@@ -1569,6 +1647,8 @@ if (direction === "back") {
   });
     if (justPinchedRef.current) {
       pendingDragRef.current = null;
+      activeDragRef.current = null;
+      dragGrabOffsetRef.current = null;
       setDraggingItemId(null);
 
       return;
@@ -1580,9 +1660,9 @@ if (direction === "back") {
       pendingDragRef.current &&
       !pendingDragRef.current.moved
     ) {
-      setEditingItemId(
-        pendingDragRef.current.itemId
-      );
+      if (pendingDragRef.current.itemType === "text") {
+        setEditingItemId(pendingDragRef.current.itemId);
+      }
 
       setSelectedItemId(
         pendingDragRef.current.itemId
@@ -1590,30 +1670,108 @@ if (direction === "back") {
     }
 
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     setDraggingItemId(null);
   };
+
+  useEffect(() => {
+    const cancelDragOnWindowBlur = () => {
+      if (!pendingDragRef.current && !activeDragRef.current) return;
+
+      commitHistoryTransaction();
+      pendingDragRef.current = null;
+      activeDragRef.current = null;
+      dragGrabOffsetRef.current = null;
+      setDraggingItemId(null);
+      setAlignmentGuides({
+        vertical: false,
+        horizontal: false,
+      });
+    };
+
+    window.addEventListener("blur", cancelDragOnWindowBlur);
+
+    return () => {
+      window.removeEventListener("blur", cancelDragOnWindowBlur);
+      pendingDragRef.current = null;
+      activeDragRef.current = null;
+      dragGrabOffsetRef.current = null;
+    };
+  }, [commitHistoryTransaction]);
 
   const startDesktopResize = (
     event: React.PointerEvent<HTMLDivElement>,
     onResize: (event: PointerEvent) => void
   ) => {
+    event.preventDefault();
     event.stopPropagation();
+    activeResizeCleanupRef.current?.();
     commitHistoryTransaction();
     beginHistoryTransaction();
 
-    const stopResize = () => {
+    const handle = event.currentTarget;
+    const pointerId = event.pointerId;
+    let resizeFrame: number | null = null;
+    let latestMoveEvent: PointerEvent | null = null;
+
+    const flushResize = () => {
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = null;
+      }
+
+      if (!latestMoveEvent) return;
+
+      const moveEvent = latestMoveEvent;
+
+      latestMoveEvent = null;
+      onResize(moveEvent);
+    };
+
+    const scheduleResize = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+
+      latestMoveEvent = moveEvent;
+
+      if (resizeFrame !== null) return;
+
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = null;
+        flushResize();
+      });
+    };
+
+    const stopResize = (endEvent?: PointerEvent) => {
+      if (endEvent && endEvent.pointerId !== pointerId) return;
+
+      if (endEvent?.type === "pointerup") {
+        latestMoveEvent = endEvent;
+      }
+
+      flushResize();
       commitHistoryTransaction();
 
-      window.removeEventListener("pointermove", onResize);
-      window.removeEventListener("pointerup", stopResize);
-      window.removeEventListener("pointercancel", stopResize);
+      handle.removeEventListener("pointermove", scheduleResize);
+      handle.removeEventListener("pointerup", stopResize);
+      handle.removeEventListener("pointercancel", stopResize);
+      handle.removeEventListener("lostpointercapture", stopResize);
+      window.removeEventListener("blur", stopResizeOnBlur);
+
+      if (handle.hasPointerCapture(pointerId)) {
+        handle.releasePointerCapture(pointerId);
+      }
 
       activeResizeCleanupRef.current = null;
     };
+    const stopResizeOnBlur = () => stopResize();
 
-    window.addEventListener("pointermove", onResize);
-    window.addEventListener("pointerup", stopResize);
-    window.addEventListener("pointercancel", stopResize);
+    handle.setPointerCapture(pointerId);
+    handle.addEventListener("pointermove", scheduleResize);
+    handle.addEventListener("pointerup", stopResize);
+    handle.addEventListener("pointercancel", stopResize);
+    handle.addEventListener("lostpointercapture", stopResize);
+    window.addEventListener("blur", stopResizeOnBlur);
 
     activeResizeCleanupRef.current = stopResize;
   };
@@ -1638,13 +1796,26 @@ if (direction === "back") {
         : 1;
 
     const resize = (moveEvent: PointerEvent) => {
-      const change = Math.max(
-        moveEvent.clientX - startX,
-        moveEvent.clientY - startY
-      ) / displayScale;
+      const screenHorizontalChange =
+        (moveEvent.clientX - startX) / displayScale;
+      const screenVerticalChange =
+        (moveEvent.clientY - startY) / displayScale;
+      const rotation = (item.rotation * Math.PI) / 180;
+      const horizontalChange =
+        screenHorizontalChange * Math.cos(rotation) +
+        screenVerticalChange * Math.sin(rotation);
+      const verticalChange =
+        -screenHorizontalChange * Math.sin(rotation) +
+        screenVerticalChange * Math.cos(rotation);
+      const sizeVectorLengthSquared =
+        startWidth * startWidth + startHeight * startHeight;
       const requestedScale = Math.max(
         Number.EPSILON,
-        1 + change / Math.max(startWidth, startHeight)
+        1 +
+          (2 *
+            (horizontalChange * startWidth +
+              verticalChange * startHeight)) /
+            sizeVectorLengthSquared
       );
       const nextSize = getBoundedImageSize(
         startWidth * requestedScale,
@@ -1691,12 +1862,21 @@ if (direction === "back") {
         : 1;
 
     const resize = (moveEvent: PointerEvent) => {
+      const screenHorizontalChange =
+        (moveEvent.clientX - startX) / displayScale;
+      const screenVerticalChange =
+        (moveEvent.clientY - startY) / displayScale;
+      const rotation = (item.rotation * Math.PI) / 180;
       const horizontalChange =
-        (moveEvent.clientX - startX) * horizontalDirection;
+        (screenHorizontalChange * Math.cos(rotation) +
+          screenVerticalChange * Math.sin(rotation)) *
+        horizontalDirection;
       const verticalChange =
-        (moveEvent.clientY - startY) * verticalDirection;
+        (-screenHorizontalChange * Math.sin(rotation) +
+          screenVerticalChange * Math.cos(rotation)) *
+        verticalDirection;
       const proportionalChange =
-        (horizontalChange + verticalChange) / 2 / displayScale;
+        (horizontalChange + verticalChange) / 2;
       const requestedScale = Math.max(
         Number.EPSILON,
         1 + proportionalChange / startFontSize
@@ -1726,6 +1906,8 @@ if (direction === "back") {
     activeResizeCleanupRef.current?.();
     commitHistoryTransaction();
     pendingDragRef.current = null;
+    activeDragRef.current = null;
+    dragGrabOffsetRef.current = null;
     pinchRef.current = null;
     canvasTapRef.current = null;
     justPinchedRef.current = false;
@@ -1913,10 +2095,23 @@ if (direction === "back") {
           onPointerUp={finishCanvasTap}
           onPointerCancel={cancelCanvasTap}
           onPointerDown={startCanvasTap}
-          onImagePointerDown={(id) => {
+          onImagePointerDown={(id, clientX, clientY, pointerId) => {
             commitHistoryTransaction();
             beginHistoryTransaction();
-            setDraggingItemId(id);
+            const item = latestItemsRef.current.find(
+              (currentItem) => currentItem.id === id
+            );
+
+            captureDragGrabOffset(id, clientX, clientY);
+            activeDragRef.current = null;
+            pendingDragRef.current = {
+              itemId: id,
+              itemType: item?.type ?? "image",
+              pointerId,
+              startX: clientX,
+              startY: clientY,
+              moved: false,
+            };
             setSelectedItemId(id);
             setShapeStyleItemId(null);
             setEditingItemId(null);
@@ -1926,6 +2121,8 @@ if (direction === "back") {
           onLockedItemPointerDown={(id) => {
             commitHistoryTransaction();
             pendingDragRef.current = null;
+            activeDragRef.current = null;
+            dragGrabOffsetRef.current = null;
             pinchRef.current = null;
             canvasTapRef.current = null;
             setDraggingItemId(null);
@@ -1969,16 +2166,25 @@ if (direction === "back") {
           }}
           onEditingPointerDown={(id) => {
             pendingDragRef.current = null;
+            activeDragRef.current = null;
+            dragGrabOffsetRef.current = null;
             setDraggingItemId(null);
             setSelectedItemId(id);
             setShapeStyleItemId(null);
             setShowMobileContextToolbar(true);
           }}
-          onPendingDragStart={(id, startX, startY) => {
+          onPendingDragStart={(id, startX, startY, pointerId) => {
             commitHistoryTransaction();
             beginHistoryTransaction();
+            const item = latestItemsRef.current.find(
+              (currentItem) => currentItem.id === id
+            );
+
+            captureDragGrabOffset(id, startX, startY);
             pendingDragRef.current = {
               itemId: id,
+              itemType: item?.type ?? "text",
+              pointerId,
               startX,
               startY,
               moved: false,

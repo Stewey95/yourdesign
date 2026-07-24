@@ -27,7 +27,8 @@ type CanvasTextItemProps = {
   onPendingDragStart: (
     id: string,
     startX: number,
-    startY: number
+    startY: number,
+    pointerId: number
   ) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
@@ -272,11 +273,13 @@ maxWidth: maximumWidth,
           <div
             onPointerDown={(event) => {
               event.stopPropagation();
+              event.currentTarget.setPointerCapture(event.pointerId);
 
               onPendingDragStart(
                 item.id,
                 event.clientX,
-                event.clientY
+                event.clientY,
+                event.pointerId
               );
             }}
             className="cursor-move select-none whitespace-pre-wrap [overflow-wrap:anywhere] text-center font-bold touch-none md:absolute md:inset-0 md:!w-full md:!max-w-full"
