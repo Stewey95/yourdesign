@@ -99,8 +99,11 @@ export default function LayersPanel({
   };
 
   return (
-    <section aria-labelledby="layers-heading">
-      <div className="mb-2 flex items-center justify-between gap-2">
+    <section
+      aria-labelledby="layers-heading"
+      className="flex min-h-32 flex-1 flex-col"
+    >
+      <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
         <h2
           id="layers-heading"
           className="text-xs font-bold uppercase tracking-widest text-cyan-400"
@@ -117,7 +120,7 @@ export default function LayersPanel({
           No layers yet
         </p>
       ) : (
-        <div className="max-h-48 space-y-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
           {visibleItems.map((layer) => {
             const selected = layer.id === selectedItemId;
             const hidden = layer.hidden === true;

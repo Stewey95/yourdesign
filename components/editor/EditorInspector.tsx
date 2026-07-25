@@ -67,7 +67,7 @@ export default function EditorInspector({
   return (
     <aside
       data-editor-retain-selection
-      className="hidden h-full min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:block"
+      className="hidden h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:flex"
     >
       <LayersPanel
         items={items}
@@ -78,9 +78,9 @@ export default function EditorInspector({
         onToggleLock={onToggleLayerLock}
       />
 
-      <div className="my-4 border-t border-white/10" />
+      <div className="my-4 shrink-0 border-t border-white/10" />
 
-      <p className="mb-4 text-xs font-bold uppercase tracking-widest text-cyan-400">
+      <p className="mb-4 shrink-0 text-xs font-bold uppercase tracking-widest text-cyan-400">
         Properties
       </p>
 
