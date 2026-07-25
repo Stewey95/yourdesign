@@ -21,7 +21,8 @@ type ImageCanvasItemProps = {
     clientX: number,
     clientY: number,
     pointerId: number,
-    sourceElement?: HTMLImageElement
+    pointerType: string,
+    sourceElement?: HTMLElement
   ) => boolean;
   onLockedPointerDown: (id: string) => void;
   onResizeStart: (
@@ -150,6 +151,24 @@ export default function CanvasItem(props: CanvasItemProps) {
           onPointerDown={(event) => {
             event.preventDefault();
             event.stopPropagation();
+
+            if (item.type !== "text" && "onPointerDown" in props) {
+              const ownsInteraction = props.onPointerDown(
+                item.id,
+                event.clientX,
+                event.clientY,
+                event.pointerId,
+                event.pointerType,
+                event.currentTarget
+              );
+
+              if (ownsInteraction) {
+                event.currentTarget.setPointerCapture(event.pointerId);
+              }
+
+              return;
+            }
+
             props.onLockedPointerDown(item.id);
           }}
         />

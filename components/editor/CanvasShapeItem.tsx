@@ -12,7 +12,8 @@ type CanvasShapeItemProps = {
     clientX: number,
     clientY: number,
     pointerId: number,
-    sourceElement?: HTMLImageElement
+    pointerType: string,
+    sourceElement?: HTMLElement
   ) => boolean;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
@@ -43,7 +44,9 @@ export default function CanvasShapeItem({
             item.id,
             event.clientX,
             event.clientY,
-            event.pointerId
+            event.pointerId,
+            event.pointerType,
+            event.currentTarget
           );
 
           if (ownsInteraction) {

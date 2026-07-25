@@ -1581,40 +1581,48 @@ if (direction === "back") {
 
     if (!canvas) return null;
 
-    return screenPointToCanvas(
-      clientX,
-      clientY,
-      getCanvasInteractionBounds(canvas),
-      canvasSize
-    );
+    const canvasBounds = getCanvasInteractionBounds(canvas);
+
+    return {
+      point: screenPointToCanvas(
+        clientX,
+        clientY,
+        canvasBounds,
+        canvasSize
+      ),
+      scale: getCanvasDisplayScale(canvasBounds, canvasSize),
+    };
   };
 
   const resolveVisiblePointerTarget = (
     pressedItem: DesignItem,
     clientX: number,
     clientY: number,
-    sourceElement?: HTMLImageElement
+    pointerType: string,
+    sourceElement?: HTMLElement
   ) => {
     if (
-      pressedItem.type !== "image" ||
+      pressedItem.type === "text" ||
       pressedItem.id !== selectedItemId ||
       !sourceElement
     ) {
       return pressedItem;
     }
 
-    const canvasPoint = getPointerCanvasPoint(clientX, clientY);
+    const pointerCanvas = getPointerCanvasPoint(clientX, clientY);
     const pressedElement = sourceElement.closest<HTMLElement>(
       "[data-canvas-item-id]"
     );
 
     if (
-      !canvasPoint ||
+      !pointerCanvas ||
       !pressedElement ||
       isPointerInsideVisibleContent({
         item: pressedItem,
-        canvasPoint,
+        canvasPoint: pointerCanvas.point,
         element: pressedElement,
+        canvasScale: pointerCanvas.scale,
+        pointerType,
       })
     ) {
       return pressedItem;
@@ -1655,8 +1663,10 @@ if (direction === "back") {
         candidateElement &&
         isPointerInsideVisibleContent({
           item: candidate,
-          canvasPoint,
+          canvasPoint: pointerCanvas.point,
           element: candidateElement,
+          canvasScale: pointerCanvas.scale,
+          pointerType,
         })
       ) {
         return candidate;
@@ -2194,6 +2204,7 @@ if (direction === "back") {
             clientX,
             clientY,
             pointerId,
+            pointerType,
             sourceElement
           ) => {
             const pressedItem = latestItemsRef.current.find(
@@ -2206,6 +2217,7 @@ if (direction === "back") {
               pressedItem,
               clientX,
               clientY,
+              pointerType,
               sourceElement
             );
 

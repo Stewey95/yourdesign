@@ -59,7 +59,8 @@ type EditorCanvasProps = {
     clientX: number,
     clientY: number,
     pointerId: number,
-    sourceElement?: HTMLImageElement
+    pointerType: string,
+    sourceElement?: HTMLElement
   ) => boolean;
   onLockedItemPointerDown: (id: string) => void;
   onImageResizeStart: (

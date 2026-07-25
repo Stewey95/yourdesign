@@ -2,9 +2,15 @@ import type {
   DesignItem,
   ImageDesignItem,
   Position,
+  ShapeDesignItem,
 } from "./editor.types";
+import { getShapePath } from "./shape.geometry";
 
 export const RASTER_ALPHA_HIT_THRESHOLD = 16;
+export const SHAPE_HIT_TOLERANCE = {
+  desktop: 2,
+  touch: 6,
+} as const;
 const MAX_RASTER_HIT_TEST_DIMENSION = 1024;
 
 type RasterAlphaMap = {
@@ -20,6 +26,8 @@ type VisibleContentHitTestContext = {
   item: DesignItem;
   canvasPoint: Position;
   element: HTMLElement;
+  canvasScale: number;
+  pointerType: string;
 };
 
 type VisibleContentHitTester<T extends DesignItem> = (
@@ -27,6 +35,7 @@ type VisibleContentHitTester<T extends DesignItem> = (
 ) => boolean;
 
 const rasterAlphaCache = new WeakMap<HTMLImageElement, RasterAlphaMap>();
+let shapeHitTestContext: CanvasRenderingContext2D | null = null;
 
 const getRasterAlphaMap = (
   image: HTMLImageElement
@@ -102,7 +111,7 @@ const getRasterAlphaMap = (
 };
 
 const toUnrotatedLocalPoint = (
-  item: ImageDesignItem,
+  item: Pick<DesignItem, "position" | "rotation">,
   canvasPoint: Position
 ) => {
   const deltaX = canvasPoint.x - item.position.x;
@@ -117,6 +126,15 @@ const toUnrotatedLocalPoint = (
       deltaX * Math.sin(rotation) +
       deltaY * Math.cos(rotation),
   };
+};
+
+const getShapeHitTestContext = () => {
+  if (shapeHitTestContext) return shapeHitTestContext;
+
+  const canvas = document.createElement("canvas");
+
+  shapeHitTestContext = canvas.getContext("2d");
+  return shapeHitTestContext;
 };
 
 const hitTestImage: VisibleContentHitTester<ImageDesignItem> = ({
@@ -166,24 +184,89 @@ const hitTestImage: VisibleContentHitTester<ImageDesignItem> = ({
   return alpha >= RASTER_ALPHA_HIT_THRESHOLD;
 };
 
+const hitTestShape: VisibleContentHitTester<ShapeDesignItem> = ({
+  item,
+  canvasPoint,
+  canvasScale,
+  pointerType,
+}) => {
+  const context = getShapeHitTestContext();
+
+  if (!context) return true;
+
+  const localPoint = toUnrotatedLocalPoint(item, canvasPoint);
+  const shapePoint = {
+    x: localPoint.x + item.size.width / 2,
+    y: localPoint.y + item.size.height / 2,
+  };
+  const path = new Path2D(getShapePath(item));
+  const hasVisibleFill = item.fill !== null;
+  const hasVisibleStroke =
+    item.stroke !== null && item.strokeWidth > 0;
+
+  if (
+    hasVisibleFill &&
+    context.isPointInPath(path, shapePoint.x, shapePoint.y)
+  ) {
+    return true;
+  }
+
+  if (!hasVisibleStroke) return false;
+
+  const screenTolerance =
+    pointerType === "touch"
+      ? SHAPE_HIT_TOLERANCE.touch
+      : SHAPE_HIT_TOLERANCE.desktop;
+  const logicalTolerance =
+    screenTolerance /
+    (Number.isFinite(canvasScale) && canvasScale > 0
+      ? canvasScale
+      : 1);
+
+  context.save();
+  context.lineWidth = item.strokeWidth + logicalTolerance * 2;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+
+  const hitsStroke = context.isPointInStroke(
+    path,
+    shapePoint.x,
+    shapePoint.y
+  );
+
+  context.restore();
+  return hitsStroke;
+};
+
 const visibleContentHitTesters: Partial<{
   [Type in DesignItem["type"]]: VisibleContentHitTester<
     Extract<DesignItem, { type: Type }>
   >;
 }> = {
   image: hitTestImage,
+  shape: hitTestShape,
 };
 
 export const isPointerInsideVisibleContent = ({
   item,
   canvasPoint,
   element,
+  canvasScale,
+  pointerType,
 }: VisibleContentHitTestContext) => {
+  if (item.hidden) return false;
+
   const tester = visibleContentHitTesters[item.type] as
     | VisibleContentHitTester<DesignItem>
     | undefined;
 
   return tester
-    ? tester({ item, canvasPoint, element })
+    ? tester({
+        item,
+        canvasPoint,
+        element,
+        canvasScale,
+        pointerType,
+      })
     : true;
 };

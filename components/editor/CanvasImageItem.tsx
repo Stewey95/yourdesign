@@ -11,7 +11,8 @@ type CanvasImageItemProps = {
     clientX: number,
     clientY: number,
     pointerId: number,
-    sourceElement?: HTMLImageElement
+    pointerType: string,
+    sourceElement?: HTMLElement
   ) => boolean;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
@@ -50,6 +51,7 @@ export default function CanvasImageItem({
             event.clientX,
             event.clientY,
             event.pointerId,
+            event.pointerType,
             event.currentTarget
           );
 
