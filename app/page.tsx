@@ -30,9 +30,8 @@ const LANDING_SCROLL_RESET_SCRIPT = `
 
       if (navigationType === "back_forward") return;
 
-      const root = document.documentElement;
-      root.dataset.landingScrollResetActive = "true";
-      root.dataset.landingPreviousScrollRestoration =
+      window.__gripixLandingScrollResetActive = true;
+      window.__gripixLandingPreviousScrollRestoration =
         history.scrollRestoration;
       history.scrollRestoration = "manual";
 
@@ -42,7 +41,7 @@ const LANDING_SCROLL_RESET_SCRIPT = `
         (event) => {
           if (
             event.persisted ||
-            root.dataset.landingScrollResetActive !== "true"
+            window.__gripixLandingScrollResetActive !== true
           ) {
             return;
           }
@@ -64,6 +63,8 @@ const benefits = [
 
 const features = [
   { icon: LayoutTemplate, title: "Canvas Presets", text: "Start with landscape, portrait or square dimensions." },
+  { icon: Shapes, title: "Elements & Shapes", text: "Add flexible vector shapes and style them to suit your design." },
+  { icon: MousePointer2, title: "Layers & Object Controls", text: "Reorder, duplicate, hide or lock objects with confidence." },
   { icon: FileImage, title: "PNG, JPG & PDF", text: "Export in the format and quality your project needs." },
   { icon: Cloud, title: "Auto Draft Recovery", text: "Return after a refresh and carry on where you left off." },
   { icon: History, title: "Undo & Redo", text: "Explore ideas freely with reliable editing history." },
@@ -71,8 +72,23 @@ const features = [
   { icon: MonitorSmartphone, title: "Made for Every Screen", text: "A thoughtful editing experience on mobile and desktop." },
 ];
 
-const completed = ["Export", "Draft Recovery", "Mobile Editor", "Canvas Presets"];
-const comingNext = ["Duplicate", "Layers", "Lock and Unlock", "Universal Search", "Templates", "Saved Projects"];
+const completed = [
+  "PNG, JPG & PDF Export",
+  "Auto Draft Recovery",
+  "Mobile Editor",
+  "Canvas Presets",
+  "Elements",
+  "Duplicate",
+  "Layers",
+  "Hide and Show",
+  "Lock and Unlock",
+];
+const comingNext = ["Universal Search", "Templates", "Saved Projects"];
+
+type LandingScrollResetWindow = Window & {
+  __gripixLandingScrollResetActive?: boolean;
+  __gripixLandingPreviousScrollRestoration?: ScrollRestoration;
+};
 
 function EditorPreviewMockup() {
   return (
@@ -105,7 +121,7 @@ function EditorPreviewMockup() {
               [FileImage, "Media"],
               [Type, "Text"],
               [Shapes, "Arrange"],
-              [Sparkles, "Effects"],
+              [Sparkles, "Elements"],
             ].map(([Icon, label]) => {
               const ToolIcon = Icon as typeof FileImage;
               return (
@@ -150,8 +166,11 @@ export default function Home() {
 
     if (navigationType === "back_forward") return;
 
-    const root = document.documentElement;
-    const previousScrollRestoration = root.dataset.landingPreviousScrollRestoration === "manual" ? "manual" : "auto";
+    const landingWindow = window as LandingScrollResetWindow;
+    const previousScrollRestoration =
+      landingWindow.__gripixLandingPreviousScrollRestoration === "manual"
+        ? "manual"
+        : "auto";
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
     let active = true;
 
@@ -171,8 +190,8 @@ export default function Home() {
       cancelScheduledReset();
       removeListeners();
       restoreScrollRestoration();
-      delete root.dataset.landingScrollResetActive;
-      delete root.dataset.landingPreviousScrollRestoration;
+      delete landingWindow.__gripixLandingScrollResetActive;
+      delete landingWindow.__gripixLandingPreviousScrollRestoration;
     };
     const scheduleFinalCorrection = () => {
       if (!active) return;
@@ -187,7 +206,7 @@ export default function Home() {
     function cancelLandingReset() { finishInitialization(); }
 
     history.scrollRestoration = "manual";
-    root.dataset.landingScrollResetActive = "true";
+    landingWindow.__gripixLandingScrollResetActive = true;
     window.addEventListener("pageshow", handlePageShow);
     window.addEventListener("pointerdown", cancelLandingReset, true);
     window.addEventListener("touchstart", cancelLandingReset, true);
@@ -274,7 +293,7 @@ export default function Home() {
             <div className="mt-14 grid gap-5 md:grid-cols-3">
               {[
                 ["01", "Choose your canvas", "Pick a landscape, portrait or square preset to match your idea."],
-                ["02", "Create your design", "Add images and text, then arrange every detail in the editor."],
+                ["02", "Create your design", "Add images, text and elements, then organise every detail with layers."],
                 ["03", "Export it anywhere", "Download a high-quality PNG, JPG or PDF when you’re ready."],
               ].map(([number, title, text]) => (
                 <div key={number} className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition-colors duration-200 hover:border-blue-400/30 hover:bg-white/[0.055] motion-reduce:transition-none sm:p-8">
