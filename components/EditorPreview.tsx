@@ -1492,7 +1492,7 @@ if (direction === "back") {
 
     setSelectedItemId(newText.id);
     setShapeStyleItemId(null);
-    setEditingItemId(null);
+    setEditingItemId(newText.id);
     setShowMobileContextToolbar(true);
     setShowImageAdjustments(false);
 
