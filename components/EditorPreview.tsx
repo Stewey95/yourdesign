@@ -52,6 +52,7 @@ import {
   MAX_SHAPE_STROKE_WIDTH,
   MIN_SHAPE_STROKE_WIDTH,
 } from "./editor/shape.constants";
+import { isPointerInsideVisibleContent } from "./editor/hitTesting";
 import {
   exportDesign,
   type ExportDeliveryOptions,
@@ -1572,6 +1573,99 @@ if (direction === "back") {
     };
   };
 
+  const getPointerCanvasPoint = (
+    clientX: number,
+    clientY: number
+  ) => {
+    const canvas = canvasRef.current;
+
+    if (!canvas) return null;
+
+    return screenPointToCanvas(
+      clientX,
+      clientY,
+      getCanvasInteractionBounds(canvas),
+      canvasSize
+    );
+  };
+
+  const resolveVisiblePointerTarget = (
+    pressedItem: DesignItem,
+    clientX: number,
+    clientY: number,
+    sourceElement?: HTMLImageElement
+  ) => {
+    if (
+      pressedItem.type !== "image" ||
+      pressedItem.id !== selectedItemId ||
+      !sourceElement
+    ) {
+      return pressedItem;
+    }
+
+    const canvasPoint = getPointerCanvasPoint(clientX, clientY);
+    const pressedElement = sourceElement.closest<HTMLElement>(
+      "[data-canvas-item-id]"
+    );
+
+    if (
+      !canvasPoint ||
+      !pressedElement ||
+      isPointerInsideVisibleContent({
+        item: pressedItem,
+        canvasPoint,
+        element: pressedElement,
+      })
+    ) {
+      return pressedItem;
+    }
+
+    const canvas = canvasRef.current;
+
+    if (!canvas) return null;
+
+    const elementsAtPoint = document.elementsFromPoint(clientX, clientY);
+    const candidateElements = new Map<string, HTMLElement>();
+
+    elementsAtPoint.forEach((element) => {
+      const itemElement = element.closest<HTMLElement>(
+        "[data-canvas-item-id]"
+      );
+      const itemId = itemElement?.dataset.canvasItemId;
+
+      if (
+        itemElement &&
+        itemId &&
+        canvas.contains(itemElement) &&
+        !candidateElements.has(itemId)
+      ) {
+        candidateElements.set(itemId, itemElement);
+      }
+    });
+
+    const pressedIndex = visibleCanvasItems.findIndex(
+      (item) => item.id === pressedItem.id
+    );
+
+    for (let index = pressedIndex - 1; index >= 0; index -= 1) {
+      const candidate = visibleCanvasItems[index];
+      const candidateElement = candidateElements.get(candidate.id);
+
+      if (
+        candidateElement &&
+        isPointerInsideVisibleContent({
+          item: candidate,
+          canvasPoint,
+          element: candidateElement,
+        })
+      ) {
+        return candidate;
+      }
+    }
+
+    return null;
+  };
+
   const updateDraggedItemPosition = (
     itemId: string,
     event: React.PointerEvent<HTMLDivElement>,
@@ -2095,28 +2189,72 @@ if (direction === "back") {
           onPointerUp={finishCanvasTap}
           onPointerCancel={cancelCanvasTap}
           onPointerDown={startCanvasTap}
-          onImagePointerDown={(id, clientX, clientY, pointerId) => {
-            commitHistoryTransaction();
-            beginHistoryTransaction();
-            const item = latestItemsRef.current.find(
+          onImagePointerDown={(
+            id,
+            clientX,
+            clientY,
+            pointerId,
+            sourceElement
+          ) => {
+            const pressedItem = latestItemsRef.current.find(
               (currentItem) => currentItem.id === id
             );
 
-            captureDragGrabOffset(id, clientX, clientY);
+            if (!pressedItem) return false;
+
+            const targetItem = resolveVisiblePointerTarget(
+              pressedItem,
+              clientX,
+              clientY,
+              sourceElement
+            );
+
+            if (!targetItem) {
+              setSelectedItemId(pressedItem.id);
+              setShowMobileContextToolbar(true);
+              return false;
+            }
+
+            if (targetItem.locked) {
+              commitHistoryTransaction();
+              pendingDragRef.current = null;
+              activeDragRef.current = null;
+              dragGrabOffsetRef.current = null;
+              pinchRef.current = null;
+              canvasTapRef.current = null;
+              setDraggingItemId(null);
+              setEditingItemId(null);
+              setSelectedItemId(targetItem.id);
+              setShapeStyleItemId(null);
+              setShowMobileContextToolbar(true);
+              setShowImageAdjustments(false);
+              hideAlignmentGuides();
+              return false;
+            }
+
+            commitHistoryTransaction();
+            beginHistoryTransaction();
+
+            captureDragGrabOffset(
+              targetItem.id,
+              clientX,
+              clientY
+            );
             activeDragRef.current = null;
             pendingDragRef.current = {
-              itemId: id,
-              itemType: item?.type ?? "image",
+              itemId: targetItem.id,
+              itemType: targetItem.type,
               pointerId,
               startX: clientX,
               startY: clientY,
               moved: false,
             };
-            setSelectedItemId(id);
+            setSelectedItemId(targetItem.id);
             setShapeStyleItemId(null);
             setEditingItemId(null);
             setShowMobileContextToolbar(true);
             setShowImageAdjustments(false);
+            return true;
           }}
           onLockedItemPointerDown={(id) => {
             commitHistoryTransaction();

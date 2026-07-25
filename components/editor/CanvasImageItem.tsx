@@ -10,8 +10,9 @@ type CanvasImageItemProps = {
     id: string,
     clientX: number,
     clientY: number,
-    pointerId: number
-  ) => void;
+    pointerId: number,
+    sourceElement?: HTMLImageElement
+  ) => boolean;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: ImageDesignItem
@@ -43,14 +44,18 @@ export default function CanvasImageItem({
         draggable={false}
         onPointerDown={(event) => {
           event.stopPropagation();
-          event.currentTarget.setPointerCapture(event.pointerId);
 
-          onPointerDown(
+          const ownsInteraction = onPointerDown(
             item.id,
             event.clientX,
             event.clientY,
-            event.pointerId
+            event.pointerId,
+            event.currentTarget
           );
+
+          if (ownsInteraction) {
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }
         }}
         className="h-full w-full cursor-move select-none rounded-lg object-contain"
         style={{

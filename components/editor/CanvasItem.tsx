@@ -20,8 +20,9 @@ type ImageCanvasItemProps = {
     id: string,
     clientX: number,
     clientY: number,
-    pointerId: number
-  ) => void;
+    pointerId: number,
+    sourceElement?: HTMLImageElement
+  ) => boolean;
   onLockedPointerDown: (id: string) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,

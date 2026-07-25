@@ -58,8 +58,9 @@ type EditorCanvasProps = {
     id: string,
     clientX: number,
     clientY: number,
-    pointerId: number
-  ) => void;
+    pointerId: number,
+    sourceElement?: HTMLImageElement
+  ) => boolean;
   onLockedItemPointerDown: (id: string) => void;
   onImageResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
