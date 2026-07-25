@@ -104,6 +104,7 @@ export default function EditorPreview({
   const [showNewDesignDialog, setShowNewDesignDialog] = useState(false);
   const [isStartingNewDesign, setIsStartingNewDesign] = useState(false);
   const [newDesignError, setNewDesignError] = useState<string | null>(null);
+  const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [selectedCanvasPresetId, setSelectedCanvasPresetId] =
     useState<CanvasPresetId>(DEFAULT_DESKTOP_CANVAS_PRESET_ID);
@@ -222,9 +223,17 @@ export default function EditorPreview({
     const saveDraft = () => {
       if (saveGeneration !== draftSaveGenerationRef.current) return;
 
-      void saveEditorDraft(draft).catch((error) => {
-        console.warn("The local editor draft could not be saved.", error);
-      });
+      void saveEditorDraft(draft)
+        .then(() => setDraftSaveError(null))
+        .catch((error) => {
+          console.warn("The local editor draft could not be saved.", error);
+          setDraftSaveError(
+            error instanceof DOMException &&
+              error.name === "QuotaExceededError"
+              ? "This design is too large to save locally. Your canvas is still open."
+              : "This design could not be saved locally. Your canvas is still open."
+          );
+        });
     };
     const saveTimer = window.setTimeout(() => {
       if (draftSaveTimerRef.current === saveTimer) {
@@ -1402,7 +1411,7 @@ if (direction === "back") {
 
     if (!file) return;
 
-    const imageUrl = URL.createObjectURL(file);
+    const reader = new FileReader();
     const uploadedImage = new Image();
 
     uploadedImage.onload = () => {
@@ -1411,7 +1420,7 @@ if (direction === "back") {
         type: "image",
         hidden: false,
         locked: false,
-        src: imageUrl,
+        src: uploadedImage.src,
         position: {
           x: canvasSize.width / 2,
           y: canvasSize.height / 2,
@@ -1439,12 +1448,23 @@ if (direction === "back") {
       setShowImageAdjustments(false);
     };
 
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        uploadedImage.src = reader.result;
+      }
+    };
+    reader.onerror = () => {
+      setDraftSaveError(
+        "This image could not be read. Please try uploading it again."
+      );
+    };
     uploadedImage.onerror = () => {
-      URL.revokeObjectURL(imageUrl);
+      setDraftSaveError(
+        "This image could not be opened. Please try another file."
+      );
     };
 
-    uploadedImage.src = imageUrl;
-
+    reader.readAsDataURL(file);
     event.target.value = "";
   };
 
@@ -1601,11 +1621,7 @@ if (direction === "back") {
     pointerType: string,
     sourceElement?: HTMLElement
   ) => {
-    if (
-      pressedItem.type === "text" ||
-      pressedItem.id !== selectedItemId ||
-      !sourceElement
-    ) {
+    if (pressedItem.type === "text" || !sourceElement) {
       return pressedItem;
     }
 
@@ -1632,35 +1648,22 @@ if (direction === "back") {
 
     if (!canvas) return null;
 
-    const elementsAtPoint = document.elementsFromPoint(clientX, clientY);
-    const candidateElements = new Map<string, HTMLElement>();
-
-    elementsAtPoint.forEach((element) => {
-      const itemElement = element.closest<HTMLElement>(
-        "[data-canvas-item-id]"
-      );
-      const itemId = itemElement?.dataset.canvasItemId;
-
-      if (
-        itemElement &&
-        itemId &&
-        canvas.contains(itemElement) &&
-        !candidateElements.has(itemId)
-      ) {
-        candidateElements.set(itemId, itemElement);
-      }
-    });
-
     const pressedIndex = visibleCanvasItems.findIndex(
       (item) => item.id === pressedItem.id
     );
 
     for (let index = pressedIndex - 1; index >= 0; index -= 1) {
       const candidate = visibleCanvasItems[index];
-      const candidateElement = candidateElements.get(candidate.id);
+      const candidateElement = canvas.querySelector<HTMLElement>(
+        `[data-canvas-item-id="${CSS.escape(candidate.id)}"]`
+      );
 
       if (
         candidateElement &&
+        (candidate.type !== "text" ||
+          document
+            .elementsFromPoint(clientX, clientY)
+            .some((element) => candidateElement.contains(element))) &&
         isPointerInsideVisibleContent({
           item: candidate,
           canvasPoint: pointerCanvas.point,
@@ -2104,6 +2107,15 @@ if (direction === "back") {
         }}
         onExport={() => setShowExportDialog(true)}
       />
+
+      {draftSaveError && (
+        <p
+          role="status"
+          className="mx-1 mb-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100"
+        >
+          {draftSaveError}
+        </p>
+      )}
 
       {selectedVisibleItem && showMobileContextToolbar && (
         <MobileContextToolbar

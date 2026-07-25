@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ImageDesignItem } from "./editor.types";
 
 type CanvasImageItemProps = {
@@ -27,6 +28,8 @@ export default function CanvasImageItem({
   onPointerDown,
   onResizeStart,
 }: CanvasImageItemProps) {
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const imageFailed = failedSource === item.src;
   const hasImageFilters =
     item.brightness !== 100 ||
     item.contrast !== 100 ||
@@ -34,6 +37,23 @@ export default function CanvasImageItem({
 
   return (
     <div
+      onPointerDown={(event) => {
+        event.stopPropagation();
+
+        const ownsInteraction = onPointerDown(
+          item.id,
+          event.clientX,
+          event.clientY,
+          event.pointerId,
+          event.pointerType,
+          event.currentTarget
+        );
+
+        if (ownsInteraction) {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
+      }}
+      className="relative"
       style={{
         width: item.size.width,
         height: item.size.height,
@@ -43,23 +63,10 @@ export default function CanvasImageItem({
         src={item.src}
         alt="Uploaded design"
         draggable={false}
-        onPointerDown={(event) => {
-          event.stopPropagation();
-
-          const ownsInteraction = onPointerDown(
-            item.id,
-            event.clientX,
-            event.clientY,
-            event.pointerId,
-            event.pointerType,
-            event.currentTarget
-          );
-
-          if (ownsInteraction) {
-            event.currentTarget.setPointerCapture(event.pointerId);
-          }
-        }}
-        className="h-full w-full cursor-move select-none rounded-lg object-contain"
+        onError={() => setFailedSource(item.src)}
+        className={`h-full w-full cursor-move select-none rounded-lg object-contain ${
+          imageFailed ? "invisible" : ""
+        }`}
         style={{
           filter: hasImageFilters
             ? `brightness(${item.brightness}%) contrast(${item.contrast}%) saturate(${item.saturation}%)`
@@ -68,11 +75,20 @@ export default function CanvasImageItem({
         }}
       />
 
+      {imageFailed && (
+        <div className="absolute inset-0 flex cursor-move items-center justify-center rounded-lg border border-dashed border-slate-400/60 bg-slate-100/90 p-2 text-center text-[10px] leading-tight text-slate-600">
+          Image unavailable
+          <br />
+          Re-upload this image
+        </div>
+      )}
+
       {selected && (
         <div
-          onPointerDown={(event) =>
-            onResizeStart(event, item)
-          }
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            onResizeStart(event, item);
+          }}
           className="absolute hidden cursor-se-resize items-center justify-center md:flex"
           style={{
             left: "100%",

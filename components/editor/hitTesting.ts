@@ -145,6 +145,7 @@ const hitTestImage: VisibleContentHitTester<ImageDesignItem> = ({
   const image = element.querySelector("img");
 
   if (!image) return true;
+  if (image.complete && image.naturalWidth === 0) return false;
 
   const alphaMap = getRasterAlphaMap(image);
 

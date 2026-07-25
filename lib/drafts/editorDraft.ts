@@ -42,7 +42,6 @@ let databasePromise: Promise<IDBDatabase> | null = null;
 let saveQueue: Promise<void> = Promise.resolve();
 let lastSavedSignature: string | null = null;
 const pendingSignatures = new Set<string>();
-const blobCache = new Map<string, Blob>();
 
 const openDraftDatabase = () => {
   if (databasePromise) return databasePromise;
@@ -73,12 +72,24 @@ const completeTransaction = (transaction: IDBTransaction) =>
 
 const createSignature = (draft: EditorDraft) => JSON.stringify(draft);
 
+const readBlobAsDataUrl = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("An uploaded image could not be prepared."));
+    });
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(blob);
+  });
+
 const prepareImageSource = async (source: string) => {
   if (!source.startsWith("blob:")) return source;
-
-  const cachedBlob = blobCache.get(source);
-
-  if (cachedBlob) return cachedBlob;
 
   const response = await fetch(source);
 
@@ -86,10 +97,7 @@ const prepareImageSource = async (source: string) => {
     throw new Error("An uploaded image could not be saved to the draft.");
   }
 
-  const blob = await response.blob();
-
-  blobCache.set(source, blob);
-  return blob;
+  return readBlobAsDataUrl(await response.blob());
 };
 
 const prepareItems = (items: DesignItem[]) =>
@@ -204,52 +212,54 @@ export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
 
   if (!isStoredDraft(storedDraft)) return null;
 
-  const objectUrls: string[] = [];
-  const items = storedDraft.items.map((item): DesignItem => {
-    const hidden = item.hidden === true;
-    const locked = item.locked === true;
+  const items = await Promise.all(
+    storedDraft.items.map(async (item): Promise<DesignItem> => {
+      const hidden = item.hidden === true;
+      const locked = item.locked === true;
 
-    if (item.type === "shape") {
-      const shapeKind = isShapeKind(item.shapeKind)
-        ? item.shapeKind
-        : "rectangle";
-      const defaults = getDefaultShapeStyle(shapeKind);
-      const size = item.size ?? SHAPE_DEFAULT_SIZES[shapeKind];
+      if (item.type === "shape") {
+        const shapeKind = isShapeKind(item.shapeKind)
+          ? item.shapeKind
+          : "rectangle";
+        const defaults = getDefaultShapeStyle(shapeKind);
+        const size = item.size ?? SHAPE_DEFAULT_SIZES[shapeKind];
+
+        return {
+          ...item,
+          type: "shape",
+          shapeKind,
+          hidden,
+          locked,
+          size,
+          fill:
+            typeof item.fill === "string" || item.fill === null
+              ? item.fill
+              : defaults.fill,
+          stroke:
+            typeof item.stroke === "string" || item.stroke === null
+              ? item.stroke
+              : defaults.stroke,
+          strokeWidth:
+            typeof item.strokeWidth === "number" &&
+            Number.isFinite(item.strokeWidth) &&
+            item.strokeWidth >= 0
+              ? item.strokeWidth
+              : defaults.strokeWidth,
+        };
+      }
+
+      if (item.type !== "image" || typeof item.src === "string") {
+        return { ...item, hidden, locked } as DesignItem;
+      }
 
       return {
         ...item,
-        type: "shape",
-        shapeKind,
         hidden,
         locked,
-        size,
-        fill:
-          typeof item.fill === "string" || item.fill === null
-            ? item.fill
-            : defaults.fill,
-        stroke:
-          typeof item.stroke === "string" || item.stroke === null
-            ? item.stroke
-            : defaults.stroke,
-        strokeWidth:
-          typeof item.strokeWidth === "number" &&
-          Number.isFinite(item.strokeWidth) &&
-          item.strokeWidth >= 0
-            ? item.strokeWidth
-            : defaults.strokeWidth,
+        src: await readBlobAsDataUrl(item.src),
       };
-    }
-
-    if (item.type !== "image" || typeof item.src === "string") {
-      return { ...item, hidden, locked } as DesignItem;
-    }
-
-    const source = URL.createObjectURL(item.src);
-
-    objectUrls.push(source);
-    blobCache.set(source, item.src);
-    return { ...item, hidden, locked, src: source };
-  });
+    })
+  );
 
   lastSavedSignature = createSignature({
     presetId: storedDraft.presetId,
@@ -259,11 +269,6 @@ export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
   return {
     presetId: storedDraft.presetId,
     items,
-    release: () => {
-      objectUrls.forEach((source) => {
-        URL.revokeObjectURL(source);
-        blobCache.delete(source);
-      });
-    },
+    release: () => undefined,
   };
 }
