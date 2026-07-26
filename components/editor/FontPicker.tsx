@@ -26,7 +26,7 @@ type PanelPosition = {
   left: number;
   top: number;
   width: number;
-  maxHeight: number;
+  height: number;
 };
 
 export default function FontPicker({
@@ -38,6 +38,7 @@ export default function FontPicker({
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const listboxRef = useRef<HTMLDivElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const listboxId = useId();
   const [open, setOpen] = useState(false);
@@ -45,6 +46,8 @@ export default function FontPicker({
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [panelPosition, setPanelPosition] =
     useState<PanelPosition | null>(null);
+  const [showTopOverflow, setShowTopOverflow] = useState(false);
+  const [showBottomOverflow, setShowBottomOverflow] = useState(false);
   const fonts = useMemo(() => filterFonts(query), [query]);
   const activeFont = getFontOption(value);
   const highlightedFont = fonts[highlightedIndex];
@@ -77,13 +80,15 @@ export default function FontPicker({
       ? bounds.bottom + 6
       : Math.max(viewportPadding, bounds.top - maxHeight - 6);
 
-    setPanelPosition({ left, top, width, maxHeight });
+    setPanelPosition({ left, top, width, height: maxHeight });
   }, [variant]);
 
   const closePicker = (restoreButtonFocus = false) => {
     setOpen(false);
     setQuery("");
     setPanelPosition(null);
+    setShowTopOverflow(false);
+    setShowBottomOverflow(false);
 
     if (restoreButtonFocus) {
       requestAnimationFrame(() => buttonRef.current?.focus());
@@ -101,9 +106,13 @@ export default function FontPicker({
     setOpen(true);
     updatePanelPosition();
 
-    if (window.matchMedia("(min-width: 768px)").matches) {
-      requestAnimationFrame(() => searchRef.current?.focus());
-    }
+    requestAnimationFrame(() => {
+      updateOverflowIndicators();
+
+      if (window.matchMedia("(min-width: 768px)").matches) {
+        searchRef.current?.focus();
+      }
+    });
   };
 
   const selectFont = (fontFamily: string) => {
@@ -119,6 +128,18 @@ export default function FontPicker({
 
     setQuery(nextQuery);
     setHighlightedIndex(activeIndex >= 0 ? activeIndex : 0);
+    requestAnimationFrame(() => updateOverflowIndicators());
+  };
+
+  const updateOverflowIndicators = () => {
+    const list = listboxRef.current;
+
+    if (!list) return;
+
+    setShowTopOverflow(list.scrollTop > 1);
+    setShowBottomOverflow(
+      list.scrollTop + list.clientHeight < list.scrollHeight - 1
+    );
   };
 
   const moveHighlight = (direction: 1 | -1) => {
@@ -249,54 +270,73 @@ export default function FontPicker({
           )}
         </div>
 
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label="Fonts"
-          className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(100,116,139,0.75)_transparent] [scrollbar-width:thin]"
-        >
-          {fonts.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-slate-400">
-              No fonts found
-            </p>
-          ) : (
-            fonts.map((font, index) => {
-              const selected = font.family === value;
-              const highlighted = index === highlightedIndex;
+        <div className="relative mt-2 min-h-0 flex-1 overflow-hidden">
+          <div
+            ref={listboxRef}
+            id={listboxId}
+            role="listbox"
+            aria-label="Fonts"
+            onScroll={updateOverflowIndicators}
+            className="absolute inset-0 overflow-y-scroll overscroll-contain pr-1 [scrollbar-color:rgba(100,116,139,0.9)_rgba(30,41,59,0.7)] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-800/70"
+          >
+            {fonts.length === 0 ? (
+              <p className="px-3 py-8 text-center text-sm text-slate-400">
+                No fonts found
+              </p>
+            ) : (
+              fonts.map((font, index) => {
+                const selected = font.family === value;
+                const highlighted = index === highlightedIndex;
 
-              return (
-                <button
-                  key={font.id}
-                  id={`${listboxId}-${font.id}`}
-                  ref={(element) => {
-                    optionRefs.current[index] = element;
-                  }}
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  onPointerMove={() => setHighlightedIndex(index)}
-                  onClick={() => selectFont(font.family)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
-                    highlighted
-                      ? "bg-blue-500/20 text-white"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <span className="min-w-0 flex-1 truncate">
-                    {font.label}
-                  </span>
-                  {selected && (
-                    <>
-                      <span className="sr-only">Selected</span>
-                      <Check
-                        aria-hidden="true"
-                        className="h-4 w-4 shrink-0 text-cyan-300"
-                      />
-                    </>
-                  )}
-                </button>
-              );
-            })
+                return (
+                  <button
+                    key={font.id}
+                    id={`${listboxId}-${font.id}`}
+                    ref={(element) => {
+                      optionRefs.current[index] = element;
+                    }}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    onPointerMove={() => setHighlightedIndex(index)}
+                    onClick={() => selectFont(font.family)}
+                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+                      highlighted
+                        ? "bg-blue-500/20 text-white"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {font.label}
+                    </span>
+                    {selected && (
+                      <>
+                        <span className="sr-only">Selected</span>
+                        <Check
+                          aria-hidden="true"
+                          className="h-4 w-4 shrink-0 text-cyan-300"
+                        />
+                      </>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {showTopOverflow && (
+            <div
+              data-font-overflow-indicator="top"
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-slate-900 to-transparent"
+            />
+          )}
+          {showBottomOverflow && (
+            <div
+              data-font-overflow-indicator="bottom"
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-slate-900 to-transparent"
+            />
           )}
         </div>
       </div>,

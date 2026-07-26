@@ -4,6 +4,7 @@ import type {
   ShapeKind,
 } from "../../components/editor/editor.types";
 import {
+  DEFAULT_DESKTOP_CANVAS_PRESET_ID,
   getCanvasPreset,
   isCanvasPresetId,
   isValidCanvasSize,
@@ -30,7 +31,7 @@ type StoredDesignItem = Exclude<DesignItem, ImageDesignItem> | StoredImageItem;
 type StoredEditorDraft = {
   key: typeof CURRENT_DRAFT_KEY;
   version: number;
-  presetId: CanvasPresetId;
+  presetId: CanvasPresetId | string;
   canvasSize?: CanvasSize;
   items: StoredDesignItem[];
   savedAt: number;
@@ -134,7 +135,7 @@ const isStoredDraft = (value: unknown): value is StoredEditorDraft => {
   return (
     draft.key === CURRENT_DRAFT_KEY &&
     (draft.version === 1 || draft.version === DRAFT_VERSION) &&
-    isCanvasPresetId(draft.presetId) &&
+    typeof draft.presetId === "string" &&
     Array.isArray(draft.items)
   );
 };
@@ -268,18 +269,25 @@ export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
     })
   );
 
-  const fallbackPreset = getCanvasPreset(storedDraft.presetId);
+  const presetIsKnown = isCanvasPresetId(storedDraft.presetId);
+  const storedPresetId: CanvasPresetId = presetIsKnown
+    ? (storedDraft.presetId as CanvasPresetId)
+    : DEFAULT_DESKTOP_CANVAS_PRESET_ID;
+  const fallbackPreset = getCanvasPreset(storedPresetId);
   const canvasSize = isValidCanvasSize(storedDraft.canvasSize)
     ? storedDraft.canvasSize
     : {
         width: fallbackPreset.width,
         height: fallbackPreset.height,
       };
-  const presetId =
-    storedDraft.presetId === "custom" &&
-    !isValidCanvasSize(storedDraft.canvasSize)
+  const presetId: CanvasPresetId = !presetIsKnown
+    ? isValidCanvasSize(storedDraft.canvasSize)
+      ? "custom"
+      : DEFAULT_DESKTOP_CANVAS_PRESET_ID
+    : storedPresetId === "custom" &&
+        !isValidCanvasSize(storedDraft.canvasSize)
       ? fallbackPreset.id
-      : storedDraft.presetId;
+      : storedPresetId;
 
   lastSavedSignature = createSignature({
     presetId,
