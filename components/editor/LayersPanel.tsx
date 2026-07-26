@@ -10,7 +10,7 @@ import {
   Shapes,
   Type,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DesignItem } from "./editor.types";
 import { SHAPE_LABELS } from "./shape.constants";
 
@@ -41,8 +41,27 @@ export default function LayersPanel({
   onToggleVisibility,
   onToggleLock,
 }: LayersPanelProps) {
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const [showTopOverflow, setShowTopOverflow] = useState(false);
+  const [showBottomOverflow, setShowBottomOverflow] = useState(false);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+
+  const updateOverflowIndicators = useCallback(() => {
+    const list = listRef.current;
+
+    if (!list) return;
+
+    setShowTopOverflow(list.scrollTop > 1);
+    setShowBottomOverflow(
+      list.scrollTop + list.clientHeight < list.scrollHeight - 1
+    );
+  }, []);
+
+  useEffect(() => {
+    updateOverflowIndicators();
+  }, [items, updateOverflowIndicators]);
+
   const imageNames = useMemo(() => {
     const names = new Map<string, string>();
     let imageNumber = 0;
@@ -120,7 +139,12 @@ export default function LayersPanel({
           No layers yet
         </p>
       ) : (
-        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div
+            ref={listRef}
+            onScroll={updateOverflowIndicators}
+            className="h-full space-y-1 overflow-y-auto overscroll-contain pb-3 pr-1 [scrollbar-color:rgba(100,116,139,0.9)_rgba(30,41,59,0.7)] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-800/70"
+          >
           {visibleItems.map((layer) => {
             const selected = layer.id === selectedItemId;
             const hidden = layer.hidden === true;
@@ -258,6 +282,21 @@ export default function LayersPanel({
             );
           })}
         </div>
+        {showTopOverflow && (
+          <div
+            data-layer-overflow-indicator="top"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-5 bg-gradient-to-b from-slate-900 via-slate-900/80 to-transparent z-10"
+          />
+        )}
+        {showBottomOverflow && (
+          <div
+            data-layer-overflow-indicator="bottom"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent z-10"
+          />
+        )}
+      </div>
       )}
     </section>
   );
