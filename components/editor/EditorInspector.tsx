@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  fontOptions,
   TEXT_MAX_FONT_SIZE,
   TEXT_MIN_FONT_SIZE,
   TEXT_FONT_SIZE_STEP,
 } from "./editor.constants";
+import FontPicker from "./FontPicker";
 import type {
   DesignItem,
   ImageAdjustment,
@@ -111,19 +111,14 @@ export default function EditorInspector({
       {item?.type === "text" && !item.locked && (
         <div className="space-y-4">
           <InspectorField label="Font">
-            <select
+            <FontPicker
+              itemId={item.id}
               value={item.fontFamily}
-              onChange={(event) =>
-                onChangeTextFont(item.id, event.target.value)
+              onChange={(fontFamily) =>
+                onChangeTextFont(item.id, fontFamily)
               }
-              className="h-9 w-full rounded-lg border border-white/10 bg-slate-800 px-2 text-sm font-semibold text-white outline-none"
-            >
-              {fontOptions.map((font) => (
-                <option key={font} value={font}>
-                  {font}
-                </option>
-              ))}
-            </select>
+              variant="inspector"
+            />
           </InspectorField>
 
           <InspectorField label="Size">

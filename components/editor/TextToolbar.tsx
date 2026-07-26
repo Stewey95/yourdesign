@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  fontOptions,
-  TEXT_FONT_SIZE_STEP,
-} from "./editor.constants";
+import { TEXT_FONT_SIZE_STEP } from "./editor.constants";
+import FontPicker from "./FontPicker";
 import type { TextDesignItem } from "./editor.types";
 
 type TextToolbarProps = {
@@ -221,22 +219,13 @@ export default function TextToolbar({
             />
           </label>
 
-          <select
+          <FontPicker
+            itemId={item.id}
             value={item.fontFamily}
-            onPointerDown={(event) =>
-              event.stopPropagation()
+            onChange={(fontFamily) =>
+              onChangeTextFont(item.id, fontFamily)
             }
-            onChange={(event) =>
-              onChangeTextFont(item.id, event.target.value)
-            }
-            className="w-[110px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white outline-none md:w-[150px]"
-          >
-            {fontOptions.map((font) => (
-              <option key={font} value={font}>
-                {font}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         {showLeftArrow && (

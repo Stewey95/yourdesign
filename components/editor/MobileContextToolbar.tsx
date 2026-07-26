@@ -8,11 +8,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  fontOptions,
   TEXT_MAX_FONT_SIZE,
   TEXT_MIN_FONT_SIZE,
   TEXT_FONT_SIZE_STEP,
 } from "./editor.constants";
+import FontPicker from "./FontPicker";
 import type {
   DesignItem,
   ImageAdjustment,
@@ -293,22 +293,14 @@ export default function MobileContextToolbar({
                 />
               </label>
 
-              <select
+              <FontPicker
+                itemId={item.id}
                 value={item.fontFamily}
-                onPointerDown={(event) => event.stopPropagation()}
-                onChange={(event) =>
-                  onChangeTextFont(item.id, event.target.value)
+                onChange={(fontFamily) =>
+                  onChangeTextFont(item.id, fontFamily)
                 }
-                className="h-9 w-[116px] shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 text-sm font-bold text-white outline-none"
-                aria-label="Font family"
-                title="Font family"
-              >
-                {fontOptions.map((font) => (
-                  <option key={font} value={font}>
-                    {font}
-                  </option>
-                ))}
-              </select>
+                variant="mobile"
+              />
             </>
           )}
 
