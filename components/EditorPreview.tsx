@@ -31,6 +31,7 @@ import {
   getInitialImageSize,
   SNAP_THRESHOLD,
   type CanvasPresetId,
+  type CanvasSize,
 } from "./editor/editor.constants";
 import useEditorHistory from "./editor/useEditorHistory";
 import {
@@ -68,22 +69,69 @@ type EditorPreviewProps = {
   fullScreen?: boolean;
 };
 
+type EditorDesignState = {
+  items: DesignItem[];
+  canvas: CanvasSize & { presetId: CanvasPresetId };
+};
+
+type ItemsUpdate =
+  | DesignItem[]
+  | ((currentItems: DesignItem[]) => DesignItem[]);
+
+const initialCanvasPreset = getCanvasPreset(
+  DEFAULT_DESKTOP_CANVAS_PRESET_ID
+);
+
 export default function EditorPreview({
   fullScreen = false,
 }: EditorPreviewProps) {
   const {
-    present: items,
+    present: design,
     canUndo,
     canRedo,
-    commit: commitItems,
-    updateTransaction: updateItems,
-    restore: restoreItems,
+    commit: commitDesign,
+    updateTransaction: updateDesign,
+    restore: restoreDesign,
     beginTransaction: beginHistoryTransaction,
     commitTransaction: commitHistoryTransaction,
     isTransactionActive,
     undo: undoHistory,
     redo: redoHistory,
-  } = useEditorHistory<DesignItem[]>([]);
+  } = useEditorHistory<EditorDesignState>({
+    items: [],
+    canvas: {
+      presetId: initialCanvasPreset.id,
+      width: initialCanvasPreset.width,
+      height: initialCanvasPreset.height,
+    },
+  });
+  const items = design.items;
+  const canvasSize = design.canvas;
+  const selectedCanvasPresetId = design.canvas.presetId;
+  const commitItems = useCallback(
+    (update: ItemsUpdate) => {
+      commitDesign((current) => ({
+        ...current,
+        items:
+          typeof update === "function"
+            ? update(current.items)
+            : update,
+      }));
+    },
+    [commitDesign]
+  );
+  const updateItems = useCallback(
+    (update: ItemsUpdate) => {
+      updateDesign((current) => ({
+        ...current,
+        items:
+          typeof update === "function"
+            ? update(current.items)
+            : update,
+      }));
+    },
+    [updateDesign]
+  );
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [, setDraggingItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -106,8 +154,6 @@ export default function EditorPreview({
   const [newDesignError, setNewDesignError] = useState<string | null>(null);
   const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
-  const [selectedCanvasPresetId, setSelectedCanvasPresetId] =
-    useState<CanvasPresetId>(DEFAULT_DESKTOP_CANVAS_PRESET_ID);
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
     useState(0);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
@@ -129,7 +175,6 @@ export default function EditorPreview({
   const draftSaveTimerRef = useRef<number | null>(null);
   const draftSaveGenerationRef = useRef(0);
   const latestItemsRef = useRef(items);
-  const canvasSize = getCanvasPreset(selectedCanvasPresetId);
   const canvasItems = useMemo(
     () =>
       items.map((item) => ({
@@ -153,13 +198,27 @@ export default function EditorPreview({
   useLayoutEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 767px)");
     const updateResponsiveDefault = () => {
-      if (hasUserSelectedCanvasPresetRef.current) return;
+      if (
+        hasUserSelectedCanvasPresetRef.current ||
+        latestItemsRef.current.length > 0
+      ) {
+        return;
+      }
 
-      setSelectedCanvasPresetId(
+      const preset = getCanvasPreset(
         mobileQuery.matches
           ? DEFAULT_MOBILE_CANVAS_PRESET_ID
           : DEFAULT_DESKTOP_CANVAS_PRESET_ID
       );
+
+      restoreDesign({
+        items: [],
+        canvas: {
+          presetId: preset.id,
+          width: preset.width,
+          height: preset.height,
+        },
+      });
     };
 
     updateResponsiveDefault();
@@ -167,11 +226,35 @@ export default function EditorPreview({
 
     return () =>
       mobileQuery.removeEventListener("change", updateResponsiveDefault);
-  }, []);
+  }, [restoreDesign]);
 
-  const selectCanvasPreset = (presetId: CanvasPresetId) => {
+  const selectCanvasSize = (
+    presetId: CanvasPresetId,
+    size: CanvasSize
+  ) => {
+    if (
+      canvasSize.presetId === presetId &&
+      canvasSize.width === size.width &&
+      canvasSize.height === size.height
+    ) {
+      return;
+    }
+
     hasUserSelectedCanvasPresetRef.current = true;
-    setSelectedCanvasPresetId(presetId);
+    commitDesign((current) => ({
+      canvas: {
+        presetId,
+        width: size.width,
+        height: size.height,
+      },
+      items: current.items.map((item) => ({
+        ...item,
+        position: {
+          x: Math.min(size.width, Math.max(0, item.position.x)),
+          y: Math.min(size.height, Math.max(0, item.position.y)),
+        },
+      })),
+    }));
     setCanvasPresetFitRequest((request) => request + 1);
   };
 
@@ -194,8 +277,14 @@ export default function EditorPreview({
 
         restoredDraftReleaseRef.current = draft.release;
         hasUserSelectedCanvasPresetRef.current = true;
-        setSelectedCanvasPresetId(draft.presetId);
-        restoreItems(draft.items);
+        restoreDesign({
+          items: draft.items,
+          canvas: {
+            presetId: draft.presetId,
+            width: draft.canvasSize.width,
+            height: draft.canvasSize.height,
+          },
+        });
       } catch (error) {
         console.warn("The local editor draft could not be restored.", error);
       } finally {
@@ -210,7 +299,7 @@ export default function EditorPreview({
       restoredDraftReleaseRef.current?.();
       restoredDraftReleaseRef.current = null;
     };
-  }, [restoreItems]);
+  }, [restoreDesign]);
 
   useEffect(() => {
     if (!draftReady) return;
@@ -218,6 +307,10 @@ export default function EditorPreview({
     const saveGeneration = draftSaveGenerationRef.current;
     const draft = {
       presetId: selectedCanvasPresetId,
+      canvasSize: {
+        width: canvasSize.width,
+        height: canvasSize.height,
+      },
       items,
     };
     const saveDraft = () => {
@@ -257,7 +350,13 @@ export default function EditorPreview({
       document.removeEventListener("visibilitychange", saveWhenHidden);
       window.removeEventListener("pagehide", saveDraft);
     };
-  }, [draftReady, items, selectedCanvasPresetId]);
+  }, [
+    canvasSize.height,
+    canvasSize.width,
+    draftReady,
+    items,
+    selectedCanvasPresetId,
+  ]);
   const hideAlignmentGuides = () => {
   setAlignmentGuides({
     vertical: false,
@@ -380,7 +479,9 @@ const getSnappedPosition = (
 
   const activeResizeCleanupRef = useRef<(() => void) | null>(null);
 
-  const reconcileAfterHistoryNavigation = useCallback((restoredItems: DesignItem[]) => {
+  const reconcileAfterHistoryNavigation = useCallback((restoredDesign: EditorDesignState) => {
+    const restoredItems = restoredDesign.items;
+
     pendingDragRef.current = null;
     activeDragRef.current = null;
     dragGrabOffsetRef.current = null;
@@ -417,25 +518,27 @@ const getSnappedPosition = (
         setShapeStyleItemId(null);
       }
     }
+
+    setCanvasPresetFitRequest((request) => request + 1);
   }, [selectedItemId]);
 
   const performUndo = useCallback(() => {
     if (!canUndo) return;
 
-    const restoredItems = undoHistory();
+    const restoredDesign = undoHistory();
 
-    if (restoredItems) {
-      reconcileAfterHistoryNavigation(restoredItems);
+    if (restoredDesign) {
+      reconcileAfterHistoryNavigation(restoredDesign);
     }
   }, [canUndo, reconcileAfterHistoryNavigation, undoHistory]);
 
   const performRedo = useCallback(() => {
     if (!canRedo) return;
 
-    const restoredItems = redoHistory();
+    const restoredDesign = redoHistory();
 
-    if (restoredItems) {
-      reconcileAfterHistoryNavigation(restoredItems);
+    if (restoredDesign) {
+      reconcileAfterHistoryNavigation(restoredDesign);
     }
   }, [canRedo, reconcileAfterHistoryNavigation, redoHistory]);
 
@@ -701,6 +804,10 @@ const getSnappedPosition = (
     try {
       await resetEditorDraft({
         presetId: selectedCanvasPresetId,
+        canvasSize: {
+          width: canvasSize.width,
+          height: canvasSize.height,
+        },
         items: [],
       });
 
@@ -717,7 +824,14 @@ const getSnappedPosition = (
       restoredDraftReleaseRef.current = null;
       latestItemsRef.current = [];
 
-      restoreItems([]);
+      restoreDesign({
+        items: [],
+        canvas: {
+          presetId: selectedCanvasPresetId,
+          width: canvasSize.width,
+          height: canvasSize.height,
+        },
+      });
       setSelectedItemId(null);
       setShapeStyleItemId(null);
       setDraggingItemId(null);
@@ -733,6 +847,10 @@ const getSnappedPosition = (
       console.error("The new design could not be started.", error);
       void saveEditorDraft({
         presetId: selectedCanvasPresetId,
+        canvasSize: {
+          width: canvasSize.width,
+          height: canvasSize.height,
+        },
         items,
       }).catch((saveError) => {
         console.warn("The local editor draft could not be saved.", saveError);
@@ -2160,8 +2278,9 @@ if (direction === "back") {
           onImageUpload={handleImageUpload}
           onAddText={addText}
           onAddElement={addElement}
+          canvasSize={canvasSize}
           selectedCanvasPresetId={selectedCanvasPresetId}
-          onCanvasPresetChange={selectCanvasPreset}
+          onCanvasSizeChange={selectCanvasSize}
           canUndo={canUndo}
           canRedo={canRedo}
           onUndo={performUndo}

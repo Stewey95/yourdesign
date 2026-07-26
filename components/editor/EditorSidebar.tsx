@@ -2,10 +2,11 @@
 
 import { Copy } from "lucide-react";
 import { useRef } from "react";
-import {
-  CANVAS_PRESETS,
-  type CanvasPresetId,
+import type {
+  CanvasPresetId,
+  CanvasSize,
 } from "./editor.constants";
+import CanvasSizePanel from "./CanvasSizePanel";
 import ElementsPanel from "./ElementsPanel";
 import type { ElementAsset } from "./elements/element.types";
 
@@ -24,8 +25,12 @@ type EditorSidebarProps = {
   ) => void;
   onAddText: () => void;
   onAddElement: (element: ElementAsset) => void;
+  canvasSize: CanvasSize;
   selectedCanvasPresetId: CanvasPresetId;
-  onCanvasPresetChange: (presetId: CanvasPresetId) => void;
+  onCanvasSizeChange: (
+    presetId: CanvasPresetId,
+    size: CanvasSize
+  ) => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -42,8 +47,9 @@ export default function EditorSidebar({
   onImageUpload,
   onAddText,
   onAddElement,
+  canvasSize,
   selectedCanvasPresetId,
-  onCanvasPresetChange,
+  onCanvasSizeChange,
   canUndo,
   canRedo,
   onUndo,
@@ -196,63 +202,12 @@ export default function EditorSidebar({
           ref={arrangePanelRef}
           className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
         >
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-cyan-400">
-            Canvas size
-          </p>
-          <p className="mb-3 text-xs text-slate-400">
-            Choose your design format
-          </p>
-          <div className="grid grid-cols-3 gap-2 md:grid-cols-1">
-            {CANVAS_PRESETS.map((preset) => {
-              const selected = selectedCanvasPresetId === preset.id;
-
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  aria-label={`Use ${preset.label} canvas, ${preset.width} by ${preset.height}`}
-                  aria-pressed={selected}
-                  onClick={() => onCanvasPresetChange(preset.id)}
-                  className={`flex min-w-0 flex-col items-center gap-2 rounded-xl border px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 md:flex-row md:text-left ${
-                    selected
-                      ? "border-blue-400/60 bg-blue-500/20 text-white"
-                      : "border-white/10 bg-slate-700/70 text-slate-300 hover:border-white/20 hover:bg-slate-700"
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="flex h-8 w-10 shrink-0 items-center justify-center"
-                  >
-                    <span
-                      className={`block max-h-8 max-w-10 rounded-sm border ${
-                        selected
-                          ? "border-blue-300 bg-blue-300/15"
-                          : "border-slate-400 bg-white/5"
-                      }`}
-                      style={{
-                        width:
-                          preset.width >= preset.height
-                            ? 32
-                            : 32 * (preset.width / preset.height),
-                        height:
-                          preset.height >= preset.width
-                            ? 32
-                            : 32 * (preset.height / preset.width),
-                      }}
-                    />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs font-semibold">
-                      {preset.label}
-                    </span>
-                    <span className="block text-[10px] tabular-nums text-slate-400">
-                      {preset.width} × {preset.height}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <CanvasSizePanel
+            key={`${canvasSize.width}x${canvasSize.height}`}
+            canvasSize={canvasSize}
+            selectedPresetId={selectedCanvasPresetId}
+            onApply={onCanvasSizeChange}
+          />
         </div>
       )}
 

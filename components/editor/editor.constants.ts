@@ -12,20 +12,134 @@ export const fontOptions = [
 
 export const SNAP_THRESHOLD = 8;
 
-export type CanvasPresetId = "landscape" | "portrait" | "square";
+export type CanvasPresetId =
+  | "landscape"
+  | "portrait"
+  | "a4-portrait"
+  | "a4-landscape"
+  | "a3-portrait"
+  | "a3-landscape"
+  | "square"
+  | "instagram-post"
+  | "instagram-story"
+  | "facebook-post"
+  | "youtube-thumbnail"
+  | "etsy-listing"
+  | "pinterest-pin"
+  | "custom";
 
-export type CanvasPreset = {
-  id: CanvasPresetId;
-  label: string;
+export type CanvasSize = {
   width: number;
   height: number;
 };
 
+export type CanvasPreset = CanvasSize & {
+  id: CanvasPresetId;
+  label: string;
+  category: "Gripix" | "Print" | "Social";
+  description?: string;
+};
+
 export const CANVAS_PRESETS: readonly CanvasPreset[] = [
-  { id: "landscape", label: "Landscape", width: 360, height: 256 },
-  { id: "portrait", label: "Portrait", width: 360, height: 480 },
-  { id: "square", label: "Square", width: 360, height: 360 },
+  {
+    id: "landscape",
+    label: "Landscape",
+    width: 360,
+    height: 256,
+    category: "Gripix",
+  },
+  {
+    id: "portrait",
+    label: "Portrait",
+    width: 360,
+    height: 480,
+    category: "Gripix",
+  },
+  {
+    id: "square",
+    label: "Square",
+    width: 360,
+    height: 360,
+    category: "Gripix",
+  },
+  {
+    id: "a4-portrait",
+    label: "A4 Portrait",
+    width: 794,
+    height: 1123,
+    category: "Print",
+    description: "Portrait print format",
+  },
+  {
+    id: "a4-landscape",
+    label: "A4 Landscape",
+    width: 1123,
+    height: 794,
+    category: "Print",
+    description: "Landscape print format",
+  },
+  {
+    id: "a3-portrait",
+    label: "A3 Portrait",
+    width: 1123,
+    height: 1587,
+    category: "Print",
+    description: "Large portrait print format",
+  },
+  {
+    id: "a3-landscape",
+    label: "A3 Landscape",
+    width: 1587,
+    height: 1123,
+    category: "Print",
+    description: "Large landscape print format",
+  },
+  {
+    id: "instagram-post",
+    label: "Instagram Post",
+    width: 1080,
+    height: 1080,
+    category: "Social",
+  },
+  {
+    id: "instagram-story",
+    label: "Instagram Story",
+    width: 1080,
+    height: 1920,
+    category: "Social",
+  },
+  {
+    id: "facebook-post",
+    label: "Facebook Post",
+    width: 1200,
+    height: 630,
+    category: "Social",
+  },
+  {
+    id: "youtube-thumbnail",
+    label: "YouTube Thumbnail",
+    width: 1280,
+    height: 720,
+    category: "Social",
+  },
+  {
+    id: "etsy-listing",
+    label: "Etsy Listing Image",
+    width: 2000,
+    height: 2000,
+    category: "Social",
+  },
+  {
+    id: "pinterest-pin",
+    label: "Pinterest Pin",
+    width: 1000,
+    height: 1500,
+    category: "Social",
+  },
 ];
+
+export const CUSTOM_CANVAS_MIN_SIZE = 64;
+export const CUSTOM_CANVAS_MAX_SIZE = 4000;
 
 export const DEFAULT_DESKTOP_CANVAS_PRESET_ID: CanvasPresetId =
   "landscape";
@@ -35,6 +149,29 @@ export const DEFAULT_MOBILE_CANVAS_PRESET_ID: CanvasPresetId =
 export const getCanvasPreset = (id: CanvasPresetId) =>
   CANVAS_PRESETS.find((preset) => preset.id === id) ??
   CANVAS_PRESETS[0];
+
+export const isCanvasPresetId = (
+  value: unknown
+): value is CanvasPresetId =>
+  value === "custom" ||
+  CANVAS_PRESETS.some((preset) => preset.id === value);
+
+export const isValidCanvasSize = (
+  value: unknown
+): value is CanvasSize => {
+  if (!value || typeof value !== "object") return false;
+
+  const size = value as Partial<CanvasSize>;
+
+  return (
+    Number.isInteger(size.width) &&
+    Number.isInteger(size.height) &&
+    Number(size.width) >= CUSTOM_CANVAS_MIN_SIZE &&
+    Number(size.width) <= CUSTOM_CANVAS_MAX_SIZE &&
+    Number(size.height) >= CUSTOM_CANVAS_MIN_SIZE &&
+    Number(size.height) <= CUSTOM_CANVAS_MAX_SIZE
+  );
+};
 
 export const DEFAULT_IMAGE_MAX_WIDTH = 120;
 export const DEFAULT_IMAGE_MAX_HEIGHT = 84;

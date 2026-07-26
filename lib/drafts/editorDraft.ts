@@ -3,7 +3,13 @@ import type {
   ImageDesignItem,
   ShapeKind,
 } from "../../components/editor/editor.types";
-import type { CanvasPresetId } from "../../components/editor/editor.constants";
+import {
+  getCanvasPreset,
+  isCanvasPresetId,
+  isValidCanvasSize,
+  type CanvasPresetId,
+  type CanvasSize,
+} from "../../components/editor/editor.constants";
 import {
   getDefaultShapeStyle,
   SHAPE_DEFAULT_SIZES,
@@ -13,7 +19,7 @@ const DATABASE_NAME = "genvilo-editor";
 const DATABASE_VERSION = 1;
 const DRAFT_STORE = "drafts";
 const CURRENT_DRAFT_KEY = "current-design";
-const DRAFT_VERSION = 1;
+const DRAFT_VERSION = 2;
 
 type StoredImageItem = Omit<ImageDesignItem, "src"> & {
   src: string | Blob;
@@ -23,14 +29,16 @@ type StoredDesignItem = Exclude<DesignItem, ImageDesignItem> | StoredImageItem;
 
 type StoredEditorDraft = {
   key: typeof CURRENT_DRAFT_KEY;
-  version: typeof DRAFT_VERSION;
+  version: number;
   presetId: CanvasPresetId;
+  canvasSize?: CanvasSize;
   items: StoredDesignItem[];
   savedAt: number;
 };
 
 export type EditorDraft = {
   presetId: CanvasPresetId;
+  canvasSize: CanvasSize;
   items: DesignItem[];
 };
 
@@ -109,9 +117,6 @@ const prepareItems = (items: DesignItem[]) =>
     )
   );
 
-const isCanvasPresetId = (value: unknown): value is CanvasPresetId =>
-  value === "landscape" || value === "portrait" || value === "square";
-
 const isShapeKind = (value: unknown): value is ShapeKind =>
   value === "rectangle" ||
   value === "roundedRectangle" ||
@@ -128,7 +133,7 @@ const isStoredDraft = (value: unknown): value is StoredEditorDraft => {
 
   return (
     draft.key === CURRENT_DRAFT_KEY &&
-    draft.version === DRAFT_VERSION &&
+    (draft.version === 1 || draft.version === DRAFT_VERSION) &&
     isCanvasPresetId(draft.presetId) &&
     Array.isArray(draft.items)
   );
@@ -153,6 +158,7 @@ export const saveEditorDraft = (draft: EditorDraft) => {
         key: CURRENT_DRAFT_KEY,
         version: DRAFT_VERSION,
         presetId: draft.presetId,
+        canvasSize: draft.canvasSize,
         items: await prepareItems(draft.items),
         savedAt: Date.now(),
       };
@@ -181,6 +187,7 @@ export const resetEditorDraft = (draft: EditorDraft) => {
         key: CURRENT_DRAFT_KEY,
         version: DRAFT_VERSION,
         presetId: draft.presetId,
+        canvasSize: draft.canvasSize,
         items: [],
         savedAt: Date.now(),
       };
@@ -261,13 +268,28 @@ export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
     })
   );
 
+  const fallbackPreset = getCanvasPreset(storedDraft.presetId);
+  const canvasSize = isValidCanvasSize(storedDraft.canvasSize)
+    ? storedDraft.canvasSize
+    : {
+        width: fallbackPreset.width,
+        height: fallbackPreset.height,
+      };
+  const presetId =
+    storedDraft.presetId === "custom" &&
+    !isValidCanvasSize(storedDraft.canvasSize)
+      ? fallbackPreset.id
+      : storedDraft.presetId;
+
   lastSavedSignature = createSignature({
-    presetId: storedDraft.presetId,
+    presetId,
+    canvasSize,
     items,
   });
 
   return {
-    presetId: storedDraft.presetId,
+    presetId,
+    canvasSize,
     items,
     release: () => undefined,
   };
