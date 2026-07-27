@@ -75,7 +75,7 @@ Legend:
 - ✅ **Templates Framework & Starter Experience**: Scalable template registry (`lib/templates/templates.catalog.ts`), 12 curated starter designs, searchable & category-filtered `TemplatesPanel.tsx`, vector thumbnail preview renderer (`TemplateThumbnail.tsx`), and instant history-backed Undo/Redo loading.
 - 📋 **Editor Quality & Refinement**: Ongoing usability polish, touch responsiveness, layer scroll discoverability, and edge-case bug fixes *[Confirmed in AGENTS.md & POLISH_BACKLOG.md]*.
 - 📋 **Universal Search**: Unified search capabilities across editor fonts, element catalog, and presets *[Confirmed in app/page.tsx `comingNext` array]*.
-- 📋 **Saved Projects**: Persistent multi-project saving beyond single active draft *[Confirmed in app/page.tsx `comingNext`]*.
+- ✅ **Saved Projects & Multi-Draft Studio Manager**: Persistent multi-project saving, loading, creating, duplicating, renaming, and deleting powered by IndexedDB (`lib/projects/projectsManager.ts`), complete with vector canvas thumbnails (`ProjectThumbnail.tsx`), inline header title editing, and responsive projects sidebar panel (`ProjectsPanel.tsx`).
 - 📋 **Expanded Elements Library**: Additional categories of vector shapes, icons, and illustrations *[Confirmed in app/page.tsx & AGENTS.md]*.
 - 🔹 **User Accounts & Authentication**: Cloud user accounts for multi-device sync *[Recommendation: natural extension of Saved Projects]*.
 

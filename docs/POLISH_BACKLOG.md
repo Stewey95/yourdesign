@@ -41,7 +41,7 @@ This backlog contains structured UX and technical polish items derived from code
 ## 5. Export Dialog & Draft Persistence
 
 - 🟢 **Export Preview Zoom Controls**: Add zoom and pan controls inside `ExportDialog.tsx` so users can inspect fine high-res PNG/PDF export detail prior to downloading.
-- 🟡 **Multi-Draft Local Management**: Expand `lib/drafts/editorDraft.ts` to allow users to save, rename, and switch between multiple local design drafts rather than a single active state.
+- ✅ **Multi-Draft Local Management**: Expanded local storage infrastructure (`lib/projects/projectsManager.ts`) allowing creators to save, search, rename, duplicate, switch, and delete multiple design projects cleanly.
 - 🟢 **Export Progress Indicator**: Add a granular progress indicator during heavy PDF generation for large multi-asset canvases.
 
 ---

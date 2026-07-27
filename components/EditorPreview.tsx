@@ -61,10 +61,20 @@ import {
 import type { DesignExportConfig } from "../types/export";
 import {
   loadEditorDraft,
-  resetEditorDraft,
   saveEditorDraft,
 } from "../lib/drafts/editorDraft";
 import type { Template } from "../lib/templates/templates.types";
+import type { ProjectRecord } from "../lib/projects/projects.types";
+import {
+  createProject,
+  getAllProjects,
+  getProject,
+  renameProject,
+  saveProject,
+  getActiveProjectId,
+  setActiveProjectId,
+} from "../lib/projects/projectsManager";
+import type { ToolbarPanel } from "./editor/EditorSidebar";
 
 type EditorPreviewProps = {
   fullScreen?: boolean;
@@ -155,11 +165,11 @@ export default function EditorPreview({
   const [newDesignError, setNewDesignError] = useState<string | null>(null);
   const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
+  const [activeProject, setActiveProject] = useState<ProjectRecord | null>(null);
+  const [projectTitle, setProjectTitle] = useState<string>("Untitled Design");
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
     useState(0);
-  const [activeToolbarPanel, setActiveToolbarPanel] = useState<
-  "templates" | "media" | "text" | "elements" | "arrange" | null
->(null);
+  const [activeToolbarPanel, setActiveToolbarPanel] = useState<ToolbarPanel>(null);
   const [alignmentGuides, setAlignmentGuides] = useState({
   vertical: false,
   horizontal: false,
@@ -172,7 +182,6 @@ export default function EditorPreview({
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const exportCanvasRef = useRef<HTMLDivElement | null>(null);
   const hasUserSelectedCanvasPresetRef = useRef(false);
-  const restoredDraftReleaseRef = useRef<(() => void) | null>(null);
   const draftSaveTimerRef = useRef<number | null>(null);
   const draftSaveGenerationRef = useRef(0);
   const latestItemsRef = useRef(items);
@@ -264,30 +273,61 @@ export default function EditorPreview({
 
     const restoreDraft = async () => {
       try {
-        const draft = await loadEditorDraft();
+        const activeId = getActiveProjectId();
+        let currentProj = activeId ? await getProject(activeId) : null;
 
-        if (cancelled || !draft) return;
+        if (!currentProj) {
+          const allProjects = await getAllProjects();
+          if (allProjects.length > 0) {
+            currentProj = allProjects[0];
+          }
+        }
+
+        if (!currentProj) {
+          const legacyDraft = await loadEditorDraft();
+          if (legacyDraft) {
+            currentProj = await createProject(
+              "My Design 1",
+              legacyDraft.presetId,
+              legacyDraft.canvasSize,
+              legacyDraft.items
+            );
+            legacyDraft.release();
+          } else {
+            const defaultPreset = getCanvasPreset(DEFAULT_DESKTOP_CANVAS_PRESET_ID);
+            currentProj = await createProject(
+              "Untitled Design",
+              DEFAULT_DESKTOP_CANVAS_PRESET_ID,
+              { width: defaultPreset.width, height: defaultPreset.height },
+              []
+            );
+          }
+        }
+
+        if (cancelled || !currentProj) return;
+
+        setActiveProject(currentProj);
+        setProjectTitle(currentProj.title);
+        setActiveProjectId(currentProj.id);
 
         if (
           latestItemsRef.current.length > 0 ||
           hasUserSelectedCanvasPresetRef.current
         ) {
-          draft.release();
           return;
         }
 
-        restoredDraftReleaseRef.current = draft.release;
         hasUserSelectedCanvasPresetRef.current = true;
         restoreDesign({
-          items: draft.items,
+          items: currentProj.items,
           canvas: {
-            presetId: draft.presetId,
-            width: draft.canvasSize.width,
-            height: draft.canvasSize.height,
+            presetId: currentProj.presetId,
+            width: currentProj.canvasSize.width,
+            height: currentProj.canvasSize.height,
           },
         });
       } catch (error) {
-        console.warn("The local editor draft could not be restored.", error);
+        console.warn("The local project draft could not be restored.", error);
       } finally {
         if (!cancelled) setDraftReady(true);
       }
@@ -297,13 +337,11 @@ export default function EditorPreview({
 
     return () => {
       cancelled = true;
-      restoredDraftReleaseRef.current?.();
-      restoredDraftReleaseRef.current = null;
     };
   }, [restoreDesign]);
 
   useEffect(() => {
-    if (!draftReady) return;
+    if (!draftReady || !activeProject) return;
 
     const saveGeneration = draftSaveGenerationRef.current;
     const draft = {
@@ -317,10 +355,22 @@ export default function EditorPreview({
     const saveDraft = () => {
       if (saveGeneration !== draftSaveGenerationRef.current) return;
 
-      void saveEditorDraft(draft)
+      const updatedRecord: ProjectRecord = {
+        ...activeProject,
+        title: projectTitle,
+        presetId: selectedCanvasPresetId,
+        canvasSize: {
+          width: canvasSize.width,
+          height: canvasSize.height,
+        },
+        items,
+        updatedAt: Date.now(),
+      };
+
+      void saveProject(updatedRecord)
         .then(() => setDraftSaveError(null))
         .catch((error) => {
-          console.warn("The local editor draft could not be saved.", error);
+          console.warn("The local project could not be saved.", error);
           setDraftSaveError(
             error instanceof DOMException &&
               error.name === "QuotaExceededError"
@@ -328,6 +378,8 @@ export default function EditorPreview({
               : "This design could not be saved locally. Your canvas is still open."
           );
         });
+
+      void saveEditorDraft(draft).catch(() => undefined);
     };
     const saveTimer = window.setTimeout(() => {
       if (draftSaveTimerRef.current === saveTimer) {
@@ -352,10 +404,12 @@ export default function EditorPreview({
       window.removeEventListener("pagehide", saveDraft);
     };
   }, [
+    activeProject,
     canvasSize.height,
     canvasSize.width,
     draftReady,
     items,
+    projectTitle,
     selectedCanvasPresetId,
   ]);
   const hideAlignmentGuides = () => {
@@ -790,6 +844,55 @@ const getSnappedPosition = (
     });
   }, [commitItems, selectedItemId]);
 
+  const handleSelectProject = useCallback(
+    (project: ProjectRecord) => {
+      activeResizeCleanupRef.current?.();
+      activeResizeCleanupRef.current = null;
+      pendingDragRef.current = null;
+      activeDragRef.current = null;
+      dragGrabOffsetRef.current = null;
+      pinchRef.current = null;
+      canvasTapRef.current = null;
+      pageInteractionRef.current = null;
+      justPinchedRef.current = false;
+
+      setActiveProject(project);
+      setProjectTitle(project.title);
+      setActiveProjectId(project.id);
+
+      hasUserSelectedCanvasPresetRef.current = true;
+      restoreDesign({
+        items: project.items,
+        canvas: {
+          presetId: project.presetId,
+          width: project.canvasSize.width,
+          height: project.canvasSize.height,
+        },
+      });
+
+      setSelectedItemId(null);
+      setShapeStyleItemId(null);
+      setDraggingItemId(null);
+      setEditingItemId(null);
+      setShowMobileContextToolbar(false);
+      setShowImageAdjustments(false);
+      setCanvasPresetFitRequest((request) => request + 1);
+    },
+    [restoreDesign]
+  );
+
+  const handleTitleChange = useCallback(
+    (newTitle: string) => {
+      const trimmed = newTitle.trim() || "Untitled Design";
+      setProjectTitle(trimmed);
+      if (activeProject) {
+        setActiveProject((prev) => (prev ? { ...prev, title: trimmed } : null));
+        void renameProject(activeProject.id, trimmed);
+      }
+    },
+    [activeProject]
+  );
+
   const startNewDesign = async () => {
     if (isStartingNewDesign) return;
 
@@ -803,14 +906,13 @@ const getSnappedPosition = (
     }
 
     try {
-      await resetEditorDraft({
-        presetId: selectedCanvasPresetId,
-        canvasSize: {
-          width: canvasSize.width,
-          height: canvasSize.height,
-        },
-        items: [],
-      });
+      const defaultPreset = getCanvasPreset(selectedCanvasPresetId);
+      const newProj = await createProject(
+        "Untitled Design",
+        selectedCanvasPresetId,
+        { width: defaultPreset.width, height: defaultPreset.height },
+        []
+      );
 
       activeResizeCleanupRef.current?.();
       activeResizeCleanupRef.current = null;
@@ -821,16 +923,18 @@ const getSnappedPosition = (
       canvasTapRef.current = null;
       pageInteractionRef.current = null;
       justPinchedRef.current = false;
-      restoredDraftReleaseRef.current?.();
-      restoredDraftReleaseRef.current = null;
       latestItemsRef.current = [];
+
+      setActiveProject(newProj);
+      setProjectTitle(newProj.title);
+      setActiveProjectId(newProj.id);
 
       restoreDesign({
         items: [],
         canvas: {
           presetId: selectedCanvasPresetId,
-          width: canvasSize.width,
-          height: canvasSize.height,
+          width: defaultPreset.width,
+          height: defaultPreset.height,
         },
       });
       setSelectedItemId(null);
@@ -846,18 +950,8 @@ const getSnappedPosition = (
       setShowNewDesignDialog(false);
     } catch (error) {
       console.error("The new design could not be started.", error);
-      void saveEditorDraft({
-        presetId: selectedCanvasPresetId,
-        canvasSize: {
-          width: canvasSize.width,
-          height: canvasSize.height,
-        },
-        items,
-      }).catch((saveError) => {
-        console.warn("The local editor draft could not be saved.", saveError);
-      });
       setNewDesignError(
-        "Your saved draft could not be cleared. Please try again."
+        "A new project design could not be initialized. Please try again."
       );
     } finally {
       setIsStartingNewDesign(false);
@@ -2254,6 +2348,9 @@ if (direction === "back") {
         style={{ height: fullScreen ? undefined : desktopEditorHeight }}
       >
       <EditorHeader
+        projectTitle={projectTitle}
+        onTitleChange={handleTitleChange}
+        onOpenProjects={() => setActiveToolbarPanel("projects")}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={performUndo}
@@ -2315,6 +2412,12 @@ if (direction === "back") {
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}
+          activeProjectId={activeProject?.id ?? null}
+          onSelectProject={handleSelectProject}
+          onNewProject={() => {
+            setNewDesignError(null);
+            setShowNewDesignDialog(true);
+          }}
           onImageUpload={handleImageUpload}
           onAddText={addText}
           onAddElement={addElement}
