@@ -1,0 +1,109 @@
+# Gripix System Architecture
+
+This document describes the high-level system architecture, component relationships, data flow, and subsystem organization of Gripix.
+
+---
+
+## 1. System Overview
+
+Gripix is built on **Next.js (App Router)**, **TypeScript**, **React 19**, and **Tailwind CSS**. It is architected as a high-performance, client-side graphic design application with local draft persistence and multi-format client-side export capabilities.
+
+```mermaid
+graph TD
+    User([User Device]) --> AppRouter[Next.js App Router]
+    AppRouter --> HomeRoute["/ (Landing Page)"]
+    AppRouter --> CreateRoute["/create (Full-Screen Editor Workspace)"]
+    
+    CreateRoute --> EditorPreview["EditorPreview Coordinator"]
+    
+    EditorPreview --> HistoryEngine["useEditorHistory (State & Undo/Redo)"]
+    EditorPreview --> ViewportEngine["Viewport Engine (Zoom & Pan Math)"]
+    EditorPreview --> CanvasWorkspace["EditorCanvas Subsystem"]
+    EditorPreview --> NavigationSidebar["EditorSidebar & Tool Panels"]
+    EditorPreview --> PropertyInspector["EditorInspector & LayersPanel"]
+    EditorPreview --> ExportSubsystem["lib/export (PNG, JPG, PDF)"]
+    EditorPreview --> PersistenceSubsystem["lib/drafts (localStorage Autosave)"]
+```
+
+---
+
+## 2. Route & Layout Architecture
+
+- **`/` (Public Landing Page - `app/page.tsx`)**:
+  - Responsive marketing landing page presenting Gripix features, Canva-style editor capabilities, and direct entry points to launch the editor.
+- **`/create` (Editor Workspace Route - `app/create/page.tsx`)**:
+  - Dedicated full-screen viewport workspace (`min-h-dvh md:h-dvh md:overflow-hidden`) hosting `EditorPreview.tsx`.
+
+---
+
+## 3. Editor Core Architecture (`components/EditorPreview.tsx`)
+
+`EditorPreview.tsx` serves as the central stateful coordinator for the entire design application. It maintains:
+
+### 1. Editor Design State (`EditorDesignState`)
+- `items: DesignItem[]`: Array of canvas items (text blocks, uploaded images, vector SVG shapes). Array index dictates render z-order on the canvas.
+- `canvas: CanvasSize & { presetId: CanvasPresetId }`: Target canvas dimensions (width, height) and active preset ID (e.g., `instagram-post`, `logo`, `custom`).
+
+### 2. Transactional State History (`useEditorHistory.ts`)
+- Manages history snapshots (`past`, `present`, `future`).
+- Supports atomic single commits (`commitDesign`) and multi-frame gesture transactions (`beginTransaction`, `updateTransaction`, `commitTransaction`).
+
+### 3. Viewport State (`EditorViewport`)
+- `zoom`: Numerical zoom scale (e.g. `0.5`, `1.0`, `2.0`).
+- `panX`, `panY`: Numerical canvas panning offsets in screen pixels.
+- Derived functions from `components/editor/editor.viewport.ts` transform screen point coordinates to canvas relative points (`screenPointToCanvas`).
+
+---
+
+## 4. Canvas & Interaction Subsystems
+
+### `EditorCanvas.tsx`
+- Renders the interactive workspace boundary, canvas background color, active items, alignment snapping guides (`AlignmentGuides.tsx`), desktop pan cursor overlays (`DesktopPanCursor.tsx`), and mobile zoom HUD (`MobileCanvasZoomHud.tsx`).
+
+### Canvas Item Renderers
+- `CanvasTextItem.tsx`: Renders editable text, handles inline focus/caret placement, auto-calculates text height, and provides desktop corner resizing handles.
+- `CanvasImageItem.tsx`: Renders uploaded raster images with boundary constraints and adjustment filters (brightness, contrast, saturation).
+- `CanvasShapeItem.tsx`: Renders vector SVG elements (`ShapeSvg.tsx`) based on element geometry definitions (`shape.geometry.ts`).
+
+### Hit Testing Engine (`components/editor/hitTesting.ts`)
+- Implements geometry-aware hit testing for shapes and smart pixel-alpha inspection for transparent PNG images. Ensures click/tap events register only on visible content rather than empty transparent container padding.
+
+---
+
+## 5. Inspection & Tooling Subsystems
+
+- **`EditorSidebar.tsx`**: Left navigation sidebar managing tool selection tabs (Elements, Text, Uploads, Layers, Canvas Dimensions).
+- **`ElementsPanel.tsx`**: Catalog browser for SVG shapes and starter graphics (`elements.catalog.ts`).
+- **`FontPicker.tsx`**: Typography browser supporting real-time font search, custom size stepping, line-height, letter-spacing, and font family application (`font.catalog.ts`).
+- **`LayersPanel.tsx`**: Desktop and mobile layer inspector supporting drag/button reordering, layer locking (`isLocked`), and visibility toggles (`hidden`).
+- **`MobileContextToolbar.tsx`**: Pinned mobile bottom toolbar providing contextual actions for selected elements.
+
+---
+
+## 6. Export Subsystem (`lib/export/`)
+
+The export engine provides high-resolution, multi-format client-side asset generation:
+
+```mermaid
+flowchart LR
+    DesignState[Editor Design State] --> RenderEngine["renderDesignToCanvas.ts"]
+    RenderEngine --> DisplayScale["Apply getCanvasDisplayScale Resolution"]
+    DisplayScale --> FormatRouter{Export Format}
+    
+    FormatRouter -->|PNG / JPG| ImageBlob["HTML5 Canvas Blob Download"]
+    FormatRouter -->|PDF| PdfGenerator["createPdf.ts (jspdf canvas rendering)"]
+    FormatRouter -->|Safari iPhone| MobileFallback["isMobileSafari.ts canvas fallback"]
+```
+
+- **`renderDesignToCanvas.ts`**: Pure offscreen HTML5 `<canvas>` rendering pipeline that draws items, text, images, and shapes with sub-pixel resolution accuracy.
+- **`exportDesign.ts`**: Controller managing background transparency toggles, image format encoding (PNG, JPG), and browser file download triggers.
+- **`createPdf.ts`**: Converts canvas output into single or multi-page PDF documents.
+- **`isMobileSafari.ts`**: Detects iOS Safari runtime environments to route downloads through compatible canvas data URL fallbacks.
+
+---
+
+## 7. Persistence Subsystem (`lib/drafts/`)
+
+- **`editorDraft.ts`**:
+  - Automatically serializes `EditorDesignState` to `localStorage` on change.
+  - Features state versioning, draft validation, state recovery on reload, and explicit draft reset capabilities.
