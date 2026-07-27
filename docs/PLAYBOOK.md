@@ -27,10 +27,10 @@ flowchart TD
 
 ### Step 1: Read Project Documentation
 Before writing any code or making architectural changes:
-- Read `AGENTS.md` for project rules, editor protection rules, and refactoring guidelines.
-- Read `/docs/MASTER_PLAN.md` to understand business alignment and the 1% Rule.
-- Read `/docs/ARCHITECTURE.md` to understand system state flow and component responsibilities.
-- Check `/docs/POLISH_BACKLOG.md` and `/docs/ROADMAP.md` for relevant prior context.
+- Read [`AGENTS.md`](../AGENTS.md) for project rules, editor protection rules, and refactoring guidelines.
+- Read [`MASTER_PLAN.md`](MASTER_PLAN.md) to understand business alignment and the 1% Rule.
+- Read [`ARCHITECTURE.md`](ARCHITECTURE.md) to understand system state flow and component responsibilities.
+- Check [`POLISH_BACKLOG.md`](POLISH_BACKLOG.md) and [`ROADMAP.md`](ROADMAP.md) for relevant prior context.
 
 ### Step 2: Product Discussion
 Evaluate the task against core product questions:
@@ -40,8 +40,8 @@ Evaluate the task against core product questions:
 
 ### Step 3: Review Architecture
 Inspect affected codebase files before making edits:
-- Check `components/EditorPreview.tsx` state interactions.
-- Check domain subcomponents in `components/editor/`.
+- Check [`components/EditorPreview.tsx`](../components/EditorPreview.tsx) state interactions.
+- Check domain subcomponents in [`components/editor/`](../components/editor/).
 - Ensure proposed changes maintain `EditorPreview` as the state coordinator.
 - Confirm touch/pointer event capture/bubble phase requirements.
 
@@ -86,23 +86,23 @@ Perform runtime validation across desktop and mobile viewports:
 - Verify export functionality (PNG transparent output, PDF generation).
 
 ### Step 10: Perform UX Review
-Evaluate visual polish against `/docs/UX_PRINCIPLES.md`:
+Evaluate visual polish against [`UX_PRINCIPLES.md`](UX_PRINCIPLES.md):
 - Verify spacing, typography hierarchy, and color consistency.
 - Ensure animations are subtle and interactive controls auto-hide appropriately.
 - Confirm the 1% rule improvement is present and effective.
 
 ### Step 11: Update Documentation
 Keep living documentation synchronized with code changes:
-- Update `/docs/CHANGELOG.md` with new features or bug fixes.
-- Update `/docs/ROADMAP.md` status badges if roadmap items are completed.
-- Add unresolved observations or follow-ups to `/docs/POLISH_BACKLOG.md`.
+- Update [`CHANGELOG.md`](CHANGELOG.md) with new features or bug fixes.
+- Update [`ROADMAP.md`](ROADMAP.md) status badges if roadmap items are completed.
+- Add unresolved observations or follow-ups to [`POLISH_BACKLOG.md`](POLISH_BACKLOG.md).
 
 ### Step 12: Commit and Push
 Only when explicitly instructed by the project lead/user:
 - Check git status to ensure no unexpected files are modified.
 - Craft a clear, descriptive commit message:
   ```bash
-  git commit -m "docs: establish Gripix living project documentation"
+  git commit -m "docs: correct documentation links and roadmap status"
   git push origin main
   ```
 - *Rule: Never commit or push automatically, rewrite git history, or force push.*

@@ -2,15 +2,17 @@
 
 The Gripix roadmap reflects the natural evolution of the product from a standalone canvas editor into a full-scale creator platform for digital products.
 
-Statuses:
-- ✅ **Complete**: Fully implemented, verified, and active in the repository.
-- 🚧 **In Progress**: Currently active focus area.
-- 📋 **Planned**: Near-term roadmap priorities based on core product vision.
-- 💡 **Future**: Long-term strategic vision for creator growth.
+Legend:
+- ✅ **Complete**: Fully implemented, verified, and active in the codebase.
+- 🚧 **In Progress**: Active focus area.
+- 📋 **Planned**: Explicitly supported by repository code, `app/page.tsx`, or `AGENTS.md`.
+- 💡 **Future Vision**: Strategic long-term direction documented in `AGENTS.md`.
+- 🔹 **Recommendation**: Proposed extension not yet explicitly declared in source code.
 
 ---
 
 ## Phase 1: Dedicated Workspace & Canvas Foundation (✅ Complete)
+*[Source: `app/create/page.tsx`, `components/EditorPreview.tsx`]*
 
 - ✅ **Dedicated Editor Route**: Full-screen design workspace hosted at `/create` separate from the public landing page (`/`).
 - ✅ **Canva-Style Interactive Canvas**: Render and manipulate text blocks, image uploads, and vector SVG shape elements.
@@ -20,24 +22,27 @@ Statuses:
 ---
 
 ## Phase 2: Viewport Navigation & Touch Gestures (✅ Complete)
+*[Source: `components/editor/editor.viewport.ts`, `DesktopPanCursor.tsx`, `MobileCanvasZoomHud.tsx`]*
 
 - ✅ **Canvas Viewport Engine**: Smooth canvas zooming with zoom preset buttons (`Fit`, `Fill`, `50%`, `100%`, `200%`), HUD display, and custom zoom percentage input.
-- ✅ **Desktop Hand-Panning**: Desktop canvas pan support using space+drag, middle-mouse drag, or dedicated viewport pan tool with customized grab/grabbing cursor feedback (`DesktopPanCursor.tsx`).
+- ✅ **Desktop Hand-Panning**: Desktop canvas pan support using space+drag, middle-mouse drag, or dedicated viewport pan tool with customized grab/grabbing cursor feedback.
 - ✅ **Mobile Viewport Ownership**: Touch-based two-finger canvas panning and pinch-to-zoom gestures without interfering with browser page scrolling.
 - ✅ **Alignment Guides & Snapping**: Geometry-aware alignment guides (`AlignmentGuides.tsx`) providing visual snap indicators for canvas center and element alignment.
 
 ---
 
-## Phase 3: Layer Management & Element Library (✅ Complete)
+## Phase 3: Layer Management & Element Catalog Foundation (✅ Complete)
+*[Source: `components/editor/LayersPanel.tsx`, `components/editor/elements/elements.catalog.ts`]*
 
 - ✅ **Layers Panel & Inspector**: Complete desktop and mobile `LayersPanel.tsx` supporting layer selection, visual order listing, and index position updates.
 - ✅ **Layer Lock & Visibility**: Ability to lock/unlock items (`isLocked`) to prevent accidental edits, complete with lock badges, and toggle item visibility (`hidden`).
 - ✅ **Item Duplication**: One-click duplication (`duplicateItem`) preserving position offsets and styling properties.
-- ✅ **Vector Elements Catalog**: Curated SVG element library (`elements.catalog.ts`) including rectangles, circles, stars, hearts, triangles, badges, and custom stroke/fill styling controls (`ShapeSvg.tsx`).
+- ✅ **Vector Elements Catalog Foundation**: Initial SVG element library (`elements.catalog.ts`) including rectangles, circles, stars, hearts, triangles, badges, and stroke/fill styling controls (`ShapeSvg.tsx`).
 
 ---
 
 ## Phase 4: Typography & Dimension Presets (✅ Complete)
+*[Source: `components/editor/FontPicker.tsx`, `CanvasSizePanel.tsx`]*
 
 - ✅ **Searchable Font Catalog**: Integrated `FontPicker.tsx` featuring real-time font search, font preview rendering, text styling (bold, italic, uppercase, alignment), line height, and letter spacing steppers.
 - ✅ **Text Auto-Fit & Caret Placement**: Auto-height calculation for text blocks with native caret focus when adding new text elements.
@@ -46,41 +51,43 @@ Statuses:
 ---
 
 ## Phase 5: Multi-Format Export & Draft Persistence (✅ Complete)
+*[Source: `lib/export/exportDesign.ts`, `lib/drafts/editorDraft.ts`]*
 
-- ✅ **High-Resolution Export Pipeline**: Client-side PNG, JPG, and PDF output using html2canvas/canvas rendering (`lib/export/renderDesignToCanvas.ts`, `lib/export/exportDesign.ts`).
+- ✅ **High-Resolution Export Pipeline**: Client-side PNG, JPG, and PDF output using html2canvas/canvas rendering (`lib/export/renderDesignToCanvas.ts`).
 - ✅ **Background Transparency**: Toggle transparent background for PNG assets.
 - ✅ **Mobile Safari Export Fallbacks**: Dedicated HTML5 canvas fallback pipeline (`isMobileSafari.ts`) supporting seamless mobile exports on iPhone.
 - ✅ **Automatic Draft Persistence**: Local storage state persistence (`lib/drafts/editorDraft.ts`) with automatic draft recovery and reset capabilities.
 
 ---
 
-## Phase 6: Living Documentation & Development Standards (🚧 In Progress)
+## Phase 6: Living Documentation & Development Standards (✅ Complete)
+*[Source: `/docs/` Directory, `README.md`]*
 
-- 🚧 **Repository Living Documentation**: Establishing `/docs/` as the single source of truth (`MASTER_PLAN.md`, `ROADMAP.md`, `PLAYBOOK.md`, `ENGINEERING.md`, `UX_PRINCIPLES.md`, `ARCHITECTURE.md`, `CHANGELOG.md`, `POLISH_BACKLOG.md`).
-- 🚧 **README Modernization**: Comprehensive landing documentation with tech stack overview, quick start commands, and doc links.
-- 🚧 **Standardized QA Workflow**: Strict playbook rules combining linting, type checks, build checks, and Chrome/Safari runtime testing.
-
----
-
-## Phase 7: Multi-Page Canvas & Template Engine (📋 Planned)
-
-- 📋 **Multi-Page Design Documents**: Support adding, reordering, duplicating, and deleting multiple pages within a single design project.
-- 📋 **Preset Template Starter Library**: Pre-designed digital product templates (ebook covers, social packs, worksheets, planners).
-- 📋 **Multi-Item Grouping**: Group multiple canvas elements to move, scale, and rotate simultaneously.
-- 📋 **Advanced Alignment Tools**: Distribute horizontally/vertically, align to canvas edges, and multi-selection properties.
+- ✅ **Repository Living Documentation**: Established `/docs/` as the single source of truth (`MASTER_PLAN.md`, `ROADMAP.md`, `PLAYBOOK.md`, `ENGINEERING.md`, `UX_PRINCIPLES.md`, `ARCHITECTURE.md`, `CHANGELOG.md`, `POLISH_BACKLOG.md`).
+- ✅ **README Modernization**: Comprehensive landing documentation with tech stack overview, quick start commands, and directory links.
+- ✅ **Standardized QA Workflow**: Strict 12-step playbook combining linting, type checks, build checks, and runtime testing.
 
 ---
 
-## Phase 8: Brand Kits & Creator Asset Management (📋 Planned)
+## Phase 7: Near-Term Priorities & Core Polish (📋 Planned)
+*[Source: `app/page.tsx` line 86 `comingNext`, `AGENTS.md` line 207 `1% Rule`, `docs/POLISH_BACKLOG.md`]*
 
-- 📋 **Brand Kit Engine**: Save and apply custom brand color palettes, font pairings, and brand logo sets across designs.
-- 📋 **Uploaded Assets Library**: Persistent media manager storing user-uploaded imagery across sessions.
-- 📋 **Custom Color Swatches & Gradients**: Palette presets, eye-dropper color sampling, and linear/radial gradient fills.
+- 📋 **Editor Quality & Refinement**: Ongoing usability polish, touch responsiveness, layer scroll discoverability, and edge-case bug fixes *[Confirmed in AGENTS.md & POLISH_BACKLOG.md]*.
+- 📋 **Universal Search**: Unified search capabilities across editor fonts, element catalog, and presets *[Confirmed in app/page.tsx `comingNext` array]*.
+- 📋 **Templates**: Starter template library for digital product creation (ebook covers, social posts, lead magnets) *[Confirmed in app/page.tsx `comingNext` & AGENTS.md]*.
+- 📋 **Saved Projects**: Persistent multi-project saving beyond single active draft *[Confirmed in app/page.tsx `comingNext`]*.
+- 📋 **Expanded Elements Library**: Additional categories of vector shapes, icons, and illustrations *[Confirmed in app/page.tsx & AGENTS.md]*.
+- 🔹 **User Accounts & Authentication**: Cloud user accounts for multi-device sync *[Recommendation: natural extension of Saved Projects]*.
 
 ---
 
-## Phase 9: AI Creator Assistant & Digital Storefront (💡 Future)
+## Phase 8: Creator Platform & Storefront Infrastructure (💡 Future Vision)
+*[Source: `AGENTS.md` lines 182-195 `Future Vision`]*
 
-- 💡 **AI Content & Layout Assistant**: Generative text copywriting, auto-layout formatting, and smart background removal for product photos.
-- 💡 **Digital Product Packaging Suite**: Automated bundling of design exports into sellable digital packages (PDF lead magnets, PNG social kits).
-- 💡 **Creator Storefront Integration**: Direct publishing to digital product marketplaces and creator storefronts.
+- 💡 **Brand Kits**: Persistent brand colors, font pairings, and asset kits *[Confirmed in AGENTS.md]*.
+- 💡 **AI Assistance**: Generative copywriting, layout formatting, and automated background tools *[Confirmed in AGENTS.md]*.
+- 💡 **Project Management**: Asset organization and design workflow tools *[Confirmed in AGENTS.md]*.
+- 💡 **Digital Product Preparation**: Multi-page bundling and asset packaging for digital products *[Confirmed in AGENTS.md]*.
+- 💡 **Marketplace Integrations & Selling Tools**: Direct storefront integrations and digital product distribution *[Confirmed in AGENTS.md]*.
+- 🔹 **Multi-Page Canvas Engine**: Multi-page document editing within a single design session *[Recommendation]*.
+- 🔹 **Multi-Item Grouping & Alignment**: Grouping elements and distribution tools *[Recommendation]*.

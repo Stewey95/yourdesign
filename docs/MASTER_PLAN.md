@@ -63,7 +63,7 @@ When working on Gripix, always look for opportunities to make the product **1% b
 - Improve usability, consistency, or visual polish.
 
 ### Editor Protection Rules
-The Canva-style canvas editor (`components/EditorPreview.tsx` & `components/editor/*`) is the heart of Gripix. The following core editor capabilities are protected and must never be broken:
+The Canva-style canvas editor ([`components/EditorPreview.tsx`](../components/EditorPreview.tsx) & [`components/editor/`](../components/editor/)) is the heart of Gripix. The following core editor capabilities are protected and must never be broken:
 - Text editing & mobile caret placement.
 - Text auto-height & auto-fit inside canvas bounds.
 - Drag-and-drop item movement & tap-vs-drag gesture discrimination.

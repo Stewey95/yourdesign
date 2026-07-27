@@ -2,6 +2,11 @@
 
 All notable changes to the Gripix project are documented in this file based strictly on repository commit history.
 
+## 2026-07-27
+
+- `a6cb3e8`: **Documentation Sprint**: Established `/docs/` living project documentation (`MASTER_PLAN.md`, `ROADMAP.md`, `PLAYBOOK.md`, `ENGINEERING.md`, `UX_PRINCIPLES.md`, `ARCHITECTURE.md`, `CHANGELOG.md`, `POLISH_BACKLOG.md`) and updated `README.md`. Automated verification passed with zero lint/type/build errors (`npm run lint`, `npx tsc --noEmit`, `npm run build`).
+- `post-sprint`: **Documentation Audit & Refinement**: Verified all relative repository links, reclassified roadmap items with explicit source attribution (`app/page.tsx`, `AGENTS.md`), and updated living documentation sprint status to Complete.
+
 ---
 
 ## 2026-07-26

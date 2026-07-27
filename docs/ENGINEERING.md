@@ -7,12 +7,12 @@ This document outlines the engineering architecture, code organization standards
 ## 1. Architecture Principles
 
 ### Single Stateful Coordinator Pattern
-- `components/EditorPreview.tsx` acts as the single stateful coordinator for the design editor.
+- [`components/EditorPreview.tsx`](../components/EditorPreview.tsx) acts as the single stateful coordinator for the design editor.
 - All canvas items (`DesignItem[]`), canvas size parameters (`CanvasPresetId`, width, height), selection state (`selectedItemId`), and viewports are coordinated centrally.
-- Presentational subcomponents in `components/editor/` receive typed props and callbacks, remaining decoupled from state mutations.
+- Presentational subcomponents in [`components/editor/`](../components/editor/) receive typed props and callbacks, remaining decoupled from state mutations.
 
 ### Transaction-Based History Management
-- State undo/redo operations are managed via the custom hook `components/editor/useEditorHistory.ts`.
+- State undo/redo operations are managed via the custom hook [`components/editor/useEditorHistory.ts`](../components/editor/useEditorHistory.ts).
 - Gesture interactions (such as dragging items or resizing canvas elements) use transaction batching (`beginTransaction`, `updateTransaction`, `commitTransaction`) so continuous pointer movements collapse into a single atomic history step.
 
 ### Presentational Extraction & Component Safety
@@ -74,7 +74,7 @@ type EditorDesignState = {
 - Every canvas item requires a stable, unique `id` key (`item.id`) that persists across operations and undo/redo cycles.
 
 ### Property Stepping & Bounds
-- Numeric property updates (e.g. font size, stroke width, opacity, rotation, dimensions) use bounded stepping helper functions in `components/editor/editor.constants.ts` (e.g. `clampFontSize`, `getBoundedImageSize`).
+- Numeric property updates (e.g. font size, stroke width, opacity, rotation, dimensions) use bounded stepping helper functions in [`components/editor/editor.constants.ts`](../components/editor/editor.constants.ts) (e.g. `clampFontSize`, `getBoundedImageSize`).
 
 ---
 
@@ -108,10 +108,10 @@ npm run build
 
 ## 5. Performance Optimizations
 
-- **Geometry-Aware Hit Testing**: `components/editor/hitTesting.ts` performs smart hit-testing on transparent PNG images and SVG shape outlines to ensure users select items naturally without clicking transparent background padding.
-- **Canvas Rendering Engine**: `lib/export/renderDesignToCanvas.ts` uses an offscreen HTML5 `<canvas>` element with crisp device pixel ratio scaling (`getCanvasDisplayScale`) for ultra-sharp PNG/JPG export without DOM layout thrashing.
+- **Geometry-Aware Hit Testing**: [`components/editor/hitTesting.ts`](../components/editor/hitTesting.ts) performs smart hit-testing on transparent PNG images and SVG shape outlines to ensure users select items naturally without clicking transparent background padding.
+- **Canvas Rendering Engine**: [`lib/export/renderDesignToCanvas.ts`](../lib/export/renderDesignToCanvas.ts) uses an offscreen HTML5 `<canvas>` element with crisp device pixel ratio scaling (`getCanvasDisplayScale`) for ultra-sharp PNG/JPG export without DOM layout thrashing.
 - **Gesture Animation Frames**: Dragging and resizing updates use `requestAnimationFrame` timing to maintain 60fps interaction smoothness.
-- **Debounced Draft Persistence**: Draft saving (`lib/drafts/editorDraft.ts`) uses debounced writing to `localStorage` to eliminate main-thread IO latency during active drawing.
+- **Debounced Draft Persistence**: Draft saving ([`lib/drafts/editorDraft.ts`](../lib/drafts/editorDraft.ts)) uses debounced writing to `localStorage` to eliminate main-thread IO latency during active drawing.
 
 ---
 
