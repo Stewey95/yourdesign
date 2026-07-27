@@ -9,7 +9,7 @@ type TemplateThumbnailProps = {
 export default function TemplateThumbnail({ template }: TemplateThumbnailProps) {
   const { width, height, items, backgroundColor = "#0f172a" } = template;
   const maxDim = Math.max(width, height);
-  const scale = 160 / maxDim;
+  const scale = 120 / maxDim;
   const containerWidth = Math.round(width * scale);
   const containerHeight = Math.round(height * scale);
 

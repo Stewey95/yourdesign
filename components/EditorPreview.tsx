@@ -1270,6 +1270,7 @@ const getSnappedPosition = (
         id: `item-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
       }));
 
+      hasUserSelectedCanvasPresetRef.current = true;
       commitDesign({
         items: freshItems,
         canvas: {
