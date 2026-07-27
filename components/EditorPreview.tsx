@@ -64,6 +64,7 @@ import {
   resetEditorDraft,
   saveEditorDraft,
 } from "../lib/drafts/editorDraft";
+import type { Template } from "../lib/templates/templates.types";
 
 type EditorPreviewProps = {
   fullScreen?: boolean;
@@ -157,7 +158,7 @@ export default function EditorPreview({
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
     useState(0);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<
-  "media" | "text" | "arrange" | "elements" | null
+  "templates" | "media" | "text" | "elements" | "arrange" | null
 >(null);
   const [alignmentGuides, setAlignmentGuides] = useState({
   vertical: false,
@@ -1251,6 +1252,44 @@ const getSnappedPosition = (
     hideAlignmentGuides();
     setShowMobileContextToolbar(true);
   };
+
+  const handleSelectTemplate = useCallback(
+    (template: Template) => {
+      activeResizeCleanupRef.current?.();
+      activeResizeCleanupRef.current = null;
+      pendingDragRef.current = null;
+      activeDragRef.current = null;
+      dragGrabOffsetRef.current = null;
+      pinchRef.current = null;
+      canvasTapRef.current = null;
+      pageInteractionRef.current = null;
+      justPinchedRef.current = false;
+
+      const freshItems: DesignItem[] = template.items.map((item, index) => ({
+        ...item,
+        id: `item-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
+      }));
+
+      commitDesign({
+        items: freshItems,
+        canvas: {
+          presetId: template.presetId,
+          width: template.width,
+          height: template.height,
+        },
+      });
+
+      setSelectedItemId(null);
+      setEditingItemId(null);
+      setShapeStyleItemId(null);
+      setDraggingItemId(null);
+      setShowMobileContextToolbar(false);
+      setShowImageAdjustments(false);
+      hideAlignmentGuides();
+      setCanvasPresetFitRequest((count) => count + 1);
+    },
+    [commitDesign, hideAlignmentGuides]
+  );
     const moveItemLayer = (
     id: string,
     direction:
@@ -2278,6 +2317,7 @@ if (direction === "back") {
           onImageUpload={handleImageUpload}
           onAddText={addText}
           onAddElement={addElement}
+          onSelectTemplate={handleSelectTemplate}
           canvasSize={canvasSize}
           selectedCanvasPresetId={selectedCanvasPresetId}
           onCanvasSizeChange={selectCanvasSize}

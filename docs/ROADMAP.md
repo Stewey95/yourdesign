@@ -72,9 +72,9 @@ Legend:
 ## Phase 7: Near-Term Priorities & Core Polish (📋 Planned)
 *[Source: `app/page.tsx` line 86 `comingNext`, `AGENTS.md` line 207 `1% Rule`, `docs/POLISH_BACKLOG.md`]*
 
+- ✅ **Templates Framework & Starter Experience**: Scalable template registry (`lib/templates/templates.catalog.ts`), 12 curated starter designs, searchable & category-filtered `TemplatesPanel.tsx`, vector thumbnail preview renderer (`TemplateThumbnail.tsx`), and instant history-backed Undo/Redo loading.
 - 📋 **Editor Quality & Refinement**: Ongoing usability polish, touch responsiveness, layer scroll discoverability, and edge-case bug fixes *[Confirmed in AGENTS.md & POLISH_BACKLOG.md]*.
 - 📋 **Universal Search**: Unified search capabilities across editor fonts, element catalog, and presets *[Confirmed in app/page.tsx `comingNext` array]*.
-- 📋 **Templates**: Starter template library for digital product creation (ebook covers, social posts, lead magnets) *[Confirmed in app/page.tsx `comingNext` & AGENTS.md]*.
 - 📋 **Saved Projects**: Persistent multi-project saving beyond single active draft *[Confirmed in app/page.tsx `comingNext`]*.
 - 📋 **Expanded Elements Library**: Additional categories of vector shapes, icons, and illustrations *[Confirmed in app/page.tsx & AGENTS.md]*.
 - 🔹 **User Accounts & Authentication**: Cloud user accounts for multi-device sync *[Recommendation: natural extension of Saved Projects]*.

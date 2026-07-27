@@ -77,17 +77,31 @@ export default function MobileCanvasZoomHud({
       className="relative z-[60] flex min-h-11 justify-end pb-2 pl-2 pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden"
     >
       {!expanded ? (
-        <button
-          type="button"
-          onPointerDown={protectButtonPointer}
-          onClick={() => setExpanded(true)}
-          className="flex h-9 items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/95 px-3 text-xs font-bold tabular-nums text-white shadow-xl backdrop-blur-xl"
-          aria-label="Canvas zoom"
-          title="Canvas zoom"
-        >
-          <ZoomIcon />
-          {Math.round(zoom * 100)}%
-        </button>
+        <div className="flex items-center gap-1">
+          {Math.abs(zoom - 1) > 0.05 && (
+            <button
+              type="button"
+              onPointerDown={protectButtonPointer}
+              onClick={onFit}
+              className="flex h-9 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/20 px-2.5 text-xs font-bold text-cyan-300 shadow-xl backdrop-blur-xl transition active:scale-95"
+              aria-label="Reset Viewport"
+              title="Reset Viewport"
+            >
+              Reset View
+            </button>
+          )}
+          <button
+            type="button"
+            onPointerDown={protectButtonPointer}
+            onClick={() => setExpanded(true)}
+            className="flex h-9 items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/95 px-3 text-xs font-bold tabular-nums text-white shadow-xl backdrop-blur-xl"
+            aria-label="Canvas zoom"
+            title="Canvas zoom"
+          >
+            <ZoomIcon />
+            {Math.round(zoom * 100)}%
+          </button>
+        </div>
       ) : (
         <div className="rounded-2xl border border-white/10 bg-slate-900/95 p-2 text-white shadow-2xl backdrop-blur-xl">
           <div className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
