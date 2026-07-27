@@ -128,7 +128,8 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
             return (
               <div
                 key={template.id}
-                className="group relative flex flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-2.5 transition hover:border-cyan-500/50 hover:bg-slate-900"
+                onClick={() => onSelectTemplate(template)}
+                className="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-2.5 transition hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-lg active:scale-[0.99]"
               >
                 <div className="relative mb-2">
                   <TemplateThumbnail template={template} />
