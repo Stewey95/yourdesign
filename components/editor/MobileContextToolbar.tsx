@@ -6,7 +6,13 @@ import {
   LockOpen,
   Palette,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   TEXT_MAX_FONT_SIZE,
   TEXT_MIN_FONT_SIZE,
@@ -114,6 +120,50 @@ export default function MobileContextToolbar({
       controls.scrollLeft < maximumScrollLeft - 1
     );
   }, []);
+
+  const resetControlsScroll = useCallback(() => {
+    const controls = controlsRef.current;
+
+    if (!controls) return;
+
+    controls.scrollLeft = 0;
+    updateScrollControls();
+  }, [updateScrollControls]);
+
+  useLayoutEffect(() => {
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    resetControlsScroll();
+  }, [item.id, item.type, resetControlsScroll]);
+
+  useEffect(() => {
+    const resetWhenSelectedItemIsPressed = (event: PointerEvent) => {
+      if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+      const canvasItem =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>("[data-canvas-item-id]")
+          : null;
+
+      if (!canvasItem) return;
+
+      resetControlsScroll();
+    };
+
+    document.addEventListener(
+      "pointerdown",
+      resetWhenSelectedItemIsPressed,
+      true
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        resetWhenSelectedItemIsPressed,
+        true
+      );
+    };
+  }, [resetControlsScroll]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(updateScrollControls);
