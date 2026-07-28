@@ -103,7 +103,14 @@ export default function MobileContextToolbar({
   onAdjustmentChange,
   onResetImageAdjustments,
 }: MobileContextToolbarProps) {
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
   const controlsRef = useRef<HTMLDivElement | null>(null);
+  const canvasItemTapRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
+  const revealFrameRef = useRef<number | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -130,15 +137,72 @@ export default function MobileContextToolbar({
     updateScrollControls();
   }, [updateScrollControls]);
 
+  const revealToolbarInVisualViewport = useCallback(() => {
+    const toolbar = toolbarRef.current;
+
+    if (
+      !toolbar ||
+      !window.matchMedia("(max-width: 767px)").matches
+    ) {
+      return;
+    }
+
+    const visualViewport = window.visualViewport;
+    const visibleTop = visualViewport?.offsetTop ?? 0;
+    const visibleHeight = visualViewport?.height ?? window.innerHeight;
+    const visibleBottom = visibleTop + visibleHeight;
+    const toolbarBounds = toolbar.getBoundingClientRect();
+    const scrollMarginTop =
+      Number.parseFloat(getComputedStyle(toolbar).scrollMarginTop) || 0;
+    const desiredTop = visibleTop + scrollMarginTop;
+    const bottomClearance = Math.min(scrollMarginTop, visibleHeight * 0.05);
+    const desiredBottom = visibleBottom - bottomClearance;
+    let scrollDelta = 0;
+
+    if (toolbarBounds.top < desiredTop) {
+      scrollDelta = toolbarBounds.top - desiredTop;
+    } else if (toolbarBounds.bottom > desiredBottom) {
+      scrollDelta = toolbarBounds.bottom - desiredBottom;
+    }
+
+    if (Math.abs(scrollDelta) > 1) {
+      window.scrollBy({
+        top: scrollDelta,
+        left: 0,
+        behavior: "auto",
+      });
+    }
+  }, []);
+
+  const revealToolbarAfterLayout = useCallback(() => {
+    revealToolbarInVisualViewport();
+
+    if (revealFrameRef.current !== null) {
+      cancelAnimationFrame(revealFrameRef.current);
+    }
+
+    revealFrameRef.current = requestAnimationFrame(() => {
+      revealFrameRef.current = null;
+      revealToolbarInVisualViewport();
+    });
+  }, [revealToolbarInVisualViewport]);
+
   useLayoutEffect(() => {
     if (!window.matchMedia("(max-width: 767px)").matches) return;
 
     resetControlsScroll();
-  }, [item.id, item.type, resetControlsScroll]);
+    revealToolbarAfterLayout();
+  }, [
+    item.id,
+    item.type,
+    resetControlsScroll,
+    revealToolbarAfterLayout,
+  ]);
 
   useEffect(() => {
-    const resetWhenSelectedItemIsPressed = (event: PointerEvent) => {
+    const startCanvasItemTap = (event: PointerEvent) => {
       if (!window.matchMedia("(max-width: 767px)").matches) return;
+      if (!event.isPrimary) return;
 
       const canvasItem =
         event.target instanceof Element
@@ -148,22 +212,65 @@ export default function MobileContextToolbar({
       if (!canvasItem) return;
 
       resetControlsScroll();
+      canvasItemTapRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+      };
     };
 
-    document.addEventListener(
-      "pointerdown",
-      resetWhenSelectedItemIsPressed,
-      true
-    );
+    const trackCanvasItemTap = (event: PointerEvent) => {
+      const candidate = canvasItemTapRef.current;
+
+      if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+      if (
+        Math.abs(event.clientX - candidate.startX) > 5 ||
+        Math.abs(event.clientY - candidate.startY) > 5
+      ) {
+        canvasItemTapRef.current = null;
+      }
+    };
+
+    const finishCanvasItemTap = (event: PointerEvent) => {
+      const candidate = canvasItemTapRef.current;
+
+      canvasItemTapRef.current = null;
+
+      if (!candidate || candidate.pointerId !== event.pointerId) return;
+
+      revealToolbarAfterLayout();
+    };
+
+    const cancelCanvasItemTap = () => {
+      canvasItemTapRef.current = null;
+    };
+
+    document.addEventListener("pointerdown", startCanvasItemTap, true);
+    document.addEventListener("pointermove", trackCanvasItemTap, true);
+    document.addEventListener("pointerup", finishCanvasItemTap, true);
+    document.addEventListener("pointercancel", cancelCanvasItemTap, true);
 
     return () => {
+      document.removeEventListener("pointerdown", startCanvasItemTap, true);
+      document.removeEventListener("pointermove", trackCanvasItemTap, true);
+      document.removeEventListener("pointerup", finishCanvasItemTap, true);
       document.removeEventListener(
-        "pointerdown",
-        resetWhenSelectedItemIsPressed,
+        "pointercancel",
+        cancelCanvasItemTap,
         true
       );
     };
-  }, [resetControlsScroll]);
+  }, [resetControlsScroll, revealToolbarAfterLayout]);
+
+  useEffect(
+    () => () => {
+      if (revealFrameRef.current !== null) {
+        cancelAnimationFrame(revealFrameRef.current);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const frame = requestAnimationFrame(updateScrollControls);
@@ -195,6 +302,7 @@ export default function MobileContextToolbar({
 
   return (
     <div
+      ref={toolbarRef}
       data-editor-retain-selection
       data-editor-keep-zoom-hud-open
       data-mobile-context-toolbar
@@ -206,6 +314,7 @@ export default function MobileContextToolbar({
       onPointerUp={(event) => event.stopPropagation()}
       className="relative z-40 mb-4 flex w-full min-w-0 flex-col gap-2 md:hidden"
       style={{
+        scrollMarginTop: "max(0.75rem, env(safe-area-inset-top))",
         WebkitUserSelect: "none",
         userSelect: "none",
       }}
