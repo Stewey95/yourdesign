@@ -1,5 +1,5 @@
 import type { ProjectRecord } from "./projects.types";
-import type { DesignItem, ImageDesignItem, ShapeKind } from "../../components/editor/editor.types";
+import type { DesignItem } from "../../components/editor/editor.types";
 import {
   DEFAULT_DESKTOP_CANVAS_PRESET_ID,
   getCanvasPreset,
@@ -9,157 +9,72 @@ import {
   type CanvasSize,
 } from "../../components/editor/editor.constants";
 import {
-  getDefaultShapeStyle,
-  SHAPE_DEFAULT_SIZES,
-} from "../../components/editor/shape.constants";
+  prepareDesignItemsForStorage,
+  restoreStoredDesignItems,
+  type StoredDesignItem,
+} from "../persistence/designItemStorage";
+import {
+  completeEditorTransaction,
+  openEditorDatabase,
+  PROJECTS_STORE_NAME,
+} from "../persistence/editorDatabase";
 
-const DATABASE_NAME = "genvilo-editor";
-const DATABASE_VERSION = 2;
-const DRAFT_STORE = "drafts";
-const PROJECTS_STORE = "projects";
 const ACTIVE_PROJECT_KEY = "gripix_active_project_id";
-
-type StoredImageItem = Omit<ImageDesignItem, "src"> & {
-  src: string | Blob;
-};
-
-type StoredDesignItem = Exclude<DesignItem, ImageDesignItem> | StoredImageItem;
 
 type StoredProjectRecord = Omit<ProjectRecord, "items"> & {
   items: StoredDesignItem[];
 };
 
-let databasePromise: Promise<IDBDatabase> | null = null;
 let saveQueue: Promise<void> = Promise.resolve();
 
-const openDatabase = (): Promise<IDBDatabase> => {
-  if (databasePromise) return databasePromise;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === "object";
 
-  databasePromise = new Promise<IDBDatabase>((resolve, reject) => {
-    if (typeof window === "undefined" || !("indexedDB" in window)) {
-      reject(new Error("IndexedDB is not supported in this environment."));
-      return;
-    }
-
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-
-    request.addEventListener("upgradeneeded", () => {
-      const database = request.result;
-
-      if (!database.objectStoreNames.contains(DRAFT_STORE)) {
-        database.createObjectStore(DRAFT_STORE, { keyPath: "key" });
-      }
-      if (!database.objectStoreNames.contains(PROJECTS_STORE)) {
-        database.createObjectStore(PROJECTS_STORE, { keyPath: "id" });
-      }
-    });
-
-    request.addEventListener("success", () => resolve(request.result));
-    request.addEventListener("error", () => reject(request.error));
-  });
-
-  return databasePromise;
-};
-
-const completeTransaction = (transaction: IDBTransaction) =>
-  new Promise<void>((resolve, reject) => {
-    transaction.addEventListener("complete", () => resolve());
-    transaction.addEventListener("abort", () => reject(transaction.error));
-    transaction.addEventListener("error", () => reject(transaction.error));
-  });
-
-const readBlobAsDataUrl = (blob: Blob) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-      reject(new Error("Image blob conversion failed."));
-    });
-    reader.addEventListener("error", () => reject(reader.error));
-    reader.readAsDataURL(blob);
-  });
-
-const prepareImageSource = async (source: string) => {
-  if (!source.startsWith("blob:")) return source;
-  try {
-    const response = await fetch(source);
-    if (!response.ok) return source;
-    return await readBlobAsDataUrl(await response.blob());
-  } catch {
-    return source;
+const restoreProjectRecord = async (
+  raw: unknown
+): Promise<ProjectRecord | null> => {
+  if (
+    !isRecord(raw) ||
+    typeof raw.id !== "string" ||
+    raw.id.length === 0
+  ) {
+    return null;
   }
+
+  const presetIsKnown = isCanvasPresetId(raw.presetId);
+  const presetId: CanvasPresetId = presetIsKnown
+    ? (raw.presetId as CanvasPresetId)
+    : isValidCanvasSize(raw.canvasSize)
+      ? "custom"
+      : DEFAULT_DESKTOP_CANVAS_PRESET_ID;
+  const fallbackPreset = getCanvasPreset(presetId);
+  const canvasSize: CanvasSize = isValidCanvasSize(raw.canvasSize)
+    ? raw.canvasSize
+    : { width: fallbackPreset.width, height: fallbackPreset.height };
+  const items = await restoreStoredDesignItems(raw.items);
+  const now = Date.now();
+
+  return {
+    id: raw.id,
+    title:
+      typeof raw.title === "string" && raw.title.trim()
+        ? raw.title
+        : "Untitled Design",
+    presetId,
+    canvasSize,
+    items,
+    createdAt:
+      typeof raw.createdAt === "number" &&
+      Number.isFinite(raw.createdAt)
+        ? raw.createdAt
+        : now,
+    updatedAt:
+      typeof raw.updatedAt === "number" &&
+      Number.isFinite(raw.updatedAt)
+        ? raw.updatedAt
+        : now,
+  };
 };
-
-const prepareItemsForStorage = (items: DesignItem[]) =>
-  Promise.all(
-    items.map(async (item): Promise<StoredDesignItem> =>
-      item.type === "image"
-        ? { ...item, src: await prepareImageSource(item.src) }
-        : item
-    )
-  );
-
-const isShapeKind = (value: unknown): value is ShapeKind =>
-  value === "rectangle" ||
-  value === "roundedRectangle" ||
-  value === "circle" ||
-  value === "triangle" ||
-  value === "star" ||
-  value === "line" ||
-  value === "arrow";
-
-const restoreStoredItems = (storedItems: StoredDesignItem[]): Promise<DesignItem[]> =>
-  Promise.all(
-    storedItems.map(async (item): Promise<DesignItem> => {
-      const hidden = item.hidden === true;
-      const locked = item.locked === true;
-
-      if (item.type === "shape") {
-        const shapeKind = isShapeKind(item.shapeKind)
-          ? item.shapeKind
-          : "rectangle";
-        const defaults = getDefaultShapeStyle(shapeKind);
-        const size = item.size ?? SHAPE_DEFAULT_SIZES[shapeKind];
-
-        return {
-          ...item,
-          type: "shape",
-          shapeKind,
-          hidden,
-          locked,
-          size,
-          fill:
-            typeof item.fill === "string" || item.fill === null
-              ? item.fill
-              : defaults.fill,
-          stroke:
-            typeof item.stroke === "string" || item.stroke === null
-              ? item.stroke
-              : defaults.stroke,
-          strokeWidth:
-            typeof item.strokeWidth === "number" &&
-            Number.isFinite(item.strokeWidth) &&
-            item.strokeWidth >= 0
-              ? item.strokeWidth
-              : defaults.strokeWidth,
-        };
-      }
-
-      if (item.type !== "image" || typeof item.src === "string") {
-        return { ...item, hidden, locked } as DesignItem;
-      }
-
-      return {
-        ...item,
-        hidden,
-        locked,
-        src: await readBlobAsDataUrl(item.src),
-      };
-    })
-  );
 
 export const getActiveProjectId = (): string | null => {
   if (typeof window === "undefined") return null;
@@ -177,9 +92,12 @@ export const setActiveProjectId = (id: string | null): void => {
 
 export async function getAllProjects(): Promise<ProjectRecord[]> {
   try {
-    const database = await openDatabase();
-    const transaction = database.transaction(PROJECTS_STORE, "readonly");
-    const store = transaction.objectStore(PROJECTS_STORE);
+    const database = await openEditorDatabase();
+    const transaction = database.transaction(
+      PROJECTS_STORE_NAME,
+      "readonly"
+    );
+    const store = transaction.objectStore(PROJECTS_STORE_NAME);
     const request = store.getAll();
 
     const rawRecords = await new Promise<unknown[]>((resolve, reject) => {
@@ -187,35 +105,15 @@ export async function getAllProjects(): Promise<ProjectRecord[]> {
       request.addEventListener("error", () => reject(request.error));
     });
 
-    await completeTransaction(transaction);
+    await completeEditorTransaction(transaction);
 
-    const projects = await Promise.all(
-      rawRecords.map(async (raw): Promise<ProjectRecord> => {
-        const record = raw as StoredProjectRecord;
-        const presetIsKnown = isCanvasPresetId(record.presetId);
-        const presetId: CanvasPresetId = presetIsKnown
-          ? (record.presetId as CanvasPresetId)
-          : DEFAULT_DESKTOP_CANVAS_PRESET_ID;
-        const fallbackPreset = getCanvasPreset(presetId);
-        const canvasSize: CanvasSize = isValidCanvasSize(record.canvasSize)
-          ? record.canvasSize
-          : { width: fallbackPreset.width, height: fallbackPreset.height };
-
-        const items = await restoreStoredItems(record.items || []);
-
-        return {
-          id: record.id,
-          title: record.title || "Untitled Design",
-          presetId,
-          canvasSize,
-          items,
-          createdAt: record.createdAt || Date.now(),
-          updatedAt: record.updatedAt || Date.now(),
-        };
-      })
+    const restoredProjects = await Promise.all(
+      rawRecords.map(restoreProjectRecord)
     );
 
-    return projects.sort((a, b) => b.updatedAt - a.updatedAt);
+    return restoredProjects
+      .filter((project): project is ProjectRecord => project !== null)
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   } catch (error) {
     console.error("Failed to load projects from IndexedDB:", error);
     return [];
@@ -224,9 +122,12 @@ export async function getAllProjects(): Promise<ProjectRecord[]> {
 
 export async function getProject(id: string): Promise<ProjectRecord | null> {
   try {
-    const database = await openDatabase();
-    const transaction = database.transaction(PROJECTS_STORE, "readonly");
-    const store = transaction.objectStore(PROJECTS_STORE);
+    const database = await openEditorDatabase();
+    const transaction = database.transaction(
+      PROJECTS_STORE_NAME,
+      "readonly"
+    );
+    const store = transaction.objectStore(PROJECTS_STORE_NAME);
     const request = store.get(id);
 
     const raw = await new Promise<unknown>((resolve, reject) => {
@@ -234,31 +135,11 @@ export async function getProject(id: string): Promise<ProjectRecord | null> {
       request.addEventListener("error", () => reject(request.error));
     });
 
-    await completeTransaction(transaction);
+    await completeEditorTransaction(transaction);
 
     if (!raw) return null;
 
-    const record = raw as StoredProjectRecord;
-    const presetIsKnown = isCanvasPresetId(record.presetId);
-    const presetId: CanvasPresetId = presetIsKnown
-      ? (record.presetId as CanvasPresetId)
-      : DEFAULT_DESKTOP_CANVAS_PRESET_ID;
-    const fallbackPreset = getCanvasPreset(presetId);
-    const canvasSize: CanvasSize = isValidCanvasSize(record.canvasSize)
-      ? record.canvasSize
-      : { width: fallbackPreset.width, height: fallbackPreset.height };
-
-    const items = await restoreStoredItems(record.items || []);
-
-    return {
-      id: record.id,
-      title: record.title || "Untitled Design",
-      presetId,
-      canvasSize,
-      items,
-      createdAt: record.createdAt || Date.now(),
-      updatedAt: record.updatedAt || Date.now(),
-    };
+    return restoreProjectRecord(raw);
   } catch {
     return null;
   }
@@ -268,15 +149,20 @@ export async function saveProject(project: ProjectRecord): Promise<void> {
   saveQueue = saveQueue
     .catch(() => undefined)
     .then(async () => {
-      const database = await openDatabase();
+      const database = await openEditorDatabase();
       const storedProject: StoredProjectRecord = {
         ...project,
-        items: await prepareItemsForStorage(project.items),
+        items: await prepareDesignItemsForStorage(project.items),
         updatedAt: Date.now(),
       };
-      const transaction = database.transaction(PROJECTS_STORE, "readwrite");
-      transaction.objectStore(PROJECTS_STORE).put(storedProject);
-      await completeTransaction(transaction);
+      const transaction = database.transaction(
+        PROJECTS_STORE_NAME,
+        "readwrite"
+      );
+      transaction
+        .objectStore(PROJECTS_STORE_NAME)
+        .put(storedProject);
+      await completeEditorTransaction(transaction);
     });
 
   return saveQueue;
@@ -349,10 +235,13 @@ export async function renameProject(
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const database = await openDatabase();
-  const transaction = database.transaction(PROJECTS_STORE, "readwrite");
-  transaction.objectStore(PROJECTS_STORE).delete(id);
-  await completeTransaction(transaction);
+  const database = await openEditorDatabase();
+  const transaction = database.transaction(
+    PROJECTS_STORE_NAME,
+    "readwrite"
+  );
+  transaction.objectStore(PROJECTS_STORE_NAME).delete(id);
+  await completeEditorTransaction(transaction);
 
   if (getActiveProjectId() === id) {
     setActiveProjectId(null);

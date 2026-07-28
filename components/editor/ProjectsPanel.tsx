@@ -21,6 +21,7 @@ import ProjectThumbnail from "./ProjectThumbnail";
 
 type ProjectsPanelProps = {
   activeProjectId: string | null;
+  projectTitle?: string;
   onSelectProject: (project: ProjectRecord) => void;
   onNewProject: () => void;
 };
@@ -38,6 +39,7 @@ function formatTimeAgo(timestamp: number): string {
 
 export default function ProjectsPanel({
   activeProjectId,
+  projectTitle,
   onSelectProject,
   onNewProject,
 }: ProjectsPanelProps) {
@@ -65,7 +67,7 @@ export default function ProjectsPanel({
     return () => {
       active = false;
     };
-  }, [activeProjectId]);
+  }, [activeProjectId, projectTitle]);
 
   const filteredProjects = useMemo(() => {
     if (!searchQuery.trim()) return projects;

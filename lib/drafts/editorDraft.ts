@@ -1,8 +1,4 @@
-import type {
-  DesignItem,
-  ImageDesignItem,
-  ShapeKind,
-} from "../../components/editor/editor.types";
+import type { DesignItem } from "../../components/editor/editor.types";
 import {
   DEFAULT_DESKTOP_CANVAS_PRESET_ID,
   getCanvasPreset,
@@ -12,21 +8,18 @@ import {
   type CanvasSize,
 } from "../../components/editor/editor.constants";
 import {
-  getDefaultShapeStyle,
-  SHAPE_DEFAULT_SIZES,
-} from "../../components/editor/shape.constants";
+  prepareDesignItemsForStorage,
+  restoreStoredDesignItems,
+  type StoredDesignItem,
+} from "../persistence/designItemStorage";
+import {
+  completeEditorTransaction,
+  DRAFT_STORE_NAME,
+  openEditorDatabase,
+} from "../persistence/editorDatabase";
 
-const DATABASE_NAME = "genvilo-editor";
-const DATABASE_VERSION = 1;
-const DRAFT_STORE = "drafts";
 const CURRENT_DRAFT_KEY = "current-design";
 const DRAFT_VERSION = 2;
-
-type StoredImageItem = Omit<ImageDesignItem, "src"> & {
-  src: string | Blob;
-};
-
-type StoredDesignItem = Exclude<DesignItem, ImageDesignItem> | StoredImageItem;
 
 type StoredEditorDraft = {
   key: typeof CURRENT_DRAFT_KEY;
@@ -47,85 +40,11 @@ export type RestoredEditorDraft = EditorDraft & {
   release: () => void;
 };
 
-let databasePromise: Promise<IDBDatabase> | null = null;
 let saveQueue: Promise<void> = Promise.resolve();
 let lastSavedSignature: string | null = null;
 const pendingSignatures = new Set<string>();
 
-const openDraftDatabase = () => {
-  if (databasePromise) return databasePromise;
-
-  databasePromise = new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-
-    request.addEventListener("upgradeneeded", () => {
-      const database = request.result;
-
-      if (!database.objectStoreNames.contains(DRAFT_STORE)) {
-        database.createObjectStore(DRAFT_STORE, { keyPath: "key" });
-      }
-    });
-    request.addEventListener("success", () => resolve(request.result));
-    request.addEventListener("error", () => reject(request.error));
-  });
-
-  return databasePromise;
-};
-
-const completeTransaction = (transaction: IDBTransaction) =>
-  new Promise<void>((resolve, reject) => {
-    transaction.addEventListener("complete", () => resolve());
-    transaction.addEventListener("abort", () => reject(transaction.error));
-    transaction.addEventListener("error", () => reject(transaction.error));
-  });
-
 const createSignature = (draft: EditorDraft) => JSON.stringify(draft);
-
-const readBlobAsDataUrl = (blob: Blob) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.addEventListener("load", () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new Error("An uploaded image could not be prepared."));
-    });
-    reader.addEventListener("error", () => reject(reader.error));
-    reader.readAsDataURL(blob);
-  });
-
-const prepareImageSource = async (source: string) => {
-  if (!source.startsWith("blob:")) return source;
-
-  const response = await fetch(source);
-
-  if (!response.ok) {
-    throw new Error("An uploaded image could not be saved to the draft.");
-  }
-
-  return readBlobAsDataUrl(await response.blob());
-};
-
-const prepareItems = (items: DesignItem[]) =>
-  Promise.all(
-    items.map(async (item): Promise<StoredDesignItem> =>
-      item.type === "image"
-        ? { ...item, src: await prepareImageSource(item.src) }
-        : item
-    )
-  );
-
-const isShapeKind = (value: unknown): value is ShapeKind =>
-  value === "rectangle" ||
-  value === "roundedRectangle" ||
-  value === "circle" ||
-  value === "triangle" ||
-  value === "star" ||
-  value === "line" ||
-  value === "arrow";
 
 const isStoredDraft = (value: unknown): value is StoredEditorDraft => {
   if (!value || typeof value !== "object") return false;
@@ -154,19 +73,22 @@ export const saveEditorDraft = (draft: EditorDraft) => {
   saveQueue = saveQueue
     .catch(() => undefined)
     .then(async () => {
-      const database = await openDraftDatabase();
+      const database = await openEditorDatabase();
       const storedDraft: StoredEditorDraft = {
         key: CURRENT_DRAFT_KEY,
         version: DRAFT_VERSION,
         presetId: draft.presetId,
         canvasSize: draft.canvasSize,
-        items: await prepareItems(draft.items),
+        items: await prepareDesignItemsForStorage(draft.items),
         savedAt: Date.now(),
       };
-      const transaction = database.transaction(DRAFT_STORE, "readwrite");
+      const transaction = database.transaction(
+        DRAFT_STORE_NAME,
+        "readwrite"
+      );
 
-      transaction.objectStore(DRAFT_STORE).put(storedDraft);
-      await completeTransaction(transaction);
+      transaction.objectStore(DRAFT_STORE_NAME).put(storedDraft);
+      await completeEditorTransaction(transaction);
       lastSavedSignature = signature;
     })
     .finally(() => {
@@ -183,7 +105,7 @@ export const resetEditorDraft = (draft: EditorDraft) => {
   saveQueue = saveQueue
     .catch(() => undefined)
     .then(async () => {
-      const database = await openDraftDatabase();
+      const database = await openEditorDatabase();
       const storedDraft: StoredEditorDraft = {
         key: CURRENT_DRAFT_KEY,
         version: DRAFT_VERSION,
@@ -192,12 +114,15 @@ export const resetEditorDraft = (draft: EditorDraft) => {
         items: [],
         savedAt: Date.now(),
       };
-      const transaction = database.transaction(DRAFT_STORE, "readwrite");
-      const store = transaction.objectStore(DRAFT_STORE);
+      const transaction = database.transaction(
+        DRAFT_STORE_NAME,
+        "readwrite"
+      );
+      const store = transaction.objectStore(DRAFT_STORE_NAME);
 
       store.delete(CURRENT_DRAFT_KEY);
       store.put(storedDraft);
-      await completeTransaction(transaction);
+      await completeEditorTransaction(transaction);
       lastSavedSignature = signature;
     })
     .finally(() => {
@@ -208,66 +133,24 @@ export const resetEditorDraft = (draft: EditorDraft) => {
 };
 
 export async function loadEditorDraft(): Promise<RestoredEditorDraft | null> {
-  const database = await openDraftDatabase();
-  const transaction = database.transaction(DRAFT_STORE, "readonly");
-  const request = transaction.objectStore(DRAFT_STORE).get(CURRENT_DRAFT_KEY);
+  const database = await openEditorDatabase();
+  const transaction = database.transaction(
+    DRAFT_STORE_NAME,
+    "readonly"
+  );
+  const request = transaction
+    .objectStore(DRAFT_STORE_NAME)
+    .get(CURRENT_DRAFT_KEY);
   const storedDraft = await new Promise<unknown>((resolve, reject) => {
     request.addEventListener("success", () => resolve(request.result));
     request.addEventListener("error", () => reject(request.error));
   });
 
-  await completeTransaction(transaction);
+  await completeEditorTransaction(transaction);
 
   if (!isStoredDraft(storedDraft)) return null;
 
-  const items = await Promise.all(
-    storedDraft.items.map(async (item): Promise<DesignItem> => {
-      const hidden = item.hidden === true;
-      const locked = item.locked === true;
-
-      if (item.type === "shape") {
-        const shapeKind = isShapeKind(item.shapeKind)
-          ? item.shapeKind
-          : "rectangle";
-        const defaults = getDefaultShapeStyle(shapeKind);
-        const size = item.size ?? SHAPE_DEFAULT_SIZES[shapeKind];
-
-        return {
-          ...item,
-          type: "shape",
-          shapeKind,
-          hidden,
-          locked,
-          size,
-          fill:
-            typeof item.fill === "string" || item.fill === null
-              ? item.fill
-              : defaults.fill,
-          stroke:
-            typeof item.stroke === "string" || item.stroke === null
-              ? item.stroke
-              : defaults.stroke,
-          strokeWidth:
-            typeof item.strokeWidth === "number" &&
-            Number.isFinite(item.strokeWidth) &&
-            item.strokeWidth >= 0
-              ? item.strokeWidth
-              : defaults.strokeWidth,
-        };
-      }
-
-      if (item.type !== "image" || typeof item.src === "string") {
-        return { ...item, hidden, locked } as DesignItem;
-      }
-
-      return {
-        ...item,
-        hidden,
-        locked,
-        src: await readBlobAsDataUrl(item.src),
-      };
-    })
-  );
+  const items = await restoreStoredDesignItems(storedDraft.items);
 
   const presetIsKnown = isCanvasPresetId(storedDraft.presetId);
   const storedPresetId: CanvasPresetId = presetIsKnown

@@ -69,7 +69,6 @@ import {
   createProject,
   getAllProjects,
   getProject,
-  renameProject,
   saveProject,
   getActiveProjectId,
   setActiveProjectId,
@@ -184,6 +183,7 @@ export default function EditorPreview({
   const hasUserSelectedCanvasPresetRef = useRef(false);
   const draftSaveTimerRef = useRef<number | null>(null);
   const draftSaveGenerationRef = useRef(0);
+  const projectSwitchRequestRef = useRef(0);
   const latestItemsRef = useRef(items);
   const canvasItems = useMemo(
     () =>
@@ -845,7 +845,48 @@ const getSnappedPosition = (
   }, [commitItems, selectedItemId]);
 
   const handleSelectProject = useCallback(
-    (project: ProjectRecord) => {
+    async (project: ProjectRecord) => {
+      if (project.id === activeProject?.id) return;
+
+      const switchRequest = projectSwitchRequestRef.current + 1;
+      projectSwitchRequestRef.current = switchRequest;
+
+      if (activeProject) {
+        try {
+          await saveProject({
+            ...activeProject,
+            title: projectTitle,
+            presetId: selectedCanvasPresetId,
+            canvasSize: {
+              width: canvasSize.width,
+              height: canvasSize.height,
+            },
+            items: latestItemsRef.current,
+            updatedAt: Date.now(),
+          });
+        } catch (error) {
+          console.warn(
+            "The current project could not be saved before switching.",
+            error
+          );
+          setDraftSaveError(
+            "This design could not be saved, so Gripix kept it open."
+          );
+          return;
+        }
+      }
+
+      const freshProject = await getProject(project.id);
+
+      if (projectSwitchRequestRef.current !== switchRequest) return;
+
+      if (!freshProject) {
+        setDraftSaveError(
+          "That saved project could not be opened. Your current design is still safe."
+        );
+        return;
+      }
+
       activeResizeCleanupRef.current?.();
       activeResizeCleanupRef.current = null;
       pendingDragRef.current = null;
@@ -856,17 +897,19 @@ const getSnappedPosition = (
       pageInteractionRef.current = null;
       justPinchedRef.current = false;
 
-      setActiveProject(project);
-      setProjectTitle(project.title);
-      setActiveProjectId(project.id);
+      latestItemsRef.current = freshProject.items;
+      setActiveProject(freshProject);
+      setProjectTitle(freshProject.title);
+      setActiveProjectId(freshProject.id);
+      setDraftSaveError(null);
 
       hasUserSelectedCanvasPresetRef.current = true;
       restoreDesign({
-        items: project.items,
+        items: freshProject.items,
         canvas: {
-          presetId: project.presetId,
-          width: project.canvasSize.width,
-          height: project.canvasSize.height,
+          presetId: freshProject.presetId,
+          width: freshProject.canvasSize.width,
+          height: freshProject.canvasSize.height,
         },
       });
 
@@ -878,7 +921,7 @@ const getSnappedPosition = (
       setShowImageAdjustments(false);
       setCanvasPresetFitRequest((request) => request + 1);
     },
-    [restoreDesign]
+    [activeProject, canvasSize.height, canvasSize.width, projectTitle, restoreDesign, selectedCanvasPresetId]
   );
 
   const handleTitleChange = useCallback(
@@ -886,11 +929,22 @@ const getSnappedPosition = (
       const trimmed = newTitle.trim() || "Untitled Design";
       setProjectTitle(trimmed);
       if (activeProject) {
-        setActiveProject((prev) => (prev ? { ...prev, title: trimmed } : null));
-        void renameProject(activeProject.id, trimmed);
+        const updated = {
+          ...activeProject,
+          title: trimmed,
+          presetId: selectedCanvasPresetId,
+          canvasSize: {
+            width: canvasSize.width,
+            height: canvasSize.height,
+          },
+          items: latestItemsRef.current,
+          updatedAt: Date.now(),
+        };
+        setActiveProject(updated);
+        void saveProject(updated);
       }
     },
-    [activeProject]
+    [activeProject, canvasSize.height, canvasSize.width, selectedCanvasPresetId]
   );
 
   const startNewDesign = async () => {
@@ -906,6 +960,20 @@ const getSnappedPosition = (
     }
 
     try {
+      if (activeProject) {
+        await saveProject({
+          ...activeProject,
+          title: projectTitle,
+          presetId: selectedCanvasPresetId,
+          canvasSize: {
+            width: canvasSize.width,
+            height: canvasSize.height,
+          },
+          items: latestItemsRef.current,
+          updatedAt: Date.now(),
+        });
+      }
+
       const defaultPreset = getCanvasPreset(selectedCanvasPresetId);
       const newProj = await createProject(
         "Untitled Design",
@@ -2413,6 +2481,7 @@ if (direction === "back") {
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}
           activeProjectId={activeProject?.id ?? null}
+          projectTitle={projectTitle}
           onSelectProject={handleSelectProject}
           onNewProject={() => {
             setNewDesignError(null);
