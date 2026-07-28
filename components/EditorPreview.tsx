@@ -88,6 +88,8 @@ type ItemsUpdate =
   | DesignItem[]
   | ((currentItems: DesignItem[]) => DesignItem[]);
 
+type MobileContextScrollTarget = "toolbar" | "image-adjustments";
+
 const initialCanvasPreset = getCanvasPreset(
   DEFAULT_DESKTOP_CANVAS_PRESET_ID
 );
@@ -169,6 +171,11 @@ export default function EditorPreview({
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
     useState(0);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<ToolbarPanel>(null);
+  const [mobileContextScrollRequest, setMobileContextScrollRequest] =
+    useState<{
+      id: number;
+      target: MobileContextScrollTarget;
+    } | null>(null);
   const [alignmentGuides, setAlignmentGuides] = useState({
   vertical: false,
   horizontal: false,
@@ -184,6 +191,7 @@ export default function EditorPreview({
   const draftSaveTimerRef = useRef<number | null>(null);
   const draftSaveGenerationRef = useRef(0);
   const projectSwitchRequestRef = useRef(0);
+  const mobileContextScrollRequestIdRef = useRef(0);
   const latestItemsRef = useRef(items);
   const canvasItems = useMemo(
     () =>
@@ -204,6 +212,51 @@ export default function EditorPreview({
   useEffect(() => {
     latestItemsRef.current = items;
   }, [items]);
+
+  const returnToMobileContext = useCallback(
+    (target: MobileContextScrollTarget = "toolbar") => {
+      if (!window.matchMedia("(max-width: 767px)").matches) {
+        return false;
+      }
+
+      setActiveToolbarPanel(null);
+      setShowMobileContextToolbar(true);
+      setMobileContextScrollRequest({
+        id: ++mobileContextScrollRequestIdRef.current,
+        target,
+      });
+      return true;
+    },
+    []
+  );
+
+  useLayoutEffect(() => {
+    if (
+      !mobileContextScrollRequest ||
+      !window.matchMedia("(max-width: 767px)").matches
+    ) {
+      return;
+    }
+
+    const selector =
+      mobileContextScrollRequest.target === "image-adjustments"
+        ? "[data-mobile-image-adjustments]"
+        : "[data-mobile-context-toolbar]";
+    const target =
+      editorShellRef.current?.querySelector<HTMLElement>(selector);
+
+    if (!target) return;
+
+    target.scrollIntoView({
+      behavior: window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+      inline: "nearest",
+    });
+  }, [mobileContextScrollRequest]);
 
   useLayoutEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 767px)");
@@ -1446,12 +1499,29 @@ const getSnappedPosition = (
       setEditingItemId(null);
       setShapeStyleItemId(null);
       setDraggingItemId(null);
-      setShowMobileContextToolbar(false);
       setShowImageAdjustments(false);
       hideAlignmentGuides();
       setCanvasPresetFitRequest((count) => count + 1);
+
+      const mobileSelection = [...freshItems]
+        .reverse()
+        .find(
+          (item) =>
+            item.hidden !== true &&
+            item.locked !== true
+        );
+
+      if (
+        mobileSelection &&
+        returnToMobileContext()
+      ) {
+        setSelectedItemId(mobileSelection.id);
+      } else {
+        setSelectedItemId(null);
+        setShowMobileContextToolbar(false);
+      }
     },
-    [commitDesign, hideAlignmentGuides]
+    [commitDesign, hideAlignmentGuides, returnToMobileContext]
   );
     const moveItemLayer = (
     id: string,
@@ -1863,6 +1933,7 @@ if (direction === "back") {
     setEditingItemId(null);
     setShowMobileContextToolbar(true);
     setShowImageAdjustments(false);
+    returnToMobileContext();
   };
 
   const deleteSelected = () => {
@@ -2349,15 +2420,7 @@ if (direction === "back") {
     const nextValue = !currentValue;
 
     if (nextValue) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          canvasRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-            inline: "nearest",
-          });
-        });
-      });
+      returnToMobileContext("image-adjustments");
     }
 
     return nextValue;

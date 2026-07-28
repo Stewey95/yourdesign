@@ -147,6 +147,7 @@ export default function MobileContextToolbar({
     <div
       data-editor-retain-selection
       data-editor-keep-zoom-hud-open
+      data-mobile-context-toolbar
       data-text-toolbar={item.type === "text" ? item.id : undefined}
       data-image-toolbar={item.type === "image" ? item.id : undefined}
       onDragStart={(event) => event.preventDefault()}
@@ -160,7 +161,7 @@ export default function MobileContextToolbar({
       }}
     >
       {!item.locked && item.type === "image" && showImageAdjustments && (
-        <MobileStylePanel>
+        <MobileStylePanel scrollTarget="image-adjustments">
           <div className="grid grid-cols-2 gap-3">
             <MobileAdjustmentSlider
               label="Brightness"
