@@ -2012,7 +2012,11 @@ if (direction === "back") {
     pointerType: string,
     sourceElement?: HTMLElement
   ) => {
-    if (pressedItem.type === "text" || !sourceElement) {
+    if (
+      pressedItem.id === selectedItemId ||
+      pressedItem.type === "text" ||
+      !sourceElement
+    ) {
       return pressedItem;
     }
 
@@ -2629,8 +2633,7 @@ if (direction === "back") {
             );
 
             if (!targetItem) {
-              setSelectedItemId(pressedItem.id);
-              setShowMobileContextToolbar(true);
+              clearSelection();
               return false;
             }
 
