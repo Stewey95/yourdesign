@@ -122,7 +122,7 @@ export default function ElementsPanel({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 max-w-full space-y-4">
       {/* Search Bar */}
       <label className="relative block">
         <span className="sr-only">Search elements</span>
@@ -188,7 +188,7 @@ export default function ElementsPanel({
             </button>
           )}
         </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
+        <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             aria-pressed={category === undefined}
@@ -256,7 +256,7 @@ export default function ElementsPanel({
           </div>
         ) : !query && !category ? (
           /* Grouped Categorized View when no search or filter active */
-          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1 [scrollbar-width:thin] md:max-h-none md:overflow-visible md:pr-0">
+          <div className="space-y-4 md:max-h-none md:overflow-visible md:pr-0">
             {ELEMENT_CATEGORIES.map((catName) => {
               const catItems = ELEMENT_CATALOG.filter(
                 (item) => item.category === catName
@@ -292,7 +292,7 @@ export default function ElementsPanel({
           </div>
         ) : (
           /* Flat Search / Filter Grid View */
-          <div className="grid max-h-[380px] grid-cols-3 gap-2 overflow-y-auto pr-1 [scrollbar-width:thin] md:max-h-none md:overflow-visible md:pr-0">
+          <div className="grid grid-cols-3 gap-2 md:max-h-none md:overflow-visible md:pr-0">
             {searchResult.items.map((element) => (
               <ElementCard
                 key={element.id}
@@ -372,7 +372,7 @@ function LibrarySectionHeader({
   onInsertElement,
 }: LibrarySectionHeaderProps) {
   return (
-    <div className="rounded-lg border border-white/10 bg-slate-900/50 p-2">
+    <div className="min-w-0 rounded-lg border border-white/10 bg-slate-900/50 p-2">
       <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1.5 min-w-0">
           <Icon size={13} aria-hidden="true" className="shrink-0 text-slate-400" />
@@ -386,7 +386,7 @@ function LibrarySectionHeader({
       </div>
 
       {count > 0 && (
-        <div className="mt-2 flex gap-1 overflow-x-auto pb-0.5 [scrollbar-width:none]">
+        <div className="mt-2 flex max-w-full gap-1 overflow-x-auto overscroll-x-contain pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {elements.slice(0, 5).map((element) => (
             <button
               key={element.id}

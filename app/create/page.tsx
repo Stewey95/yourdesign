@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function CreatePage() {
   return (
-    <main className="min-h-dvh bg-slate-950 text-white md:h-dvh md:overflow-hidden">
+    <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-slate-950 text-white md:h-dvh md:overflow-hidden">
       <EditorPreview fullScreen />
     </main>
   );

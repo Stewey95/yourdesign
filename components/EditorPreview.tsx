@@ -2473,7 +2473,7 @@ if (direction === "back") {
         ref={editorShellRef}
         className={
           fullScreen
-            ? "w-full overflow-hidden bg-white/5 p-2 shadow-2xl md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-2 md:pt-3"
+            ? "w-full max-w-full overflow-hidden bg-white/5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] shadow-2xl md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-2 md:pt-3"
             : "mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-2 md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
         }
         style={{ height: fullScreen ? undefined : desktopEditorHeight }}
@@ -2539,7 +2539,7 @@ if (direction === "back") {
         />
       )}
 
-      <div className="grid gap-4 md:min-h-0 md:flex-1 md:grid-cols-[190px_minmax(0,1fr)_180px] md:gap-2">
+      <div className="grid min-w-0 gap-4 md:min-h-0 md:flex-1 md:grid-cols-[190px_minmax(0,1fr)_180px] md:gap-2">
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}

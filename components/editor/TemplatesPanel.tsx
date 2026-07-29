@@ -45,15 +45,15 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
   );
 
   return (
-    <div className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-cyan-400" />
-          <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+    <div className="mt-3 min-w-0 max-w-full scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0">
+      <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Sparkles className="h-4 w-4 shrink-0 text-cyan-400" />
+          <p className="min-w-0 truncate text-xs font-bold uppercase tracking-widest text-cyan-400">
             Starter Templates
           </p>
         </div>
-        <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-semibold text-cyan-300 border border-cyan-500/30">
+        <span className="shrink-0 rounded-full border border-cyan-500/30 bg-cyan-500/20 px-2 py-0.5 text-xs font-semibold text-cyan-300">
           {templates.length}
         </span>
       </div>
@@ -80,7 +80,7 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
       </div>
 
       {/* Category Pills */}
-      <div className="mb-3 flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
+      <div className="mb-3 flex max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {CATEGORIES.map((cat) => {
           const isActive = selectedCategory === cat.id;
           const count = categoryCounts[cat.id];
@@ -129,7 +129,7 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
               <div
                 key={template.id}
                 onClick={() => onSelectTemplate(template)}
-                className="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-2.5 transition hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-lg active:scale-[0.99]"
+                className="group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-2.5 transition hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-lg active:scale-[0.99]"
               >
                 <div className="relative mb-2">
                   <TemplateThumbnail template={template} />
@@ -143,7 +143,7 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
 
                 <div className="flex flex-1 flex-col justify-between">
                   <div>
-                    <h4 className="text-xs font-bold text-slate-100 group-hover:text-cyan-300 transition">
+                    <h4 className="break-words text-xs font-bold text-slate-100 transition group-hover:text-cyan-300">
                       {template.name}
                     </h4>
                     <p className="mt-0.5 line-clamp-2 text-[11px] leading-tight text-slate-400">
@@ -151,15 +151,15 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
                     </p>
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2">
-                    <span className="text-[10px] font-medium text-slate-500">
+                  <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2">
+                    <span className="min-w-0 flex-1 break-words text-[10px] font-medium text-slate-500">
                       {template.width} × {template.height} • {preset?.label || template.presetId}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => onSelectTemplate(template)}
-                      className="rounded-lg bg-cyan-600 px-3 py-1 text-xs font-bold text-white shadow-sm transition hover:bg-cyan-500 active:scale-95"
+                      className="shrink-0 whitespace-nowrap rounded-lg bg-cyan-600 px-3 py-1 text-xs font-bold text-white shadow-sm transition hover:bg-cyan-500 active:scale-95"
                     >
                       Use Template
                     </button>
