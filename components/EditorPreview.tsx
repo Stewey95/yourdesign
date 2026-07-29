@@ -2543,7 +2543,7 @@ if (direction === "back") {
         />
       )}
 
-      <div className="grid min-w-0 gap-4 md:min-h-0 md:flex-1 md:grid-cols-[190px_minmax(0,1fr)_180px] md:gap-2">
+      <div className="grid min-w-0 gap-4 md:min-h-0 md:flex-1 md:grid-cols-[clamp(220px,18vw,260px)_minmax(0,1fr)_180px] md:gap-2">
         <EditorSidebar
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}

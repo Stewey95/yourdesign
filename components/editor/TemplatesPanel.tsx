@@ -80,7 +80,7 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
       </div>
 
       {/* Category Pills */}
-      <div className="mb-3 flex max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mb-3 flex max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] md:flex-wrap md:overflow-x-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
         {CATEGORIES.map((cat) => {
           const isActive = selectedCategory === cat.id;
           const count = categoryCounts[cat.id];
@@ -143,10 +143,10 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
 
                 <div className="flex flex-1 flex-col justify-between">
                   <div>
-                    <h4 className="break-words text-xs font-bold text-slate-100 transition group-hover:text-cyan-300">
+                    <h4 className="break-words text-xs font-bold text-slate-100 transition group-hover:text-cyan-300 md:text-sm">
                       {template.name}
                     </h4>
-                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-tight text-slate-400">
+                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-tight text-slate-400 md:leading-snug">
                       {template.description}
                     </p>
                   </div>

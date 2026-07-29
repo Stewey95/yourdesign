@@ -136,8 +136,8 @@ export default function ElementsPanel({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Search shapes, lines, symbols..."
-          className="h-10 w-full rounded-lg border border-white/10 bg-slate-900/70 pl-9 pr-8 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/30"
+          placeholder="Search elements..."
+          className="h-10 w-full rounded-lg border border-white/10 bg-slate-900/70 pl-9 pr-8 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/30 md:pl-8 md:text-[11px]"
         />
         {query && (
           <button
@@ -188,7 +188,7 @@ export default function ElementsPanel({
             </button>
           )}
         </div>
-        <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] md:flex-wrap md:overflow-x-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             aria-pressed={category === undefined}
@@ -263,14 +263,14 @@ export default function ElementsPanel({
               );
               return (
                 <div key={catName} className="space-y-2">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-1">
-                    <span className="text-[11px] font-semibold text-slate-300">
+                  <div className="flex min-w-0 items-center justify-between gap-2 border-b border-white/5 pb-1">
+                    <span className="min-w-0 text-[11px] font-semibold text-slate-300">
                       {catName}
                     </span>
                     <button
                       type="button"
                       onClick={() => setCategory(catName)}
-                      className="text-[10px] font-medium text-blue-400 hover:text-blue-300"
+                      className="shrink-0 whitespace-nowrap text-[10px] font-medium text-blue-400 hover:text-blue-300"
                     >
                       See all ({catItems.length})
                     </button>
@@ -292,7 +292,7 @@ export default function ElementsPanel({
           </div>
         ) : (
           /* Flat Search / Filter Grid View */
-          <div className="grid grid-cols-3 gap-2 md:max-h-none md:overflow-visible md:pr-0">
+          <div className="grid grid-cols-3 gap-2 md:max-h-none md:grid-cols-2 md:overflow-visible md:pr-0">
             {searchResult.items.map((element) => (
               <ElementCard
                 key={element.id}
@@ -337,7 +337,7 @@ function ElementCard({
           backgroundImage: `url("${getElementSvgDataUrl(element)}")`,
         }}
       />
-      <span className="block truncate text-[10px] font-semibold text-slate-200">
+      <span className="block truncate text-[10px] font-semibold leading-tight text-slate-200 md:line-clamp-2 md:min-h-[2.5em] md:whitespace-normal md:text-center md:text-[11px]">
         {element.name}
       </span>
       <button
