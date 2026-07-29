@@ -277,7 +277,7 @@ export default function FontPicker({
             role="listbox"
             aria-label="Fonts"
             onScroll={updateOverflowIndicators}
-            className="absolute inset-0 overflow-y-scroll overscroll-contain pr-1 [scrollbar-color:rgba(100,116,139,0.9)_rgba(30,41,59,0.7)] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-800/70"
+            className="editor-scrollbar absolute inset-0 overflow-y-scroll overscroll-contain pr-1"
           >
             {fonts.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm text-slate-400">

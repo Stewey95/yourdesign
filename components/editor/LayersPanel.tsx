@@ -143,7 +143,7 @@ export default function LayersPanel({
           <div
             ref={listRef}
             onScroll={updateOverflowIndicators}
-            className="h-full space-y-1 overflow-y-auto overscroll-contain pb-3 pr-1 [scrollbar-color:rgba(100,116,139,0.9)_rgba(30,41,59,0.7)] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-800/70"
+            className="editor-scrollbar h-full space-y-1 overflow-y-auto overscroll-contain pb-3 pr-1"
           >
           {visibleItems.map((layer) => {
             const selected = layer.id === selectedItemId;

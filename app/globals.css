@@ -9,6 +9,42 @@
   }
 }
 
+@layer utilities {
+  @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+    .editor-scrollbar {
+      scrollbar-color: rgb(100 116 139) rgb(15 23 42 / 0.55);
+      scrollbar-width: thin;
+    }
+
+    .editor-scrollbar:hover {
+      scrollbar-color: rgb(148 163 184) rgb(15 23 42 / 0.7);
+    }
+
+    .editor-scrollbar::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .editor-scrollbar::-webkit-scrollbar-track {
+      background: rgb(15 23 42 / 0.55);
+      border-radius: 9999px;
+    }
+
+    .editor-scrollbar::-webkit-scrollbar-thumb {
+      min-height: 32px;
+      border: 2px solid transparent;
+      border-radius: 9999px;
+      background: rgb(100 116 139);
+      background-clip: padding-box;
+    }
+
+    .editor-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgb(148 163 184);
+      background-clip: padding-box;
+    }
+  }
+}
+
 @keyframes zoom-feedback {
   0% {
     opacity: 0;

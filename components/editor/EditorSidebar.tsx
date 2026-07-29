@@ -183,7 +183,7 @@ export default function EditorSidebar({
 
       <div
         ref={scrollContainerRef}
-        className="min-w-0 max-w-full md:min-h-0 md:flex-1 md:overflow-y-auto md:pb-3 md:pr-1 md:[scrollbar-color:rgba(100,116,139,0.75)_rgba(15,23,42,0.35)] md:[scrollbar-width:thin] md:[&::-webkit-scrollbar]:w-1.5 md:[&::-webkit-scrollbar-track]:rounded-full md:[&::-webkit-scrollbar-track]:bg-slate-900/40 md:[&::-webkit-scrollbar-thumb]:rounded-full md:[&::-webkit-scrollbar-thumb]:bg-slate-500/70"
+        className="editor-scrollbar min-w-0 max-w-full md:min-h-0 md:flex-1 md:overflow-y-auto md:pb-3 md:pr-1"
       >
         {activeToolbarPanel === "projects" && (
           <div ref={projectsPanelRef}>

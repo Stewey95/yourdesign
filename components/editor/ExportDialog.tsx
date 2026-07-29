@@ -327,7 +327,7 @@ export default function ExportDialog({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 md:px-6 md:py-6">
+        <div className="editor-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 md:px-6 md:py-6">
           <section aria-labelledby="export-filename-label">
             <div className="mb-2 flex items-center justify-between gap-3">
               <label

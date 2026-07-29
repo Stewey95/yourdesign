@@ -1346,7 +1346,7 @@ export default function EditorCanvas({
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}
         onTouchCancelCapture={cancelTouchGesture}
-        className={`relative -mx-2 w-[calc(100%+1rem)] touch-pan-y overflow-hidden md:mx-0 md:min-h-0 md:w-full md:flex-1 md:touch-auto md:overscroll-none md:overflow-x-hidden md:px-2 md:pb-2 ${
+        className={`editor-scrollbar relative -mx-2 w-[calc(100%+1rem)] touch-pan-y overflow-hidden md:mx-0 md:min-h-0 md:w-full md:flex-1 md:touch-auto md:overscroll-none md:overflow-x-hidden md:px-2 md:pb-2 ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
             : "md:overflow-y-hidden"
