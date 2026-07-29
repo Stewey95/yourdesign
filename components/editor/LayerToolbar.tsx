@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsDown,
+  ChevronsUp,
+  type LucideIcon,
+} from "lucide-react";
+
 type LayerToolbarProps = {
   itemId: string;
   itemType: "image" | "text" | "shape";
@@ -34,32 +42,32 @@ export default function LayerToolbar({
       onPointerDown={(event) => event.stopPropagation()}
       onPointerMove={(event) => event.stopPropagation()}
       onPointerUp={(event) => event.stopPropagation()}
-      className="flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-slate-900/95 px-2 shadow-lg"
+      className="editor-toolbar-surface editor-motion flex h-10 items-center justify-center gap-1 px-1.5"
     >
       <LayerButton
         label="Send Backward"
-        symbol="⬇️"
+        icon={ArrowDown}
         disabled={!canSendBackward}
         onPointerDown={protectPointer}
         onClick={() => onMoveItemLayer(itemId, "backward")}
       />
       <LayerButton
         label="Bring Forward"
-        symbol="⬆️"
+        icon={ArrowUp}
         disabled={!canBringForward}
         onPointerDown={protectPointer}
         onClick={() => onMoveItemLayer(itemId, "forward")}
       />
       <LayerButton
         label="Send to Back"
-        symbol="⏬"
+        icon={ChevronsDown}
         disabled={!canSendBackward}
         onPointerDown={protectPointer}
         onClick={() => onMoveItemLayer(itemId, "back")}
       />
       <LayerButton
         label="Bring to Front"
-        symbol="⏫"
+        icon={ChevronsUp}
         disabled={!canBringForward}
         onPointerDown={protectPointer}
         onClick={() => onMoveItemLayer(itemId, "front")}
@@ -70,13 +78,13 @@ export default function LayerToolbar({
 
 function LayerButton({
   label,
-  symbol,
+  icon: Icon,
   disabled,
   onPointerDown,
   onClick,
 }: {
   label: string;
-  symbol: string;
+  icon: LucideIcon;
   disabled: boolean;
   onPointerDown: React.PointerEventHandler<HTMLButtonElement>;
   onClick: () => void;
@@ -87,11 +95,11 @@ function LayerButton({
       disabled={disabled}
       onPointerDown={onPointerDown}
       onClick={onClick}
-      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-sm font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+      className="editor-toolbar-control flex h-8 w-8 cursor-pointer items-center justify-center"
       aria-label={label}
       title={label}
     >
-      {symbol}
+      <Icon aria-hidden="true" className="h-4 w-4" />
     </button>
   );
 }

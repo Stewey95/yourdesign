@@ -67,7 +67,7 @@ export default function EditorInspector({
   return (
     <aside
       data-editor-retain-selection
-      className="editor-scrollbar hidden h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:flex"
+      className="editor-scrollbar hidden h-full min-h-0 flex-col overflow-y-auto rounded-xl border border-[var(--editor-border-subtle)] bg-[var(--editor-panel)] p-3 text-sm text-slate-300 shadow-[0_8px_24px_rgb(2_6_23/0.18)] md:flex"
     >
       <LayersPanel
         items={items}

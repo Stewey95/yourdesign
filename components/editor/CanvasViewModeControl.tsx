@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LocateFixed } from "lucide-react";
+import {
+  ChevronDown,
+  LocateFixed,
+  Minus,
+  Plus,
+  Search,
+} from "lucide-react";
 import ZoomPercentageInput from "./ZoomPercentageInput";
 
 export type CanvasViewMode = "fit" | "fill";
@@ -77,7 +83,7 @@ export default function CanvasViewModeControl({
     <div
       ref={containerRef}
       data-editor-retain-selection
-      className="relative flex h-10 items-center rounded-xl border border-white/10 bg-slate-900/95 p-1 shadow-lg"
+      className="editor-toolbar-surface editor-motion relative flex h-10 items-center p-1"
       aria-label="Canvas zoom controls"
     >
       <button
@@ -87,29 +93,22 @@ export default function CanvasViewModeControl({
         onPointerDown={protectPointer}
         onClick={onZoomOut}
         disabled={zoom <= 0.25}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40"
+        className="editor-toolbar-control flex h-8 w-8 items-center justify-center"
       >
-        −
+        <Minus aria-hidden="true" className="h-3.5 w-3.5" />
       </button>
       <div
-        className="flex h-8 w-[76px] items-center rounded-lg bg-transparent pl-2 transition hover:bg-slate-800"
+        className="flex h-8 w-[76px] items-center rounded-lg bg-transparent pl-2 transition hover:bg-[var(--editor-elevated)]"
         title="Canvas zoom"
       >
-        <svg
+        <Search
           aria-hidden="true"
-          viewBox="0 0 20 20"
-          className="h-3.5 w-3.5 shrink-0 text-slate-400"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        >
-          <circle cx="8.5" cy="8.5" r="5" />
-          <path d="m12.2 12.2 4 4" strokeLinecap="round" />
-        </svg>
+          className="h-3.5 w-3.5 shrink-0 text-slate-500"
+        />
         <ZoomPercentageInput
           zoom={zoom}
           onApply={onZoomChange}
-          className="h-8 min-w-0 flex-1 rounded-lg bg-transparent px-1 text-center text-[11px] font-semibold tabular-nums text-slate-300 outline-none transition hover:text-white focus:text-white focus:ring-2 focus:ring-blue-500"
+          className="h-8 min-w-0 flex-1 rounded-lg bg-transparent px-1 text-center text-[11px] font-semibold tabular-nums text-slate-300 outline-none transition hover:text-white focus:text-white focus:ring-2 focus:ring-cyan-400/50"
         />
       </div>
       <button
@@ -119,9 +118,9 @@ export default function CanvasViewModeControl({
         onPointerDown={protectPointer}
         onClick={onZoomIn}
         disabled={zoom >= 5}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40"
+        className="editor-toolbar-control flex h-8 w-8 items-center justify-center"
       >
-        +
+        <Plus aria-hidden="true" className="h-3.5 w-3.5" />
       </button>
       <div className="mx-1 h-5 w-px bg-white/10" aria-hidden="true" />
       <button
@@ -130,7 +129,7 @@ export default function CanvasViewModeControl({
         title="Reset Zoom to 100%"
         onPointerDown={protectPointer}
         onClick={onResetZoom}
-        className="flex h-8 items-center justify-center rounded-lg px-2 text-[11px] font-bold tabular-nums text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="editor-toolbar-control flex h-8 items-center justify-center px-2 text-[11px] font-semibold tabular-nums"
       >
         100%
       </button>
@@ -140,7 +139,7 @@ export default function CanvasViewModeControl({
         title="Centre Canvas"
         onPointerDown={protectPointer}
         onClick={onCenter}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="editor-toolbar-control flex h-8 w-8 items-center justify-center"
       >
         <LocateFixed aria-hidden="true" className="h-4 w-4" />
       </button>
@@ -153,15 +152,15 @@ export default function CanvasViewModeControl({
         title="Zoom presets"
         onPointerDown={protectPointer}
         onClick={() => setMenuOpen((open) => !open)}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="editor-toolbar-control flex h-8 w-8 items-center justify-center"
       >
-        ▼
+        <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
       </button>
 
       {menuOpen && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+0.375rem)] z-[70] w-32 overflow-hidden rounded-xl border border-white/10 bg-slate-900 p-1.5 text-xs text-slate-200 shadow-2xl"
+          className="absolute right-0 top-[calc(100%+0.375rem)] z-[70] w-32 overflow-hidden rounded-lg border border-[var(--editor-border-subtle)] bg-slate-900 p-1.5 text-xs text-slate-200 shadow-[0_14px_36px_rgb(2_6_23/0.38)]"
         >
           <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
             Canvas zoom
@@ -174,7 +173,7 @@ export default function CanvasViewModeControl({
               onClick={() =>
                 selectMenuAction(() => onZoomChange(percentage / 100))
               }
-              className="block w-full rounded-lg px-3 py-1.5 text-left tabular-nums hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="block w-full rounded-md px-3 py-1.5 text-left tabular-nums hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
             >
               {percentage}%
             </button>

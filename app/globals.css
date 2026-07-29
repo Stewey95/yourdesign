@@ -11,36 +11,66 @@
 
 @layer utilities {
   @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
-    .editor-scrollbar {
-      scrollbar-color: rgb(100 116 139) rgb(15 23 42 / 0.55);
-      scrollbar-width: thin;
+    @supports (-moz-appearance: none) {
+      .editor-scrollbar {
+        scrollbar-color: rgb(100 116 139) rgb(15 23 42 / 0.55);
+        scrollbar-width: thin;
+      }
+
+      .editor-scrollbar:hover {
+        scrollbar-color: rgb(148 163 184) rgb(15 23 42 / 0.7);
+      }
     }
 
-    .editor-scrollbar:hover {
-      scrollbar-color: rgb(148 163 184) rgb(15 23 42 / 0.7);
+    @supports selector(::-webkit-scrollbar) {
+      .editor-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      .editor-scrollbar::-webkit-scrollbar-track {
+        background: rgb(15 23 42 / 0.55);
+        border-radius: 9999px;
+      }
+
+      .editor-scrollbar::-webkit-scrollbar-thumb {
+        min-height: 32px;
+        border: 2px solid transparent;
+        border-radius: 9999px;
+        background: rgb(100 116 139);
+        background-clip: padding-box;
+      }
+
+      .editor-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgb(148 163 184);
+        background-clip: padding-box;
+      }
+    }
+  }
+
+  @media (min-width: 768px) {
+    .editor-workspace-surface {
+      background:
+        radial-gradient(
+          circle at 50% 42%,
+          rgb(20 30 51 / 0.62) 0,
+          rgb(11 17 31 / 0.2) 48%,
+          transparent 76%
+        ),
+        var(--editor-workspace);
+      border-radius: var(--editor-radius-panel);
+      box-shadow:
+        inset 0 0 0 1px rgb(148 163 184 / 0.055),
+        inset 0 1px 0 rgb(255 255 255 / 0.025);
     }
 
-    .editor-scrollbar::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    .editor-scrollbar::-webkit-scrollbar-track {
-      background: rgb(15 23 42 / 0.55);
-      border-radius: 9999px;
-    }
-
-    .editor-scrollbar::-webkit-scrollbar-thumb {
-      min-height: 32px;
-      border: 2px solid transparent;
-      border-radius: 9999px;
-      background: rgb(100 116 139);
-      background-clip: padding-box;
-    }
-
-    .editor-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgb(148 163 184);
-      background-clip: padding-box;
+    .editor-canvas-surface {
+      border-radius: var(--editor-radius-control);
+      outline: 1px solid var(--editor-canvas-edge);
+      outline-offset: -1px;
+      box-shadow:
+        0 2px 5px rgb(2 6 23 / 0.34),
+        0 18px 48px rgb(2 6 23 / 0.3);
     }
   }
 }
@@ -108,6 +138,22 @@
 }
 
 :root {
+  --editor-workspace: #090e1c;
+  --editor-shell: #0b1120;
+  --editor-panel: rgb(15 23 42 / 0.92);
+  --editor-elevated: rgb(30 41 59 / 0.78);
+  --editor-hover: rgb(51 65 85 / 0.72);
+  --editor-selected: rgb(8 145 178 / 0.16);
+  --editor-border-subtle: rgb(148 163 184 / 0.11);
+  --editor-border-focus: rgb(34 211 238 / 0.62);
+  --editor-canvas-edge: rgb(148 163 184 / 0.42);
+  --editor-radius-compact: 6px;
+  --editor-radius-control: 8px;
+  --editor-radius-panel: 12px;
+  --editor-control-compact: 28px;
+  --editor-control-standard: 32px;
+  --editor-motion-fast: 140ms;
+  --editor-motion-standard: 180ms;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -190,5 +236,80 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer components {
+  .editor-toolbar-surface {
+    border: 1px solid var(--editor-border-subtle);
+    border-radius: var(--editor-radius-control);
+    background: rgb(15 23 42 / 0.9);
+    box-shadow: 0 8px 24px rgb(2 6 23 / 0.2);
+    backdrop-filter: blur(14px);
+  }
+
+  .editor-toolbar-control {
+    min-height: var(--editor-control-standard);
+    border: 1px solid transparent;
+    border-radius: var(--editor-radius-control);
+    color: rgb(203 213 225);
+    transition:
+      background-color var(--editor-motion-fast) ease,
+      border-color var(--editor-motion-fast) ease,
+      color var(--editor-motion-fast) ease,
+      transform var(--editor-motion-fast) ease;
+  }
+
+  .editor-toolbar-control:hover:not(:disabled) {
+    border-color: var(--editor-border-subtle);
+    background: var(--editor-hover);
+    color: white;
+  }
+
+  .editor-toolbar-control:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .editor-toolbar-control:focus-visible {
+    outline: 2px solid var(--editor-border-focus);
+    outline-offset: 2px;
+  }
+
+  .editor-toolbar-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.36;
+  }
+
+  .editor-document-action {
+    min-height: var(--editor-control-standard);
+    border-radius: var(--editor-radius-control);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition:
+      background-color var(--editor-motion-fast) ease,
+      border-color var(--editor-motion-fast) ease,
+      color var(--editor-motion-fast) ease,
+      transform var(--editor-motion-fast) ease;
+  }
+
+  .editor-document-action:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .editor-document-action:focus-visible {
+    outline: 2px solid var(--editor-border-focus);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-motion,
+  .editor-motion *,
+  .editor-toolbar-control,
+  .editor-document-action {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

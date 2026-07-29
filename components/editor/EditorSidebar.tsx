@@ -132,7 +132,7 @@ export default function EditorSidebar({
     <div
       data-editor-retain-selection
       data-editor-keep-zoom-hud-open
-      className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-slate-900/95 p-3 text-sm text-slate-300 shadow-xl md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
+      className="min-w-0 max-w-full rounded-xl border border-[var(--editor-border-subtle)] bg-[var(--editor-panel)] p-3 text-sm text-slate-300 shadow-[0_8px_24px_rgb(2_6_23/0.18)] md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
     >
       <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-6 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-1.5 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:shrink-0 md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
         {[

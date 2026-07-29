@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Folder, Pencil, Check } from "lucide-react";
+import {
+  Check,
+  Folder,
+  Pencil,
+  Plus,
+  Redo2,
+  Undo2,
+} from "lucide-react";
 
 type EditorHeaderProps = {
   projectTitle: string;
@@ -45,23 +52,23 @@ export default function EditorHeader({
   return (
     <div
       data-editor-retain-selection
-      className="mb-4 flex flex-wrap items-center justify-between gap-2 md:mb-1"
+      className="editor-motion mb-4 flex min-w-0 flex-wrap items-center justify-between gap-2 md:mb-2 md:min-h-9 md:flex-nowrap"
     >
       {/* Brand Logo & Title */}
-      <div className="flex items-center gap-3">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <img
             src="/brand/genvilo-icon-master.png"
             alt="Gripix"
-            className="h-8 w-8 object-contain md:h-9 md:w-9"
+            className="h-8 w-8 object-contain md:h-8 md:w-8"
           />
-          <span className="hidden bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-base font-extrabold text-transparent sm:inline md:text-lg">
+          <span className="hidden bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-base font-bold tracking-tight text-transparent sm:inline">
             Gripix
           </span>
         </Link>
 
         {/* Separator */}
-        <span className="hidden text-slate-600 sm:inline">/</span>
+        <span className="hidden text-slate-700 sm:inline">/</span>
 
         {/* Dynamic Project Title Inline Input */}
         <div className="flex items-center gap-1.5">
@@ -77,12 +84,12 @@ export default function EditorHeader({
                 }}
                 onBlur={handleSaveTitle}
                 autoFocus
-                className="max-w-[140px] rounded border border-cyan-400 bg-slate-900 px-2 py-0.5 text-xs font-semibold text-white focus:outline-none sm:max-w-[220px] sm:text-sm"
+                className="h-8 max-w-[140px] rounded-lg border border-cyan-400/60 bg-slate-900 px-2 text-xs font-semibold text-white outline-none focus:ring-2 focus:ring-cyan-400/40 sm:max-w-[220px] sm:text-sm"
               />
               <button
                 type="button"
                 onClick={handleSaveTitle}
-                className="cursor-pointer text-cyan-400 hover:text-white"
+                className="editor-toolbar-control flex h-8 w-8 cursor-pointer items-center justify-center"
                 title="Save Title"
               >
                 <Check size={16} />
@@ -92,7 +99,7 @@ export default function EditorHeader({
             <button
               type="button"
               onClick={handleStartEditing}
-              className="group flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-2 py-1 text-xs font-bold text-slate-100 transition hover:border-white/10 hover:bg-slate-800 sm:text-sm"
+              className="group flex h-8 min-w-0 cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-2 text-xs font-semibold text-slate-100 transition hover:border-[var(--editor-border-subtle)] hover:bg-[var(--editor-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:text-sm"
               title="Click to rename design"
             >
               <span className="max-w-[120px] truncate sm:max-w-[200px]">
@@ -108,15 +115,15 @@ export default function EditorHeader({
       </div>
 
       {/* Header Tools */}
-      <div className="flex items-center gap-2">
-        {/* Saved Projects Button */}
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {/* Document utilities */}
         <button
           type="button"
           onClick={onOpenProjects}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-semibold text-cyan-300 transition hover:border-cyan-400/50 hover:bg-cyan-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:px-3 sm:text-sm"
+          className="editor-document-action flex cursor-pointer items-center gap-1.5 border border-[var(--editor-border-subtle)] bg-[var(--editor-elevated)] px-2.5 text-slate-200 hover:border-white/20 hover:bg-[var(--editor-hover)] sm:px-3"
           title="Open Saved Projects"
         >
-          <Folder size={14} />
+          <Folder size={15} aria-hidden="true" />
           <span className="hidden sm:inline">Projects</span>
         </button>
 
@@ -126,9 +133,10 @@ export default function EditorHeader({
           onClick={onNewDesign}
           aria-label="New Design"
           title="New Design"
-          className="cursor-pointer whitespace-nowrap rounded-lg border border-purple-400/40 bg-purple-500/10 px-2.5 py-1 text-xs font-semibold text-purple-200 transition hover:border-purple-300/60 hover:bg-purple-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 sm:px-3 sm:text-sm"
+          className="editor-document-action flex cursor-pointer items-center gap-1.5 whitespace-nowrap border border-[var(--editor-border-subtle)] bg-transparent px-2.5 text-slate-300 hover:border-white/20 hover:bg-[var(--editor-elevated)] hover:text-white sm:px-3"
         >
-          New Design
+          <Plus size={15} aria-hidden="true" className="hidden sm:block" />
+          <span>New Design</span>
         </button>
 
         {/* Undo / Redo */}
@@ -136,29 +144,34 @@ export default function EditorHeader({
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          className="editor-toolbar-control flex h-8 w-8 cursor-pointer items-center justify-center"
           aria-label="Undo"
           title="Undo"
         >
-          ↶
+          <Undo2 size={15} aria-hidden="true" />
         </button>
 
         <button
           type="button"
           onClick={onRedo}
           disabled={!canRedo}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          className="editor-toolbar-control flex h-8 w-8 cursor-pointer items-center justify-center"
           aria-label="Redo"
           title="Redo"
         >
-          ↷
+          <Redo2 size={15} aria-hidden="true" />
         </button>
 
-        {/* Export Button */}
+        <div
+          className="mx-0.5 h-5 w-px bg-[var(--editor-border-subtle)]"
+          aria-hidden="true"
+        />
+
+        {/* Primary document action */}
         <button
           type="button"
           onClick={onExport}
-          className="cursor-pointer rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-blue-500 sm:text-sm"
+          className="editor-document-action cursor-pointer bg-blue-600 px-3.5 text-white shadow-[0_5px_14px_rgb(37_99_235/0.2)] hover:bg-blue-500"
         >
           Export
         </button>

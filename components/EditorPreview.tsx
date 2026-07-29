@@ -2477,8 +2477,8 @@ if (direction === "back") {
         ref={editorShellRef}
         className={
           fullScreen
-            ? "w-full max-w-full overflow-hidden bg-white/5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] shadow-2xl md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-2 md:pt-3"
-            : "mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl md:mt-2 md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
+            ? "w-full max-w-full overflow-hidden bg-[var(--editor-shell)] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-2 md:pt-3"
+            : "mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-xl border border-[var(--editor-border-subtle)] bg-[var(--editor-shell)] p-2 shadow-[0_16px_48px_rgb(2_6_23/0.24)] md:mt-2 md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
         }
         style={{ height: fullScreen ? undefined : desktopEditorHeight }}
       >

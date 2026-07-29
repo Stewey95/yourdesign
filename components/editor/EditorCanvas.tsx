@@ -1346,7 +1346,7 @@ export default function EditorCanvas({
         onTouchMoveCapture={moveTouchGesture}
         onTouchEndCapture={endTouchGesture}
         onTouchCancelCapture={cancelTouchGesture}
-        className={`editor-scrollbar relative -mx-2 w-[calc(100%+1rem)] touch-pan-y overflow-hidden md:mx-0 md:min-h-0 md:w-full md:flex-1 md:touch-auto md:overscroll-none md:overflow-x-hidden md:px-2 md:pb-2 ${
+        className={`editor-scrollbar editor-workspace-surface relative -mx-2 w-[calc(100%+1rem)] touch-pan-y overflow-hidden md:mx-0 md:min-h-0 md:w-full md:flex-1 md:touch-auto md:overscroll-none md:overflow-x-hidden md:px-2 md:pb-2 ${
           viewMode === "fill"
             ? "md:overflow-y-auto"
             : "md:overflow-y-hidden"
@@ -1380,7 +1380,7 @@ export default function EditorCanvas({
               onPointerCancel={onPointerCancel}
               onLostPointerCapture={onPointerCancel}
               onPointerDown={onPointerDown}
-              className="relative touch-pan-y overflow-hidden rounded-xl bg-white text-slate-500 select-none md:touch-none"
+              className="editor-canvas-surface relative touch-pan-y overflow-hidden rounded-xl bg-white text-slate-500 select-none md:touch-none"
               style={{
                 width: canvasSize.width,
                 height: canvasSize.height,
@@ -1394,9 +1394,19 @@ export default function EditorCanvas({
               }}
             >
             {items.length === 0 && (
-              <p className="flex h-full items-center justify-center">
-                Your design canvas
-              </p>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 flex select-none items-center justify-center px-6 text-center"
+              >
+                <div className="max-w-56">
+                  <p className="text-sm font-semibold tracking-tight text-slate-500 md:text-base">
+                    Start creating
+                  </p>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400 md:text-xs">
+                    Add text, media or elements, or begin with a template.
+                  </p>
+                </div>
+              </div>
             )}
             <AlignmentGuides
               vertical={verticalGuide}
