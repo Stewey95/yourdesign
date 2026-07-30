@@ -52,12 +52,12 @@ export default function ProductPage() {
 
   if (loading) {
     return (
-      <main className="min-h-dvh bg-slate-50">
+      <main className="studio-page">
         <ProductStudioHeader backHref="/studio" backLabel="Your products" />
-        <div className="mx-auto max-w-7xl animate-pulse px-5 py-12 sm:px-6 lg:px-8">
-          <div className="h-8 w-44 rounded-lg bg-slate-200" />
-          <div className="mt-5 h-14 max-w-xl rounded-xl bg-slate-200" />
-          <div className="mt-10 h-80 rounded-3xl bg-slate-200" />
+        <div className="platform-container py-12">
+          <div className="studio-skeleton h-8 w-44" />
+          <div className="studio-skeleton mt-5 h-14 max-w-xl" />
+          <div className="studio-skeleton mt-10 h-80" />
         </div>
       </main>
     );
@@ -65,7 +65,7 @@ export default function ProductPage() {
 
   if (!product) {
     return (
-      <main className="min-h-dvh bg-slate-50 text-slate-950">
+      <main className="studio-page">
         <ProductStudioHeader backHref="/studio" backLabel="Your products" />
         <div className="mx-auto max-w-xl px-5 py-24 text-center">
           <h1 className="text-3xl font-black">Product not found</h1>
@@ -74,7 +74,7 @@ export default function ProductPage() {
           </p>
           <Link
             href="/studio"
-            className="mt-7 inline-flex min-h-11 items-center rounded-xl bg-slate-950 px-5 text-sm font-bold text-white"
+            className="studio-button studio-button-primary mt-7"
           >
             Return to Product Studio
           </Link>
@@ -87,24 +87,24 @@ export default function ProductPage() {
   const primaryAsset = product.assets[0];
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-950">
+    <main className="studio-page">
       <ProductStudioHeader backHref="/studio" backLabel="Your products" action />
 
-      <div className="mx-auto max-w-7xl px-5 py-9 sm:px-6 sm:py-12 lg:px-8">
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="platform-container py-9 sm:py-12">
+        <section className="studio-card overflow-hidden rounded-[var(--studio-radius-prominent)]">
           <div
             className={`relative bg-gradient-to-br ${definition.accent} px-6 py-8 text-white sm:px-9 sm:py-10`}
           >
             <div className="absolute inset-0 bg-slate-950/10" />
             <div className="relative">
-              <span className="inline-flex rounded-full border border-white/30 bg-white/15 px-3 py-1.5 text-xs font-bold backdrop-blur">
+              <span className="studio-badge border border-white/30 bg-white/15 backdrop-blur">
                 {definition.name}
               </span>
-              <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-[-0.04em] sm:text-5xl">
+              <h1 className="studio-page-title mt-5 max-w-3xl text-white">
                 {product.name}
               </h1>
               <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold text-white/90">
-                <span className="inline-flex items-center gap-2 rounded-full bg-slate-950/20 px-3 py-1.5 backdrop-blur">
+                <span className="studio-badge bg-slate-950/20 backdrop-blur">
                   <CheckCircle2 size={15} aria-hidden="true" />
                   {statusLabels[product.status]}
                 </span>
@@ -131,7 +131,7 @@ export default function ProductPage() {
               <button
                 type="button"
                 onClick={() => openAsset(primaryAsset)}
-                className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                className="studio-button studio-button-primary min-h-12 shrink-0"
               >
                 <Pencil size={17} aria-hidden="true" />
                 Edit Product
@@ -159,7 +159,7 @@ export default function ProductPage() {
                   key={asset.id}
                   type="button"
                   onClick={() => openAsset(asset)}
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  className="studio-card studio-card-interactive group overflow-hidden text-left"
                 >
                   <div className="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
                     <FileText size={42} strokeWidth={1.5} aria-hidden="true" />
@@ -184,7 +184,7 @@ export default function ProductPage() {
             </div>
           </section>
 
-          <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <aside className="studio-card p-5">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
               <PackageCheck size={21} aria-hidden="true" />
             </span>

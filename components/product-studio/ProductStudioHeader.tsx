@@ -16,8 +16,8 @@ export default function ProductStudioHeader({
   action = false,
 }: ProductStudioHeaderProps) {
   return (
-    <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-6 lg:px-8">
+    <header className="platform-header">
+      <div className="platform-container flex min-h-18 items-center justify-between gap-4 py-3">
         <div className="flex min-w-0 items-center gap-4">
           <Link
             href="/"
@@ -46,7 +46,7 @@ export default function ProductStudioHeader({
           {backHref && (
             <Link
               href={backHref}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="studio-button studio-button-quiet min-h-10 px-3"
             >
               <ArrowLeft size={16} aria-hidden="true" />
               <span className="hidden sm:inline">{backLabel}</span>
@@ -55,7 +55,7 @@ export default function ProductStudioHeader({
           {action && (
             <Link
               href="/studio/new"
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className="studio-button studio-button-primary min-h-10 px-4"
             >
               <Plus size={16} aria-hidden="true" />
               New Product

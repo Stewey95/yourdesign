@@ -1,6 +1,14 @@
 "use client";
 
-import { Copy } from "lucide-react";
+import {
+  Copy,
+  Folder,
+  Image,
+  LayoutTemplate,
+  PanelsTopLeft,
+  Shapes,
+  Type,
+} from "lucide-react";
 import { useRef } from "react";
 import type {
   CanvasPresetId,
@@ -136,14 +144,15 @@ export default function EditorSidebar({
     >
       <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-6 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-1.5 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:shrink-0 md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
         {[
-          { id: "projects", icon: "📁", label: "Projects" },
-          { id: "templates", icon: "🎨", label: "Templates" },
-          { id: "media", icon: "🖼️", label: "Media" },
-          { id: "text", icon: "T", label: "Text" },
-          { id: "elements", icon: "✦", label: "Elements" },
-          { id: "arrange", icon: "▱", label: "Arrange" },
+          { id: "projects", icon: Folder, label: "Projects" },
+          { id: "templates", icon: LayoutTemplate, label: "Templates" },
+          { id: "media", icon: Image, label: "Media" },
+          { id: "text", icon: Type, label: "Text" },
+          { id: "elements", icon: Shapes, label: "Elements" },
+          { id: "arrange", icon: PanelsTopLeft, label: "Arrange" },
         ].map((tool) => {
           const isActive = activeToolbarPanel === tool.id;
+          const ToolIcon = tool.icon;
 
           return (
             <button
@@ -162,7 +171,7 @@ export default function EditorSidebar({
               }`}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 text-base md:h-8 md:w-8 md:text-base">
-                {tool.icon}
+                <ToolIcon size={16} strokeWidth={1.9} aria-hidden="true" />
               </span>
 
               <span className="min-w-0 truncate text-[11px] md:flex-1 md:text-sm">

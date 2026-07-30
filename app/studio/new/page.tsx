@@ -41,19 +41,19 @@ export default function NewProductPage() {
   };
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-950">
+    <main className="studio-page">
       <ProductStudioHeader backHref="/studio" backLabel="Your products" />
 
-      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <div className="platform-container max-w-6xl py-10 sm:py-14">
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-700">
             <Sparkles size={14} aria-hidden="true" />
             Start something worth sharing
           </div>
-          <h1 className="mt-5 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
+          <h1 className="studio-page-title mt-5">
             What would you like to create?
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+          <p className="studio-body mt-4 max-w-xl text-base sm:text-lg">
             Choose a starting point. Gripix will prepare the first page, and
             you can shape everything from there.
           </p>
@@ -73,10 +73,10 @@ export default function NewProductPage() {
                 role="radio"
                 aria-checked={selected}
                 onClick={() => setSelectedType(definition.id)}
-                className={`group relative min-h-40 overflow-hidden rounded-2xl border p-5 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                className={`studio-card studio-card-interactive group relative min-h-40 overflow-hidden p-5 text-left ${
                   selected
-                    ? "border-blue-500 bg-white shadow-md shadow-blue-950/5"
-                    : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                    ? "border-blue-500 ring-2 ring-blue-500/10"
+                    : ""
                 }`}
               >
                 <span
@@ -98,7 +98,7 @@ export default function NewProductPage() {
           })}
         </div>
 
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="studio-card mt-8 p-5 sm:p-6">
           <label
             htmlFor="product-name"
             className="text-sm font-bold text-slate-900"
@@ -118,13 +118,13 @@ export default function NewProductPage() {
               }}
               placeholder={`My ${selectedDefinition.name}`}
               maxLength={80}
-              className="min-h-12 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-base font-semibold text-slate-950 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              className="studio-input min-w-0 flex-1 text-base font-semibold placeholder:font-normal"
             />
             <button
               type="button"
               onClick={() => void handleCreate()}
               disabled={isCreating}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className="studio-button studio-button-primary min-h-12"
             >
               {isCreating ? "Preparing your product…" : "Create Product"}
               {!isCreating && <ArrowRight size={17} aria-hidden="true" />}

@@ -28,13 +28,13 @@ export default function ProductStudioPage() {
   }, []);
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-950">
+    <main className="studio-page">
       <ProductStudioHeader action />
-      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <div className="platform-container py-10 sm:py-14">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <p className="text-sm font-bold text-blue-600">Product Studio</p>
-            <h1 className="mt-2 text-4xl font-black tracking-[-0.04em]">
+            <p className="studio-eyebrow">Product Studio</p>
+            <h1 className="studio-page-title mt-2">
               Your products
             </h1>
             <p className="mt-3 text-slate-600">
@@ -49,12 +49,12 @@ export default function ProductStudioPage() {
             {[0, 1, 2].map((item) => (
               <div
                 key={item}
-                className="h-52 animate-pulse rounded-2xl border border-slate-200 bg-white"
+                className="studio-skeleton h-52"
               />
             ))}
           </div>
         ) : products.length === 0 ? (
-          <section className="mt-10 flex min-h-96 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm">
+          <section className="studio-empty-state mt-10 min-h-96">
             <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-100 via-blue-100 to-violet-100 text-blue-700">
               <Boxes size={29} aria-hidden="true" />
             </span>
@@ -67,7 +67,7 @@ export default function ProductStudioPage() {
             </p>
             <Link
               href="/studio/new"
-              className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              className="studio-button studio-button-primary mt-7 min-h-12"
             >
               <Plus size={17} aria-hidden="true" />
               Create your first product
@@ -81,7 +81,7 @@ export default function ProductStudioPage() {
                 <Link
                   key={product.id}
                   href={`/studio/${product.id}`}
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  className="studio-card studio-card-interactive group overflow-hidden"
                 >
                   <div
                     className={`h-24 bg-gradient-to-br ${definition.accent} opacity-90`}

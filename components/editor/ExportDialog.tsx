@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type {
   ExportCanvasDimensions,
@@ -297,7 +298,7 @@ export default function ExportDialog({
       className="fixed bottom-0 left-0 right-0 top-auto m-0 h-[min(92dvh,780px)] max-h-[calc(100dvh-0.75rem)] w-full max-w-none overflow-hidden border-0 bg-transparent p-0 text-left text-slate-100 backdrop:bg-slate-950/75 backdrop:backdrop-blur-sm md:inset-0 md:m-auto md:h-auto md:max-h-[calc(100dvh-2rem)] md:w-[min(760px,calc(100vw-2rem))] md:rounded-3xl"
     >
       <div
-        className="relative flex h-full max-h-[inherit] flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-slate-900 shadow-2xl md:h-auto md:rounded-3xl"
+        className="editor-dialog-surface relative flex h-full max-h-[inherit] flex-col overflow-hidden rounded-t-[var(--studio-radius-dialog)] md:h-auto md:rounded-[var(--studio-radius-dialog)]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-5 py-4 md:px-6">
@@ -321,9 +322,9 @@ export default function ExportDialog({
             onClick={closeDialog}
             aria-label="Close export dialog"
             title="Close"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-800 text-xl text-slate-300 transition hover:bg-slate-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="editor-toolbar-control flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-800"
           >
-            ×
+            <X size={17} aria-hidden="true" />
           </button>
         </header>
 
@@ -353,9 +354,9 @@ export default function ExportDialog({
               aria-describedby={
                 filenameIsValid ? undefined : "export-filename-error"
               }
-              className={`w-full rounded-xl border bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:ring-2 ${
+              className={`editor-input w-full px-3 py-2.5 text-sm placeholder:text-slate-600 ${
                 filenameIsValid
-                  ? "border-white/10 focus:border-blue-400 focus:ring-blue-500/25"
+                  ? ""
                   : "border-red-400/70 focus:border-red-400 focus:ring-red-500/20"
               }`}
             />

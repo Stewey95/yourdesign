@@ -29,10 +29,10 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 shadow-[0_1px_12px_rgba(15,23,42,0.035)] backdrop-blur-xl">
+    <header className="platform-header sticky top-0 z-50 w-full">
       <nav
         aria-label="Main navigation"
-        className="relative mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8"
+        className="platform-container relative flex h-18 items-center justify-between"
       >
         <Link
           href="/"
@@ -45,9 +45,9 @@ export default function Navbar() {
             width={1536}
             height={1024}
             priority
-            className="h-auto w-14 object-contain sm:w-16"
+            className="h-auto w-10 object-contain"
           />
-          <span className="bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
+          <span className="bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 bg-clip-text text-xl font-extrabold tracking-tight text-transparent">
             Gripix
           </span>
           <span className="sr-only">Gripix home</span>
@@ -69,7 +69,7 @@ export default function Navbar() {
         <div className="hidden md:block">
           <Link
             href="/studio/new"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md active:translate-y-0 active:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none"
+            className="studio-button studio-button-primary"
           >
             New Product
           </Link>
@@ -81,7 +81,7 @@ export default function Navbar() {
           aria-expanded={mobileMenuOpen}
           aria-controls="mobile-navigation"
           onClick={() => setMobileMenuOpen((open) => !open)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition duration-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none md:hidden"
+          className="studio-button studio-button-secondary h-11 w-11 p-0 md:hidden"
         >
           {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -89,7 +89,7 @@ export default function Navbar() {
         {mobileMenuOpen && (
           <div
             id="mobile-navigation"
-            className="animate-in fade-in slide-in-from-top-2 absolute left-4 right-4 top-[calc(100%+0.5rem)] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl duration-200 motion-reduce:animate-none md:hidden"
+            className="animate-in fade-in slide-in-from-top-2 studio-card absolute left-4 right-4 top-[calc(100%+0.5rem)] p-3 shadow-[var(--studio-shadow-popover)] duration-200 motion-reduce:animate-none md:hidden"
           >
             {navigation.map((item) => (
               <a
@@ -104,7 +104,7 @@ export default function Navbar() {
             <Link
               href="/studio/new"
               onClick={() => setMobileMenuOpen(false)}
-              className="mt-2 flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition duration-200 hover:bg-slate-800 active:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none"
+              className="studio-button studio-button-primary mt-2 w-full"
             >
               New Product
             </Link>

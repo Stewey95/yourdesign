@@ -221,7 +221,7 @@ export default function Home() {
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: LANDING_SCROLL_RESET_SCRIPT }} />
-      <main className="min-h-screen overflow-x-clip bg-white font-[family-name:var(--font-geist-sans)] text-slate-950">
+      <main className="min-h-screen overflow-x-clip bg-white font-[family-name:var(--font-geist-sans)] text-[var(--studio-ink)]">
         <Navbar />
 
         <section id="home" className="relative scroll-mt-20 px-5 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24 lg:px-8 lg:pt-28">
@@ -239,10 +239,10 @@ export default function Home() {
               Create beautiful graphics with Gripix. Built for creators, businesses and Etsy sellers. Design anywhere and export in high quality.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/studio/new" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/15 transition duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/15 active:translate-y-0 active:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:w-auto">
+              <Link href="/studio/new" className="studio-button studio-button-primary min-h-12 w-full px-6 sm:w-auto">
                 Create a Product
               </Link>
-              <a href="#features" className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-950 hover:shadow-md active:translate-y-0 active:bg-slate-50 active:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:w-auto">
+              <a href="#features" className="studio-button studio-button-secondary min-h-12 w-full px-6 sm:w-auto">
                 Explore Features
               </a>
             </div>
@@ -310,7 +310,7 @@ export default function Home() {
             <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">Built-in essentials</p><h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">Everything you need. Nothing you don’t.</h2><p className="mt-5 text-lg leading-8 text-slate-600">Thoughtful tools that help you move from idea to finished file without friction.</p></div>
             <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {features.map(({ icon: Icon, title, text }) => (
-                <article key={title} className="group h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-slate-200/60 motion-reduce:transform-none motion-reduce:transition-none">
+                <article key={title} className="studio-card studio-card-interactive group h-full p-6">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 text-cyan-300 transition-transform duration-200 group-hover:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none"><Icon size={20} aria-hidden="true" /></span>
                   <h3 className="mt-6 text-lg font-bold text-slate-950">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
                 </article>
@@ -331,7 +331,7 @@ export default function Home() {
 
         <section className="px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
           <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-slate-950 px-6 py-14 text-center text-white shadow-2xl sm:px-12 sm:py-20">
-            <div className="mx-auto max-w-2xl"><RotateCcw className="mx-auto text-cyan-300" size={28} aria-hidden="true" /><h2 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">Ready to create something brilliant?</h2><p className="mt-5 text-lg text-slate-300">Turn your next idea into a real product with Gripix.</p><Link href="/studio/new" className="mt-8 inline-flex min-h-12 items-center rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition duration-200 hover:-translate-y-0.5 hover:from-blue-400 hover:to-purple-400 hover:shadow-xl active:translate-y-0 active:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 motion-reduce:transform-none motion-reduce:transition-none">Create a Product</Link></div>
+            <div className="mx-auto max-w-2xl"><RotateCcw className="mx-auto text-cyan-300" size={28} aria-hidden="true" /><h2 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">Ready to create something brilliant?</h2><p className="mt-5 text-lg text-slate-300">Turn your next idea into a real product with Gripix.</p><Link href="/studio/new" className="studio-button studio-button-brand mt-8 min-h-12 px-6">Create a Product</Link></div>
           </div>
         </section>
 

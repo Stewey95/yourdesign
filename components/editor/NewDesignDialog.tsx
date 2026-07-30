@@ -47,7 +47,7 @@ export default function NewDesignDialog({
       onClick={(event) => {
         if (event.target === event.currentTarget) cancel();
       }}
-      className="fixed inset-0 m-auto w-[min(420px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-0 text-left text-slate-100 shadow-2xl backdrop:bg-slate-950/75 backdrop:backdrop-blur-sm"
+      className="editor-dialog-surface fixed inset-0 m-auto w-[min(420px,calc(100vw-2rem))] overflow-hidden rounded-[var(--studio-radius-dialog)] p-0 text-left text-slate-100 backdrop:bg-slate-950/75 backdrop:backdrop-blur-sm"
     >
       <div className="p-5 sm:p-6" onClick={(event) => event.stopPropagation()}>
         <h2 id="new-design-dialog-title" className="text-xl font-bold text-white">
@@ -72,7 +72,7 @@ export default function NewDesignDialog({
             onClick={cancel}
             disabled={isStarting}
             autoFocus
-            className="cursor-pointer rounded-lg border border-white/10 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="editor-document-action cursor-pointer border border-white/10 bg-slate-800 px-4 text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>
@@ -81,7 +81,7 @@ export default function NewDesignDialog({
             onClick={onConfirm}
             disabled={isStarting}
             aria-label="Start New Design"
-            className="cursor-pointer rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:from-blue-500 hover:to-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="editor-document-action cursor-pointer bg-blue-600 px-4 text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isStarting ? "Starting…" : "Start New Design"}
           </button>
