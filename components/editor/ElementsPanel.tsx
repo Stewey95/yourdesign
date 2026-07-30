@@ -322,10 +322,19 @@ function ElementCard({
   onToggleFavourite,
   isFavourite,
 }: ElementCardProps) {
+  const insertElement = () => onInsert(element);
+
   return (
-    <button
-      type="button"
-      onClick={() => onInsert(element)}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={insertElement}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          insertElement();
+        }
+      }}
       className="group relative min-w-0 rounded-xl border border-white/10 bg-slate-800/60 p-2 text-left transition hover:border-blue-400/50 hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
       aria-label={`Add ${element.name}`}
       title={`Add ${element.name}`}
@@ -352,7 +361,7 @@ function ElementCard({
       >
         <Star size={12} fill={isFavourite ? "currentColor" : "none"} />
       </button>
-    </button>
+    </div>
   );
 }
 

@@ -1,7 +1,8 @@
 export const EDITOR_DATABASE_NAME = "genvilo-editor";
-export const EDITOR_DATABASE_VERSION = 2;
+export const EDITOR_DATABASE_VERSION = 3;
 export const DRAFT_STORE_NAME = "drafts";
 export const PROJECTS_STORE_NAME = "projects";
+export const PRODUCTS_STORE_NAME = "products";
 
 let databasePromise: Promise<IDBDatabase> | null = null;
 
@@ -35,6 +36,12 @@ const openCurrentDatabase = () =>
           keyPath: "id",
         });
       }
+
+      if (!database.objectStoreNames.contains(PRODUCTS_STORE_NAME)) {
+        database.createObjectStore(PRODUCTS_STORE_NAME, {
+          keyPath: "id",
+        });
+      }
     });
     request.addEventListener("success", () =>
       resolve(prepareDatabase(request.result))
@@ -51,7 +58,8 @@ const openFutureDatabase = () =>
 
       if (
         !database.objectStoreNames.contains(DRAFT_STORE_NAME) ||
-        !database.objectStoreNames.contains(PROJECTS_STORE_NAME)
+        !database.objectStoreNames.contains(PROJECTS_STORE_NAME) ||
+        !database.objectStoreNames.contains(PRODUCTS_STORE_NAME)
       ) {
         database.close();
         reject(

@@ -74,9 +74,12 @@ import {
   setActiveProjectId,
 } from "../lib/projects/projectsManager";
 import type { ToolbarPanel } from "./editor/EditorSidebar";
+import { getProduct } from "../lib/products/productsManager";
 
 type EditorPreviewProps = {
   fullScreen?: boolean;
+  productId?: string;
+  productAssetId?: string;
 };
 
 type EditorDesignState = {
@@ -96,6 +99,8 @@ const initialCanvasPreset = getCanvasPreset(
 
 export default function EditorPreview({
   fullScreen = false,
+  productId,
+  productAssetId,
 }: EditorPreviewProps) {
   const {
     present: design,
@@ -326,7 +331,16 @@ export default function EditorPreview({
 
     const restoreDraft = async () => {
       try {
-        const activeId = getActiveProjectId();
+        let requestedProjectId: string | null = null;
+
+        if (productId && productAssetId) {
+          const product = await getProduct(productId);
+          requestedProjectId =
+            product?.assets.find((asset) => asset.id === productAssetId)
+              ?.projectId ?? null;
+        }
+
+        const activeId = requestedProjectId ?? getActiveProjectId();
         let currentProj = activeId ? await getProject(activeId) : null;
 
         if (!currentProj) {
@@ -391,7 +405,7 @@ export default function EditorPreview({
     return () => {
       cancelled = true;
     };
-  }, [restoreDesign]);
+  }, [productAssetId, productId, restoreDesign]);
 
   useEffect(() => {
     if (!draftReady || !activeProject) return;
@@ -2484,6 +2498,15 @@ if (direction === "back") {
       >
       <EditorHeader
         projectTitle={projectTitle}
+        productStudioHref={
+          productId
+            ? `/studio/${encodeURIComponent(productId)}${
+                productAssetId
+                  ? `?asset=${encodeURIComponent(productAssetId)}`
+                  : ""
+              }`
+            : undefined
+        }
         onTitleChange={handleTitleChange}
         onOpenProjects={() => setActiveToolbarPanel("projects")}
         canUndo={canUndo}

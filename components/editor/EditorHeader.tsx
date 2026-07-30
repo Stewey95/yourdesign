@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  ArrowLeft,
   Check,
   Folder,
   Pencil,
@@ -13,6 +14,7 @@ import {
 
 type EditorHeaderProps = {
   projectTitle: string;
+  productStudioHref?: string;
   onTitleChange: (newTitle: string) => void;
   onOpenProjects: () => void;
   canUndo: boolean;
@@ -25,6 +27,7 @@ type EditorHeaderProps = {
 
 export default function EditorHeader({
   projectTitle,
+  productStudioHref,
   onTitleChange,
   onOpenProjects,
   canUndo,
@@ -56,6 +59,16 @@ export default function EditorHeader({
     >
       {/* Brand Logo & Title */}
       <div className="flex min-w-0 items-center gap-2.5">
+        {productStudioHref && (
+          <Link
+            href={productStudioHref}
+            className="editor-toolbar-control flex h-8 w-8 shrink-0 items-center justify-center"
+            aria-label="Back to Product Studio"
+            title="Back to Product Studio"
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+          </Link>
+        )}
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <img
             src="/brand/genvilo-icon-master.png"
