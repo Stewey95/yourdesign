@@ -1,5 +1,7 @@
 "use client";
 
+import { Lock, RotateCcw, RotateCw } from "lucide-react";
+
 import {
   TEXT_MAX_FONT_SIZE,
   TEXT_MIN_FONT_SIZE,
@@ -67,7 +69,7 @@ export default function EditorInspector({
   return (
     <aside
       data-editor-retain-selection
-      className="editor-scrollbar hidden h-full min-h-0 flex-col overflow-y-auto rounded-xl border border-[var(--editor-border-subtle)] bg-[var(--editor-panel)] p-3 text-sm text-slate-300 shadow-[0_8px_24px_rgb(2_6_23/0.18)] md:flex"
+      className="editor-floating-panel editor-scrollbar hidden h-full min-h-0 flex-col overflow-y-auto rounded-xl p-3 text-sm text-slate-300 md:flex"
     >
       <LayersPanel
         items={items}
@@ -80,7 +82,7 @@ export default function EditorInspector({
 
       <div className="my-4 shrink-0 border-t border-white/10" />
 
-      <p className="mb-4 shrink-0 text-xs font-bold uppercase tracking-widest text-cyan-400">
+      <p className="mb-4 shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
         Properties
       </p>
 
@@ -92,8 +94,9 @@ export default function EditorInspector({
 
       {item?.locked && (
         <div className="rounded-xl border border-white/10 bg-slate-800/60 p-3">
-          <p className="text-sm font-bold text-white">
-            🔒 This object is locked.
+          <p className="flex items-center gap-2 text-sm font-bold text-white">
+            <Lock size={15} aria-hidden="true" />
+            This object is locked.
           </p>
           <p className="mt-1 text-xs leading-relaxed text-slate-400">
             Unlock to edit this object.
@@ -339,20 +342,20 @@ function RotationControls({
         <button
           type="button"
           onClick={() => onRotate(itemId, -15)}
-          className="h-9 rounded-lg bg-slate-800 text-xl font-bold text-white transition hover:bg-slate-700"
+          className="editor-panel-control flex h-9 items-center justify-center rounded-lg"
           aria-label="Rotate left"
           title="Rotate left"
         >
-          ↺
+          <RotateCcw size={16} aria-hidden="true" />
         </button>
         <button
           type="button"
           onClick={() => onRotate(itemId, 15)}
-          className="h-9 rounded-lg bg-slate-800 text-xl font-bold text-white transition hover:bg-slate-700"
+          className="editor-panel-control flex h-9 items-center justify-center rounded-lg"
           aria-label="Rotate right"
           title="Rotate right"
         >
-          ↻
+          <RotateCw size={16} aria-hidden="true" />
         </button>
       </div>
     </InspectorField>

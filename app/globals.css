@@ -195,6 +195,12 @@
   --editor-control-standard: 32px;
   --editor-motion-fast: 140ms;
   --editor-motion-standard: 180ms;
+  --editor-shadow-panel:
+    0 1px 0 rgb(255 255 255 / 0.025) inset,
+    0 18px 44px rgb(2 6 23 / 0.24);
+  --editor-shadow-floating:
+    0 1px 0 rgb(255 255 255 / 0.035) inset,
+    0 12px 32px rgb(2 6 23 / 0.28);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -521,11 +527,43 @@
     box-shadow: var(--studio-shadow-dialog);
   }
 
+  .editor-focus-shell {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(circle at 12% 4%, rgb(6 182 212 / 0.055), transparent 24rem),
+      radial-gradient(circle at 88% 8%, rgb(124 58 237 / 0.055), transparent 28rem),
+      linear-gradient(155deg, var(--editor-shell), var(--editor-workspace));
+  }
+
+  .editor-focus-shell::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 20%, rgb(37 99 235 / 0.025) 52%, transparent 78%);
+    content: "";
+    pointer-events: none;
+  }
+
+  .editor-floating-panel {
+    border: 1px solid rgb(148 163 184 / 0.14);
+    background: linear-gradient(165deg, rgb(18 29 50 / 0.96), rgb(12 20 37 / 0.94));
+    box-shadow: var(--editor-shadow-panel);
+    backdrop-filter: blur(18px);
+  }
+
+  .editor-floating-toolbar {
+    border: 1px solid rgb(148 163 184 / 0.14);
+    background: rgb(15 23 42 / 0.88);
+    box-shadow: var(--editor-shadow-floating);
+    backdrop-filter: blur(16px);
+  }
+
   .editor-toolbar-surface {
-    border: 1px solid var(--editor-border-subtle);
+    border: 1px solid rgb(148 163 184 / 0.14);
     border-radius: var(--editor-radius-control);
     background: rgb(15 23 42 / 0.9);
-    box-shadow: 0 8px 24px rgb(2 6 23 / 0.2);
+    box-shadow: var(--editor-shadow-floating);
     backdrop-filter: blur(14px);
   }
 
@@ -581,6 +619,32 @@
     outline: 2px solid var(--editor-border-focus);
     outline-offset: 2px;
   }
+
+  .editor-panel-control {
+    border: 1px solid var(--editor-border-subtle);
+    background: rgb(30 41 59 / 0.72);
+    color: rgb(226 232 240);
+    transition:
+      background-color var(--editor-motion-fast) ease,
+      border-color var(--editor-motion-fast) ease,
+      color var(--editor-motion-fast) ease,
+      transform var(--editor-motion-fast) ease;
+  }
+
+  .editor-panel-control:hover:not(:disabled) {
+    border-color: rgb(148 163 184 / 0.22);
+    background: var(--editor-hover);
+    color: white;
+  }
+
+  .editor-panel-control:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .editor-panel-control:focus-visible {
+    outline: 2px solid var(--editor-border-focus);
+    outline-offset: 2px;
+  }
 }
 
 @keyframes studio-skeleton-shimmer {
@@ -611,7 +675,8 @@
   .editor-motion,
   .editor-motion *,
   .editor-toolbar-control,
-  .editor-document-action {
+  .editor-document-action,
+  .editor-panel-control {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

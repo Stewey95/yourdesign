@@ -41,6 +41,7 @@ type EditorCanvasProps = {
   onViewportChange: Dispatch<SetStateAction<EditorViewport>>;
   canvasSize: Size;
   canvasPresetFitRequest: number;
+  emptyCanvasTitle: string;
   items: DesignItem[];
   selectedItemId: string | null;
   editingItemId: string | null;
@@ -122,6 +123,7 @@ export default function EditorCanvas({
   onViewportChange,
   canvasSize,
   canvasPresetFitRequest,
+  emptyCanvasTitle,
   items,
   selectedItemId,
   editingItemId,
@@ -1400,7 +1402,7 @@ export default function EditorCanvas({
               >
                 <div className="max-w-56">
                   <p className="text-sm font-semibold tracking-tight text-slate-500 md:text-base">
-                    Start creating
+                    {emptyCanvasTitle}
                   </p>
                   <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400 md:text-xs">
                     Add text, media or elements, or begin with a template.

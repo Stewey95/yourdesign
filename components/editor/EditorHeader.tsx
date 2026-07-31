@@ -14,6 +14,9 @@ import {
 
 type EditorHeaderProps = {
   projectTitle: string;
+  productName: string | null;
+  productAssetName: string | null;
+  saveStatus: string;
   productStudioHref?: string;
   onTitleChange: (newTitle: string) => void;
   onOpenProjects: () => void;
@@ -27,6 +30,9 @@ type EditorHeaderProps = {
 
 export default function EditorHeader({
   projectTitle,
+  productName,
+  productAssetName,
+  saveStatus,
   productStudioHref,
   onTitleChange,
   onOpenProjects,
@@ -55,7 +61,7 @@ export default function EditorHeader({
   return (
     <div
       data-editor-retain-selection
-      className="editor-motion mb-4 flex min-w-0 flex-wrap items-center justify-between gap-2 md:mb-2 md:min-h-9 md:flex-nowrap"
+      className="editor-motion editor-floating-toolbar mb-4 flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl px-2 py-2 md:mb-3 md:min-h-12 md:flex-nowrap md:px-2.5"
     >
       {/* Brand Logo & Title */}
       <div className="flex min-w-0 items-center gap-2.5">
@@ -80,11 +86,22 @@ export default function EditorHeader({
           </span>
         </Link>
 
-        {/* Separator */}
-        <span className="hidden text-slate-700 sm:inline">/</span>
-
         {/* Dynamic Project Title Inline Input */}
-        <div className="flex items-center gap-1.5">
+        <div className="min-w-0 border-l border-white/10 pl-2.5 sm:pl-3">
+          <div className="mb-0.5 flex min-w-0 items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+            <span className="max-w-[100px] truncate text-cyan-300 sm:max-w-[180px]">
+              {productName ?? "Focus Studio"}
+            </span>
+            <span aria-hidden="true" className="text-slate-600">/</span>
+            <span className="max-w-[90px] truncate sm:max-w-[150px]">
+              {productAssetName ?? "Current design"}
+            </span>
+            <span className="hidden items-center gap-1 text-slate-500 sm:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
+              {saveStatus}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
           {isEditingTitle ? (
             <div className="flex items-center gap-1">
               <input
@@ -124,6 +141,7 @@ export default function EditorHeader({
               />
             </button>
           )}
+          </div>
         </div>
       </div>
 

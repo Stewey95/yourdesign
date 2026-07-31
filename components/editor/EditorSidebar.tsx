@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChevronRight,
   Copy,
   Folder,
   Image,
@@ -8,6 +9,8 @@ import {
   PanelsTopLeft,
   Shapes,
   Type,
+  Redo2,
+  Undo2,
 } from "lucide-react";
 import { useRef } from "react";
 import type {
@@ -140,7 +143,7 @@ export default function EditorSidebar({
     <div
       data-editor-retain-selection
       data-editor-keep-zoom-hud-open
-      className="min-w-0 max-w-full rounded-xl border border-[var(--editor-border-subtle)] bg-[var(--editor-panel)] p-3 text-sm text-slate-300 shadow-[0_8px_24px_rgb(2_6_23/0.18)] md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
+      className="editor-floating-panel min-w-0 max-w-full rounded-xl p-3 text-sm text-slate-300 md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
     >
       <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-6 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-1.5 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:shrink-0 md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
         {[
@@ -166,8 +169,8 @@ export default function EditorSidebar({
               }
               className={`flex min-w-0 w-full cursor-pointer flex-col items-center gap-1 rounded-xl border px-1 py-2 text-center text-xs font-semibold transition md:flex-row md:gap-3 md:px-3 md:py-2.5 md:text-left md:text-sm ${
                 isActive
-                  ? "border-cyan-400/60 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 text-white shadow-[0_0_18px_rgba(6,182,212,0.25)]"
-                  : "border-white/10 bg-slate-800 text-slate-300 hover:border-white/20 hover:bg-slate-700"
+                  ? "border-cyan-400/45 bg-[var(--editor-selected)] text-white shadow-[0_8px_22px_rgb(2_6_23/0.2)]"
+                  : "border-white/10 bg-slate-800/70 text-slate-300 hover:border-white/20 hover:bg-slate-700/80"
               }`}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 text-base md:h-8 md:w-8 md:text-base">
@@ -178,13 +181,13 @@ export default function EditorSidebar({
                 {tool.label}
               </span>
 
-              <span
-                className={`hidden text-lg transition-transform md:inline ${
+              <ChevronRight
+                size={15}
+                aria-hidden="true"
+                className={`hidden transition-transform md:inline ${
                   isActive ? "rotate-90" : ""
                 }`}
-              >
-                ›
-              </span>
+              />
             </button>
           );
         })}
@@ -216,7 +219,7 @@ export default function EditorSidebar({
             ref={mediaPanelRef}
             className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
           >
-            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
               Media
             </p>
             <label className="flex h-10 w-full cursor-pointer select-none items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white transition hover:bg-blue-500">
@@ -236,7 +239,7 @@ export default function EditorSidebar({
             ref={textPanelRef}
             className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
           >
-            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
               Text
             </p>
             <button
@@ -254,7 +257,7 @@ export default function EditorSidebar({
             ref={elementsPanelRef}
             className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
           >
-            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-cyan-400">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
               Elements
             </p>
             <ElementsPanel onInsertElement={onAddElement} />
@@ -281,22 +284,22 @@ export default function EditorSidebar({
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          className="editor-panel-control flex h-8 w-8 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Undo"
           title="Undo"
         >
-          ↶
+          <Undo2 size={15} aria-hidden="true" />
         </button>
 
         <button
           type="button"
           onClick={onRedo}
           disabled={!canRedo}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-slate-700 text-lg font-bold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          className="editor-panel-control flex h-8 w-8 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Redo"
           title="Redo"
         >
-          ↷
+          <Redo2 size={15} aria-hidden="true" />
         </button>
 
         <button

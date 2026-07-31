@@ -1,10 +1,17 @@
 "use client";
 
 import {
+  ArrowDown,
+  ArrowUp,
   Copy,
   Lock,
   LockOpen,
   Palette,
+  Redo2,
+  RotateCcw,
+  RotateCw,
+  Trash2,
+  Undo2,
 } from "lucide-react";
 import {
   useCallback,
@@ -393,7 +400,7 @@ export default function MobileContextToolbar({
         />
       )}
 
-      <div className="relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/95 px-3 py-2 shadow-2xl backdrop-blur-xl">
+      <div className="editor-floating-toolbar relative min-w-0 overflow-hidden rounded-xl px-3 py-2">
         <button
           type="button"
           disabled={!canScrollLeft}
@@ -439,7 +446,7 @@ export default function MobileContextToolbar({
                 className="flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full bg-slate-700 px-2 text-sm font-bold text-white"
                 title="Text colour"
               >
-                🎨
+                <Palette size={15} aria-hidden="true" />
                 <span className="sr-only">Text colour</span>
                 <input
                   type="color"
@@ -474,7 +481,7 @@ export default function MobileContextToolbar({
                 aria-label="Rotate left"
                 title="Rotate left"
               >
-                ↺
+                <RotateCcw size={16} aria-hidden="true" />
               </button>
 
               <button
@@ -485,7 +492,7 @@ export default function MobileContextToolbar({
                 aria-label="Rotate right"
                 title="Rotate right"
               >
-                ↻
+                <RotateCw size={16} aria-hidden="true" />
               </button>
 
               {item.type === "image" && (
@@ -541,7 +548,7 @@ export default function MobileContextToolbar({
                 aria-label="Send Backward"
                 title="Send Backward"
               >
-                ⬇️
+                <ArrowDown size={16} aria-hidden="true" />
               </button>
 
               <button
@@ -553,7 +560,7 @@ export default function MobileContextToolbar({
                 aria-label="Bring Forward"
                 title="Bring Forward"
               >
-                ⬆️
+                <ArrowUp size={16} aria-hidden="true" />
               </button>
             </>
           )}
@@ -586,7 +593,7 @@ export default function MobileContextToolbar({
             aria-label="Undo"
             title="Undo"
           >
-            ↶
+            <Undo2 size={16} aria-hidden="true" />
           </button>
 
           <button
@@ -598,7 +605,7 @@ export default function MobileContextToolbar({
             aria-label="Redo"
             title="Redo"
           >
-            ↷
+            <Redo2 size={16} aria-hidden="true" />
           </button>
 
           {!item.locked && (
@@ -622,7 +629,7 @@ export default function MobileContextToolbar({
                 aria-label="Delete selected item"
                 title="Delete selected item"
               >
-                🗑
+                <Trash2 size={16} aria-hidden="true" />
               </button>
             </>
           )}

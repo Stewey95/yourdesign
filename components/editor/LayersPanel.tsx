@@ -125,7 +125,7 @@ export default function LayersPanel({
       <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
         <h2
           id="layers-heading"
-          className="text-xs font-bold uppercase tracking-widest text-cyan-400"
+          className="text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300"
         >
           Layers
         </h2>

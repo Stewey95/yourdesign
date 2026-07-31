@@ -1,5 +1,14 @@
 "use client";
 
+import {
+  ArrowDown,
+  ArrowUp,
+  BringToFront,
+  Palette,
+  RotateCcw,
+  RotateCw,
+  SendToBack,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TEXT_FONT_SIZE_STEP } from "./editor.constants";
 import FontPicker from "./FontPicker";
@@ -68,7 +77,7 @@ export default function TextToolbar({
       data-text-toolbar={item.id}
       onDragStart={(event) => event.preventDefault()}
       onPointerMove={(event) => event.stopPropagation()}
-      className="mb-3 w-full min-w-0 select-none overflow-hidden rounded-2xl bg-slate-900/95 px-3 py-2 shadow-lg [&_*]:select-none"
+      className="editor-floating-toolbar mb-3 w-full min-w-0 select-none overflow-hidden rounded-xl px-3 py-2 [&_*]:select-none"
       style={{
         WebkitUserSelect: "none",
         userSelect: "none",
@@ -120,7 +129,7 @@ export default function TextToolbar({
             className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
             aria-label="Rotate text left"
           >
-            ↺
+            <RotateCcw size={16} aria-hidden="true" />
           </button>
 
           <button
@@ -133,7 +142,7 @@ export default function TextToolbar({
             className="shrink-0 cursor-pointer rounded-full bg-slate-700 px-3 py-1 text-xl font-bold text-white"
             aria-label="Rotate text right"
           >
-            ↻
+            <RotateCw size={16} aria-hidden="true" />
           </button>
 
           <button
@@ -150,7 +159,7 @@ export default function TextToolbar({
             aria-label="Send Backward"
             title="Send Backward"
           >
-            ⬇️
+            <ArrowDown size={16} aria-hidden="true" />
           </button>
 
           <button
@@ -167,7 +176,7 @@ export default function TextToolbar({
             aria-label="Bring Forward"
             title="Bring Forward"
           >
-            ⬆️
+            <ArrowUp size={16} aria-hidden="true" />
           </button>
           <button
   type="button"
@@ -183,7 +192,7 @@ export default function TextToolbar({
   aria-label="Send to Back"
   title="Send to Back"
 >
-  ⏬
+  <SendToBack size={16} aria-hidden="true" />
 </button>
 
 <button
@@ -200,11 +209,11 @@ export default function TextToolbar({
   aria-label="Bring to Front"
   title="Bring to Front"
 >
-  ⏫
+  <BringToFront size={16} aria-hidden="true" />
 </button>
 
           <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
-            🎨
+            <Palette size={15} aria-hidden="true" />
 
             <input
               type="color"

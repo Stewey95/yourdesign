@@ -173,6 +173,8 @@ export default function EditorPreview({
   const [draftReady, setDraftReady] = useState(false);
   const [activeProject, setActiveProject] = useState<ProjectRecord | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("Untitled Design");
+  const [productName, setProductName] = useState<string | null>(null);
+  const [productAssetName, setProductAssetName] = useState<string | null>(null);
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
     useState(0);
   const [activeToolbarPanel, setActiveToolbarPanel] = useState<ToolbarPanel>(null);
@@ -335,9 +337,15 @@ export default function EditorPreview({
 
         if (productId && productAssetId) {
           const product = await getProduct(productId);
-          requestedProjectId =
-            product?.assets.find((asset) => asset.id === productAssetId)
-              ?.projectId ?? null;
+          const productAsset = product?.assets.find(
+            (asset) => asset.id === productAssetId
+          );
+          requestedProjectId = productAsset?.projectId ?? null;
+
+          if (!cancelled && product) {
+            setProductName(product.name);
+            setProductAssetName(productAsset?.name ?? null);
+          }
         }
 
         const activeId = requestedProjectId ?? getActiveProjectId();
@@ -2491,13 +2499,16 @@ if (direction === "back") {
         ref={editorShellRef}
         className={
           fullScreen
-            ? "w-full max-w-full overflow-hidden bg-[var(--editor-shell)] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-2 md:pt-3"
-            : "mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-xl border border-[var(--editor-border-subtle)] bg-[var(--editor-shell)] p-2 shadow-[0_16px_48px_rgb(2_6_23/0.24)] md:mt-2 md:flex md:flex-col md:px-4 md:pb-2 md:pt-3"
+            ? "editor-focus-shell w-full max-w-full overflow-hidden pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-3 md:pt-3"
+            : "editor-focus-shell mx-auto mt-8 w-full max-w-[1600px] overflow-hidden rounded-xl border border-[var(--editor-border-subtle)] p-2 shadow-[0_16px_48px_rgb(2_6_23/0.24)] md:mt-2 md:flex md:flex-col md:px-4 md:pb-3 md:pt-3"
         }
         style={{ height: fullScreen ? undefined : desktopEditorHeight }}
       >
       <EditorHeader
         projectTitle={projectTitle}
+        productName={productName}
+        productAssetName={productAssetName}
+        saveStatus={draftSaveError ? "Save issue" : draftReady ? "Autosave on" : "Opening draft"}
         productStudioHref={
           productId
             ? `/studio/${encodeURIComponent(productId)}${
@@ -2602,6 +2613,9 @@ if (direction === "back") {
           onViewportChange={setEditorViewport}
           canvasSize={canvasSize}
           canvasPresetFitRequest={canvasPresetFitRequest}
+          emptyCanvasTitle={`Start your ${(
+            productAssetName ?? projectTitle ?? "design"
+          ).toLocaleLowerCase()}`}
           toolbar={selectedItem && !selectedItem.locked ? (
             <LayerToolbar
               itemId={selectedItem.id}
