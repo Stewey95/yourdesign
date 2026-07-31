@@ -8,7 +8,11 @@ export const PRODUCT_TYPES = [
 ] as const;
 
 export type ProductType = (typeof PRODUCT_TYPES)[number];
-export type ProductStatus = "idea" | "in-progress" | "ready";
+export type ProductStatus =
+  | "draft"
+  | "in-progress"
+  | "ready-for-review"
+  | "ready";
 export type ProductAssetKind = "page" | "asset";
 export type DeliverableStatus = "planned" | "ready";
 
@@ -33,6 +37,7 @@ export type ProductRecord = {
   status: ProductStatus;
   assets: ProductAsset[];
   deliverables: ProductDeliverable[];
+  lastEditedAssetId?: string;
   createdAt: number;
   updatedAt: number;
 };

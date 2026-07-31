@@ -74,7 +74,11 @@ import {
   setActiveProjectId,
 } from "../lib/projects/projectsManager";
 import type { ToolbarPanel } from "./editor/EditorSidebar";
-import { getProduct } from "../lib/products/productsManager";
+import {
+  getProduct,
+  renamePageInProduct,
+  setProductLastEditedAsset,
+} from "../lib/products/productsManager";
 
 type EditorPreviewProps = {
   fullScreen?: boolean;
@@ -345,6 +349,7 @@ export default function EditorPreview({
           if (!cancelled && product) {
             setProductName(product.name);
             setProductAssetName(productAsset?.name ?? null);
+            void setProductLastEditedAsset(productId, productAssetId);
           }
         }
 
@@ -1018,8 +1023,19 @@ const getSnappedPosition = (
         setActiveProject(updated);
         void saveProject(updated);
       }
+      if (productId && productAssetId) {
+        setProductAssetName(trimmed);
+        void renamePageInProduct(productId, productAssetId, trimmed);
+      }
     },
-    [activeProject, canvasSize.height, canvasSize.width, selectedCanvasPresetId]
+    [
+      activeProject,
+      canvasSize.height,
+      canvasSize.width,
+      productAssetId,
+      productId,
+      selectedCanvasPresetId,
+    ]
   );
 
   const startNewDesign = async () => {

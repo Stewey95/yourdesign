@@ -3,7 +3,12 @@ import {
   openEditorDatabase,
   PRODUCTS_STORE_NAME,
 } from "../persistence/editorDatabase";
-import { createProject } from "../projects/projectsManager";
+import {
+  createProject,
+  duplicateProject,
+  deleteProject,
+  renameProject,
+} from "../projects/projectsManager";
 import {
   PRODUCT_TYPES,
   getProductTypeDefinition,
@@ -25,10 +30,13 @@ const restoreProduct = (raw: unknown): ProductRecord | null => {
   const type = isProductType(raw.type) ? raw.type : "blank-product";
   const now = Date.now();
   const status: ProductStatus =
-    raw.status === "idea" ||
+    raw.status === "draft" ||
     raw.status === "in-progress" ||
+    raw.status === "ready-for-review" ||
     raw.status === "ready"
       ? raw.status
+      : raw.status === "idea"
+      ? "draft"
       : "in-progress";
 
   const assets = Array.isArray(raw.assets)
@@ -71,6 +79,11 @@ const restoreProduct = (raw: unknown): ProductRecord | null => {
         }))
     : [];
 
+  const lastEditedAssetId =
+    typeof raw.lastEditedAssetId === "string" && raw.lastEditedAssetId
+      ? raw.lastEditedAssetId
+      : assets[0]?.id;
+
   return {
     id: raw.id,
     name:
@@ -81,6 +94,7 @@ const restoreProduct = (raw: unknown): ProductRecord | null => {
     status,
     assets,
     deliverables,
+    lastEditedAssetId,
     createdAt:
       typeof raw.createdAt === "number" ? raw.createdAt : now,
     updatedAt:
@@ -143,6 +157,7 @@ export async function createProduct(
   const project = await createProject(definition.startingAssetName);
   const now = Date.now();
   const productId = `product_${now}_${Math.random().toString(36).slice(2, 7)}`;
+  const assetId = `asset_${now}_${Math.random().toString(36).slice(2, 7)}`;
 
   const product: ProductRecord = {
     id: productId,
@@ -151,7 +166,7 @@ export async function createProduct(
     status: "in-progress",
     assets: [
       {
-        id: `asset_${now}_${Math.random().toString(36).slice(2, 7)}`,
+        id: assetId,
         name: definition.startingAssetName,
         kind: "page",
         projectId: project.id,
@@ -159,10 +174,228 @@ export async function createProduct(
       },
     ],
     deliverables: [],
+    lastEditedAssetId: assetId,
     createdAt: now,
     updatedAt: now,
   };
 
   await saveProduct(product);
   return product;
+}
+
+export async function addPageToProduct(
+  productId: string,
+  name?: string
+): Promise<ProductRecord | null> {
+  const product = await getProduct(productId);
+  if (!product) return null;
+
+  const pageName = name?.trim() || `Page ${product.assets.length + 1}`;
+  const project = await createProject(pageName);
+  const now = Date.now();
+  const assetId = `asset_${now}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const newAsset = {
+    id: assetId,
+    name: pageName,
+    kind: "page" as const,
+    projectId: project.id,
+    order: product.assets.length,
+  };
+
+  const updated: ProductRecord = {
+    ...product,
+    assets: [...product.assets, newAsset],
+    lastEditedAssetId: assetId,
+    updatedAt: now,
+  };
+
+  await saveProduct(updated);
+  return updated;
+}
+
+export async function renamePageInProduct(
+  productId: string,
+  assetId: string,
+  newName: string
+): Promise<ProductRecord | null> {
+  const product = await getProduct(productId);
+  if (!product) return null;
+
+  const trimmed = newName.trim();
+  if (!trimmed) return product;
+
+  let targetProjectId: string | null = null;
+  const updatedAssets = product.assets.map((asset) => {
+    if (asset.id === assetId) {
+      targetProjectId = asset.projectId;
+      return { ...asset, name: trimmed };
+    }
+    return asset;
+  });
+
+  if (targetProjectId) {
+    await renameProject(targetProjectId, trimmed);
+  }
+
+  const updated: ProductRecord = {
+    ...product,
+    assets: updatedAssets,
+    updatedAt: Date.now(),
+  };
+
+  await saveProduct(updated);
+  return updated;
+}
+
+export async function duplicatePageInProduct(
+  productId: string,
+  assetId: string
+): Promise<ProductRecord | null> {
+  const product = await getProduct(productId);
+  if (!product) return null;
+
+  const sourceAsset = product.assets.find((asset) => asset.id === assetId);
+  if (!sourceAsset) return product;
+
+  const duplicatedProject = await duplicateProject(sourceAsset.projectId);
+  if (!duplicatedProject) return product;
+
+  const newTitle = `${sourceAsset.name} (Copy)`;
+  await renameProject(duplicatedProject.id, newTitle);
+
+  const now = Date.now();
+  const newAssetId = `asset_${now}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const newAsset = {
+    id: newAssetId,
+    name: newTitle,
+    kind: sourceAsset.kind,
+    projectId: duplicatedProject.id,
+    order: sourceAsset.order + 1,
+  };
+
+  const newAssets = [...product.assets];
+  const sourceIndex = newAssets.findIndex((a) => a.id === assetId);
+  if (sourceIndex >= 0) {
+    newAssets.splice(sourceIndex + 1, 0, newAsset);
+  } else {
+    newAssets.push(newAsset);
+  }
+
+  const reindexedAssets = newAssets.map((asset, index) => ({
+    ...asset,
+    order: index,
+  }));
+
+  const updated: ProductRecord = {
+    ...product,
+    assets: reindexedAssets,
+    lastEditedAssetId: newAssetId,
+    updatedAt: now,
+  };
+
+  await saveProduct(updated);
+  return updated;
+}
+
+export async function deletePageInProduct(
+  productId: string,
+  assetId: string
+): Promise<ProductRecord | null> {
+  const product = await getProduct(productId);
+  if (!product) return null;
+  if (product.assets.length <= 1) return product; // Don't delete the last remaining page
+
+  const targetAsset = product.assets.find((asset) => asset.id === assetId);
+  if (!targetAsset) return product;
+
+  await deleteProject(targetAsset.projectId);
+
+  const remainingAssets = product.assets
+    .filter((asset) => asset.id !== assetId)
+    .map((asset, index) => ({ ...asset, order: index }));
+
+  const updatedLastEdited =
+    product.lastEditedAssetId === assetId
+      ? remainingAssets[0]?.id
+      : product.lastEditedAssetId;
+
+  const updated: ProductRecord = {
+    ...product,
+    assets: remainingAssets,
+    lastEditedAssetId: updatedLastEdited,
+    updatedAt: Date.now(),
+  };
+
+  await saveProduct(updated);
+  return updated;
+}
+
+export async function reorderPagesInProduct(
+  productId: string,
+  assetIds: string[]
+): Promise<ProductRecord | null> {
+  const product = await getProduct(productId);
+  if (!product) return null;
+
+  const assetMap = new Map(product.assets.map((a) => [a.id, a]));
+  const reordered: typeof product.assets = [];
+
+  assetIds.forEach((id, index) => {
+    const asset = assetMap.get(id);
+    if (asset) {
+      reordered.push({ ...asset, order: index });
+      assetMap.delete(id);
+    }
+  });
+
+  // Append any missing assets at the end
+  assetMap.forEach((asset) => {
+    reordered.push({ ...asset, order: reordered.length });
+  });
+
+  const updated: ProductRecord = {
+    ...product,
+    assets: reordered,
+    updatedAt: Date.now(),
+  };
+
+  await saveProduct(updated);
+  return updated;
+}
+
+export async function updateProductStatus(
+  productId: string,
+  status: ProductStatus
+): Promise<ProductRecord | null> {
+  const product = await getProduct(productId);
+  if (!product) return null;
+
+  const updated: ProductRecord = {
+    ...product,
+    status,
+    updatedAt: Date.now(),
+  };
+
+  await saveProduct(updated);
+  return updated;
+}
+
+export async function setProductLastEditedAsset(
+  productId: string,
+  assetId: string
+): Promise<ProductRecord | null> {
+  const product = await getProduct(productId);
+  if (!product) return null;
+  if (product.lastEditedAssetId === assetId) return product;
+
+  const updated: ProductRecord = {
+    ...product,
+    lastEditedAssetId: assetId,
+    updatedAt: Date.now(),
+  };
+
+  await saveProduct(updated);
+  return updated;
 }
