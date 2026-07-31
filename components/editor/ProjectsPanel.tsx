@@ -67,7 +67,7 @@ export default function ProjectsPanel({
     return () => {
       active = false;
     };
-  }, [activeProjectId, projectTitle]);
+  }, [projectTitle]);
 
   const filteredProjects = useMemo(() => {
     if (!searchQuery.trim()) return projects;

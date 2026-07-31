@@ -69,7 +69,6 @@ export default function CanvasViewModeControl({
   const protectPointer = (
     event: React.PointerEvent<HTMLButtonElement>
   ) => {
-    event.preventDefault();
     event.stopPropagation();
   };
 

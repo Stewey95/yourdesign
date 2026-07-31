@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  GripVertical,
   Pencil,
   Plus,
   Trash2,
@@ -90,6 +91,44 @@ export default function ProductPage() {
 
   // Status selector dropdown toggle
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+
+  // Drag and drop page reordering state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (index: number, e: React.DragEvent) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  };
+
+  const handleDragOver = (index: number, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = async (targetIndex: number, e: React.DragEvent) => {
+    e.preventDefault();
+    if (!product || draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const newAssets = [...product.assets];
+    const [moved] = newAssets.splice(draggedIndex, 1);
+    newAssets.splice(targetIndex, 0, moved);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    const assetIds = newAssets.map((a) => a.id);
+    const updated = await reorderPagesInProduct(product.id, assetIds);
+    if (updated) {
+      setProduct(updated);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -433,12 +472,27 @@ export default function ProductPage() {
                 const project = projectsMap.get(asset.projectId);
                 const isEditingThisAsset = editingAssetId === asset.id;
                 const isLastEdited = product.lastEditedAssetId === asset.id;
+                const isBeingDragged = draggedIndex === index;
+                const isDragOver = dragOverIndex === index;
 
                 return (
                   <div
                     key={asset.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(index, e)}
+                    onDragOver={(e) => handleDragOver(index, e)}
+                    onDragLeave={() => setDragOverIndex(null)}
+                    onDragEnd={() => {
+                      setDraggedIndex(null);
+                      setDragOverIndex(null);
+                    }}
+                    onDrop={(e) => handleDrop(index, e)}
                     className={`studio-card group relative flex flex-col justify-between overflow-hidden rounded-xl transition ${
-                      isLastEdited
+                      isBeingDragged ? "opacity-40 border-dashed border-blue-400" : ""
+                    } ${
+                      isDragOver
+                        ? "border-blue-500 ring-2 ring-blue-500/40 bg-blue-50/20"
+                        : isLastEdited
                         ? "ring-2 ring-blue-500/40"
                         : "hover:border-slate-300"
                     }`}
@@ -458,7 +512,11 @@ export default function ProductPage() {
                     <div className="p-4">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          <span
+                            className="flex cursor-grab items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-200"
+                            title="Click and drag to reorder page"
+                          >
+                            <GripVertical size={12} className="text-slate-400" />
                             Page {index + 1}
                           </span>
                           {isLastEdited && (
@@ -469,12 +527,12 @@ export default function ProductPage() {
                         </div>
 
                         {/* Order & Management Buttons */}
-                        <div className="flex items-center gap-1 opacity-90 sm:opacity-0 transition sm:group-hover:opacity-100">
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={(e) => handleMovePage(asset.id, "up", e)}
                             disabled={index === 0}
-                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
                             title="Move page up"
                           >
                             <ArrowUp size={14} />
@@ -483,7 +541,7 @@ export default function ProductPage() {
                             type="button"
                             onClick={(e) => handleMovePage(asset.id, "down", e)}
                             disabled={index === product.assets.length - 1}
-                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
                             title="Move page down"
                           >
                             <ArrowDown size={14} />
@@ -491,7 +549,7 @@ export default function ProductPage() {
                           <button
                             type="button"
                             onClick={(e) => handleDuplicatePage(asset, e)}
-                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                             title="Duplicate page"
                           >
                             <Copy size={14} />
@@ -503,7 +561,7 @@ export default function ProductPage() {
                               setDeleteTargetAsset(asset);
                             }}
                             disabled={product.assets.length <= 1}
-                            className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30"
+                            className="rounded p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30"
                             title="Delete page"
                           >
                             <Trash2 size={14} />

@@ -942,7 +942,7 @@ const getSnappedPosition = (
               height: canvasSize.height,
             },
             items: latestItemsRef.current,
-            updatedAt: Date.now(),
+            updatedAt: activeProject.updatedAt,
           });
         } catch (error) {
           console.warn(

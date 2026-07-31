@@ -153,7 +153,7 @@ export async function saveProject(project: ProjectRecord): Promise<void> {
       const storedProject: StoredProjectRecord = {
         ...project,
         items: await prepareDesignItemsForStorage(project.items),
-        updatedAt: Date.now(),
+        updatedAt: project.updatedAt || Date.now(),
       };
       const transaction = database.transaction(
         PROJECTS_STORE_NAME,
