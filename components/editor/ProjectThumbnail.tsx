@@ -23,7 +23,7 @@ export default function ProjectThumbnail({ project }: ProjectThumbnailProps) {
           height: `${containerHeight}px`,
           backgroundColor: "#0f172a",
         }}
-        className="relative overflow-hidden rounded border border-white/10 shadow-md transition-transform group-hover:scale-105"
+        className="relative overflow-hidden rounded border border-white/10 shadow-md md:transition-transform md:group-hover:scale-105"
       >
         {items.length === 0 ? (
           <div className="flex h-full w-full items-center justify-center text-[10px] italic text-slate-500">

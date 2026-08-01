@@ -1284,7 +1284,7 @@ export default function EditorCanvas({
       )}
       <div
         data-editor-retain-selection
-        className="mb-1 hidden h-10 items-center justify-between gap-2 md:flex"
+        className="relative z-[80] mb-1 hidden h-10 items-center justify-between gap-2 md:flex"
       >
         <div>{toolbar}</div>
         <div className="relative">

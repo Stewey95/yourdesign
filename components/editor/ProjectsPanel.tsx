@@ -22,6 +22,7 @@ import ProjectThumbnail from "./ProjectThumbnail";
 type ProjectsPanelProps = {
   activeProjectId: string | null;
   projectTitle?: string;
+  projectsRevision: number;
   onSelectProject: (project: ProjectRecord) => void;
   onNewProject: () => void;
 };
@@ -40,6 +41,7 @@ function formatTimeAgo(timestamp: number): string {
 export default function ProjectsPanel({
   activeProjectId,
   projectTitle,
+  projectsRevision,
   onSelectProject,
   onNewProject,
 }: ProjectsPanelProps) {
@@ -67,7 +69,7 @@ export default function ProjectsPanel({
     return () => {
       active = false;
     };
-  }, [projectTitle]);
+  }, [projectTitle, projectsRevision]);
 
   const filteredProjects = useMemo(() => {
     if (!searchQuery.trim()) return projects;
@@ -184,10 +186,10 @@ export default function ProjectsPanel({
               <div
                 key={project.id}
                 onClick={() => onSelectProject(project)}
-                className={`group relative cursor-pointer overflow-hidden rounded-xl border p-2.5 transition ${
+                className={`group relative cursor-pointer overflow-hidden rounded-xl border p-2.5 transition [-webkit-tap-highlight-color:transparent] ${
                   isActive
                     ? "border-cyan-400 bg-slate-800/90 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-                    : "border-white/10 bg-slate-800/50 hover:border-white/20 hover:bg-slate-800"
+                    : "border-white/10 bg-slate-800/50 md:hover:border-white/20 md:hover:bg-slate-800"
                 }`}
               >
                 {/* Visual Thumbnail Preview */}
@@ -222,7 +224,7 @@ export default function ProjectsPanel({
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5">
-                        <h4 className="truncate text-xs font-bold text-slate-100 group-hover:text-cyan-300">
+                        <h4 className="truncate text-xs font-bold text-slate-100 md:group-hover:text-cyan-300">
                           {project.title}
                         </h4>
                         {isActive && (

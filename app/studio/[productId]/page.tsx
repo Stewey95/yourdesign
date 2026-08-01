@@ -453,6 +453,9 @@ export default function ProductPage() {
                 <h2 className="mt-0.5 text-xl font-black tracking-tight text-slate-900">
                   Pages and Assets ({product.assets.length})
                 </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Drag pages into place, or use the order controls on each card.
+                </p>
               </div>
 
               {/* Add Page Action */}
@@ -513,8 +516,8 @@ export default function ProductPage() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span
-                            className="flex cursor-grab items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-200"
-                            title="Click and drag to reorder page"
+                            className="flex cursor-grab items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-200"
+                            title="Drag to reorder page"
                           >
                             <GripVertical size={12} className="text-slate-400" />
                             Page {index + 1}
@@ -527,32 +530,40 @@ export default function ProductPage() {
                         </div>
 
                         {/* Order & Management Buttons */}
-                        <div className="flex items-center gap-1">
+                        <div
+                          className="flex items-center gap-1"
+                          aria-label={`Page ${index + 1} order and management controls`}
+                        >
                           <button
                             type="button"
                             onClick={(e) => handleMovePage(asset.id, "up", e)}
                             disabled={index === 0}
-                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                            className="inline-flex min-h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-35"
                             title="Move page up"
+                            aria-label={`Move page ${index + 1} up`}
                           >
-                            <ArrowUp size={14} />
+                            <ArrowUp size={13} aria-hidden="true" />
+                            <span>Up</span>
                           </button>
                           <button
                             type="button"
                             onClick={(e) => handleMovePage(asset.id, "down", e)}
                             disabled={index === product.assets.length - 1}
-                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30"
+                            className="inline-flex min-h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-35"
                             title="Move page down"
+                            aria-label={`Move page ${index + 1} down`}
                           >
-                            <ArrowDown size={14} />
+                            <ArrowDown size={13} aria-hidden="true" />
+                            <span>Down</span>
                           </button>
                           <button
                             type="button"
                             onClick={(e) => handleDuplicatePage(asset, e)}
-                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                            className="flex min-h-8 min-w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                             title="Duplicate page"
+                            aria-label={`Duplicate page ${index + 1}`}
                           >
-                            <Copy size={14} />
+                            <Copy size={14} aria-hidden="true" />
                           </button>
                           <button
                             type="button"
@@ -561,10 +572,11 @@ export default function ProductPage() {
                               setDeleteTargetAsset(asset);
                             }}
                             disabled={product.assets.length <= 1}
-                            className="rounded p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30"
+                            className="flex min-h-8 min-w-8 items-center justify-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30"
                             title="Delete page"
+                            aria-label={`Delete page ${index + 1}`}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={14} aria-hidden="true" />
                           </button>
                         </div>
                       </div>

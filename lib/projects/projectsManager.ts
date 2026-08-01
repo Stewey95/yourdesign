@@ -67,7 +67,10 @@ const restoreProjectRecord = async (
       typeof raw.createdAt === "number" &&
       Number.isFinite(raw.createdAt)
         ? raw.createdAt
-        : now,
+        : typeof raw.updatedAt === "number" &&
+            Number.isFinite(raw.updatedAt)
+          ? raw.updatedAt
+          : now,
     updatedAt:
       typeof raw.updatedAt === "number" &&
       Number.isFinite(raw.updatedAt)
@@ -113,7 +116,10 @@ export async function getAllProjects(): Promise<ProjectRecord[]> {
 
     return restoredProjects
       .filter((project): project is ProjectRecord => project !== null)
-      .sort((a, b) => b.updatedAt - a.updatedAt);
+      .sort(
+        (a, b) =>
+          b.createdAt - a.createdAt || a.id.localeCompare(b.id)
+      );
   } catch (error) {
     console.error("Failed to load projects from IndexedDB:", error);
     return [];

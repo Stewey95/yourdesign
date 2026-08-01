@@ -177,6 +177,7 @@ export default function EditorPreview({
   const [draftReady, setDraftReady] = useState(false);
   const [activeProject, setActiveProject] = useState<ProjectRecord | null>(null);
   const [projectTitle, setProjectTitle] = useState<string>("Untitled Design");
+  const [projectsRevision, setProjectsRevision] = useState(0);
   const [productName, setProductName] = useState<string | null>(null);
   const [productAssetName, setProductAssetName] = useState<string | null>(null);
   const [canvasPresetFitRequest, setCanvasPresetFitRequest] =
@@ -353,8 +354,17 @@ export default function EditorPreview({
           }
         }
 
-        const activeId = requestedProjectId ?? getActiveProjectId();
+        const storedActiveId = getActiveProjectId();
+        const activeId = storedActiveId ?? requestedProjectId;
         let currentProj = activeId ? await getProject(activeId) : null;
+
+        if (
+          !currentProj &&
+          requestedProjectId &&
+          requestedProjectId !== storedActiveId
+        ) {
+          currentProj = await getProject(requestedProjectId);
+        }
 
         if (!currentProj) {
           const allProjects = await getAllProjects();
@@ -1087,6 +1097,7 @@ const getSnappedPosition = (
       setActiveProject(newProj);
       setProjectTitle(newProj.title);
       setActiveProjectId(newProj.id);
+      setProjectsRevision((revision) => revision + 1);
 
       restoreDesign({
         items: [],
@@ -2599,6 +2610,7 @@ if (direction === "back") {
           onToolbarPanelChange={setActiveToolbarPanel}
           activeProjectId={activeProject?.id ?? null}
           projectTitle={projectTitle}
+          projectsRevision={projectsRevision}
           onSelectProject={handleSelectProject}
           onNewProject={() => {
             setNewDesignError(null);
