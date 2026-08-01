@@ -66,7 +66,13 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-2 md:flex">
+          <Link
+            href="/studio"
+            className="studio-button studio-button-secondary"
+          >
+            My Products
+          </Link>
           <Link
             href="/studio/new"
             className="studio-button studio-button-primary"
@@ -101,6 +107,13 @@ export default function Navbar() {
                 {item.label}
               </a>
             ))}
+            <Link
+              href="/studio"
+              onClick={() => setMobileMenuOpen(false)}
+              className="studio-button studio-button-secondary mt-2 w-full"
+            >
+              My Products
+            </Link>
             <Link
               href="/studio/new"
               onClick={() => setMobileMenuOpen(false)}

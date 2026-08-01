@@ -388,7 +388,6 @@ export async function setProductLastEditedAsset(
 ): Promise<ProductRecord | null> {
   const product = await getProduct(productId);
   if (!product) return null;
-  if (product.lastEditedAssetId === assetId) return product;
 
   const updated: ProductRecord = {
     ...product,
