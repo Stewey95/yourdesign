@@ -192,6 +192,10 @@ export default function EditorPreview({
   vertical: false,
   horizontal: false,
 });
+  const snapStateRef = useRef({
+    vertical: false,
+    horizontal: false,
+  });
   const [desktopEditorHeight, setDesktopEditorHeight] = useState<
     number | undefined
   >(undefined);
@@ -502,12 +506,17 @@ export default function EditorPreview({
     projectTitle,
     selectedCanvasPresetId,
   ]);
-  const hideAlignmentGuides = () => {
-  setAlignmentGuides({
-    vertical: false,
-    horizontal: false,
-  });
-};
+  const hideAlignmentGuides = useCallback(() => {
+    snapStateRef.current = {
+      vertical: false,
+      horizontal: false,
+    };
+    setAlignmentGuides((current) =>
+      current.vertical || current.horizontal
+        ? { vertical: false, horizontal: false }
+        : current
+    );
+  }, []);
 const getSnappedPosition = (
   event: React.PointerEvent<HTMLDivElement>,
   canvasBounds: DOMRect,
@@ -532,17 +541,33 @@ const getSnappedPosition = (
   const canvasCentreY = canvasSize.height / 2;
   const activeSnapThreshold =
   (event.pointerType === "touch" ? 18 : SNAP_THRESHOLD) / displayScale;
+  const snapReleaseThreshold = activeSnapThreshold * 1.75;
+  const previousSnap = snapStateRef.current;
 
   const snapToVerticalCentre =
-    Math.abs(rawX - canvasCentreX) <= activeSnapThreshold;
+    Math.abs(rawX - canvasCentreX) <=
+    (previousSnap.vertical
+      ? snapReleaseThreshold
+      : activeSnapThreshold);
 
   const snapToHorizontalCentre =
-    Math.abs(rawY - canvasCentreY) <= activeSnapThreshold;
+    Math.abs(rawY - canvasCentreY) <=
+    (previousSnap.horizontal
+      ? snapReleaseThreshold
+      : activeSnapThreshold);
 
-  setAlignmentGuides({
+  const nextSnap = {
     vertical: snapToVerticalCentre,
     horizontal: snapToHorizontalCentre,
-  });
+  };
+
+  if (
+    nextSnap.vertical !== previousSnap.vertical ||
+    nextSnap.horizontal !== previousSnap.horizontal
+  ) {
+    snapStateRef.current = nextSnap;
+    setAlignmentGuides(nextSnap);
+  }
 
   return {
     x: snapToVerticalCentre ? canvasCentreX : rawX,
@@ -598,6 +623,11 @@ const getSnappedPosition = (
     itemId: string;
     offset: Position;
   } | null>(null);
+  const pendingDragPositionRef = useRef<{
+    itemId: string;
+    position: Position;
+  } | null>(null);
+  const dragPositionFrameRef = useRef<number | null>(null);
 
   const pinchRef = useRef<{
     itemId: string;
@@ -2125,6 +2155,34 @@ if (direction === "back") {
     return null;
   };
 
+  const applyDraggedItemPosition = useCallback((
+    itemId: string,
+    position: Position
+  ) => {
+    updateItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === itemId ? { ...item, position } : item
+      )
+    );
+  }, [updateItems]);
+
+  const flushDraggedItemPosition = useCallback(() => {
+    if (dragPositionFrameRef.current !== null) {
+      cancelAnimationFrame(dragPositionFrameRef.current);
+      dragPositionFrameRef.current = null;
+    }
+
+    const pendingPosition = pendingDragPositionRef.current;
+    pendingDragPositionRef.current = null;
+
+    if (pendingPosition) {
+      applyDraggedItemPosition(
+        pendingPosition.itemId,
+        pendingPosition.position
+      );
+    }
+  }, [applyDraggedItemPosition]);
+
   const updateDraggedItemPosition = (
     itemId: string,
     event: React.PointerEvent<HTMLDivElement>,
@@ -2142,11 +2200,22 @@ if (direction === "back") {
 
     if (!position) return;
 
-    updateItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === itemId ? { ...item, position } : item
-      )
-    );
+    pendingDragPositionRef.current = { itemId, position };
+
+    if (dragPositionFrameRef.current !== null) return;
+
+    dragPositionFrameRef.current = requestAnimationFrame(() => {
+      dragPositionFrameRef.current = null;
+      const pendingPosition = pendingDragPositionRef.current;
+      pendingDragPositionRef.current = null;
+
+      if (pendingPosition) {
+        applyDraggedItemPosition(
+          pendingPosition.itemId,
+          pendingPosition.position
+        );
+      }
+    });
   };
 
   const moveItem = (
@@ -2193,6 +2262,7 @@ if (direction === "back") {
   };
 
   const stopDragging = () => {
+  flushDraggedItemPosition();
   hideAlignmentGuides();
 
   requestAnimationFrame(() => {
@@ -2232,6 +2302,7 @@ if (direction === "back") {
     const cancelDragOnWindowBlur = () => {
       if (!pendingDragRef.current && !activeDragRef.current) return;
 
+      flushDraggedItemPosition();
       commitHistoryTransaction();
       pendingDragRef.current = null;
       activeDragRef.current = null;
@@ -2250,8 +2321,13 @@ if (direction === "back") {
       pendingDragRef.current = null;
       activeDragRef.current = null;
       dragGrabOffsetRef.current = null;
+      pendingDragPositionRef.current = null;
+      if (dragPositionFrameRef.current !== null) {
+        cancelAnimationFrame(dragPositionFrameRef.current);
+        dragPositionFrameRef.current = null;
+      }
     };
-  }, [commitHistoryTransaction]);
+  }, [commitHistoryTransaction, flushDraggedItemPosition]);
 
   const startDesktopResize = (
     event: React.PointerEvent<HTMLDivElement>,

@@ -1,12 +1,13 @@
 "use client";
 
+import { memo } from "react";
 import type { ProjectRecord } from "../../lib/projects/projects.types";
 
 type ProjectThumbnailProps = {
   project: ProjectRecord;
 };
 
-export default function ProjectThumbnail({ project }: ProjectThumbnailProps) {
+function ProjectThumbnail({ project }: ProjectThumbnailProps) {
   const { canvasSize, items } = project;
   const width = canvasSize.width;
   const height = canvasSize.height;
@@ -122,3 +123,5 @@ export default function ProjectThumbnail({ project }: ProjectThumbnailProps) {
     </div>
   );
 }
+
+export default memo(ProjectThumbnail);

@@ -186,7 +186,7 @@ export default function ProjectsPanel({
                 onClick={() => onSelectProject(project)}
                 className={`group relative cursor-pointer overflow-hidden rounded-xl border p-2.5 [-webkit-tap-highlight-color:transparent] focus-within:ring-1 focus-within:ring-cyan-400/50 ${
                   isActive
-                    ? "border-cyan-400 bg-slate-800/90 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                    ? "border-cyan-400 bg-slate-800/50"
                     : "border-white/10 bg-slate-800/50 md:hover:border-white/20 md:hover:bg-slate-800"
                 }`}
               >
@@ -225,11 +225,16 @@ export default function ProjectsPanel({
                         <h4 className="truncate text-xs font-bold text-slate-100">
                           {project.title}
                         </h4>
-                        {isActive && (
-                          <span className="shrink-0 rounded-full bg-cyan-500/20 px-1.5 py-0.2 text-[9px] font-extrabold text-cyan-300 border border-cyan-400/40">
-                            Active
-                          </span>
-                        )}
+                        <span
+                          aria-hidden={!isActive}
+                          className={`shrink-0 rounded-full border px-1.5 py-0.2 text-[9px] font-extrabold ${
+                            isActive
+                              ? "border-cyan-400/40 bg-cyan-500/20 text-cyan-300 opacity-100"
+                              : "border-transparent text-transparent opacity-0"
+                          }`}
+                        >
+                          Active
+                        </span>
                       </div>
                     )}
 
@@ -276,7 +281,10 @@ export default function ProjectsPanel({
                   <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2">
                     <button
                       type="button"
-                      onClick={() => onSelectProject(project)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelectProject(project);
+                      }}
                       className="cursor-pointer text-[11px] font-semibold text-cyan-400 transition hover:text-cyan-300"
                     >
                       {isActive ? "Currently Editing" : "Open Design →"}
