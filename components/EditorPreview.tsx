@@ -1031,7 +1031,9 @@ const getSnappedPosition = (
           updatedAt: Date.now(),
         };
         setActiveProject(updated);
-        void saveProject(updated);
+        void saveProject(updated).then(() =>
+          setProjectsRevision((revision) => revision + 1)
+        );
       }
       if (productId && productAssetId) {
         setProductAssetName(trimmed);
@@ -2609,7 +2611,6 @@ if (direction === "back") {
           activeToolbarPanel={activeToolbarPanel}
           onToolbarPanelChange={setActiveToolbarPanel}
           activeProjectId={activeProject?.id ?? null}
-          projectTitle={projectTitle}
           projectsRevision={projectsRevision}
           onSelectProject={handleSelectProject}
           onNewProject={() => {

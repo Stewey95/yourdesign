@@ -21,7 +21,6 @@ import ProjectThumbnail from "./ProjectThumbnail";
 
 type ProjectsPanelProps = {
   activeProjectId: string | null;
-  projectTitle?: string;
   projectsRevision: number;
   onSelectProject: (project: ProjectRecord) => void;
   onNewProject: () => void;
@@ -40,7 +39,6 @@ function formatTimeAgo(timestamp: number): string {
 
 export default function ProjectsPanel({
   activeProjectId,
-  projectTitle,
   projectsRevision,
   onSelectProject,
   onNewProject,
@@ -69,7 +67,7 @@ export default function ProjectsPanel({
     return () => {
       active = false;
     };
-  }, [projectTitle, projectsRevision]);
+  }, [projectsRevision]);
 
   const filteredProjects = useMemo(() => {
     if (!searchQuery.trim()) return projects;
@@ -121,7 +119,7 @@ export default function ProjectsPanel({
         <button
           type="button"
           onClick={onNewProject}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:from-blue-500 hover:to-purple-500 shadow-md"
+          className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
         >
           <FolderPlus size={14} />
           <span>New Project</span>
@@ -186,7 +184,7 @@ export default function ProjectsPanel({
               <div
                 key={project.id}
                 onClick={() => onSelectProject(project)}
-                className={`group relative cursor-pointer overflow-hidden rounded-xl border p-2.5 transition [-webkit-tap-highlight-color:transparent] ${
+                className={`group relative cursor-pointer overflow-hidden rounded-xl border p-2.5 [-webkit-tap-highlight-color:transparent] focus-within:ring-1 focus-within:ring-cyan-400/50 ${
                   isActive
                     ? "border-cyan-400 bg-slate-800/90 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
                     : "border-white/10 bg-slate-800/50 md:hover:border-white/20 md:hover:bg-slate-800"
@@ -224,7 +222,7 @@ export default function ProjectsPanel({
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5">
-                        <h4 className="truncate text-xs font-bold text-slate-100 md:group-hover:text-cyan-300">
+                        <h4 className="truncate text-xs font-bold text-slate-100">
                           {project.title}
                         </h4>
                         {isActive && (

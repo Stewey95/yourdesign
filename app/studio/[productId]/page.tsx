@@ -414,6 +414,24 @@ export default function ProductPage() {
                     Continue Editing {activeAsset.name}
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document.getElementById("product-pages")?.scrollIntoView({
+                        behavior: window.matchMedia(
+                          "(prefers-reduced-motion: reduce)"
+                        ).matches
+                          ? "auto"
+                          : "smooth",
+                        block: "start",
+                      })
+                    }
+                    className="studio-button studio-button-secondary min-h-11"
+                  >
+                    <GripVertical size={16} aria-hidden="true" />
+                    Reorder Pages
+                  </button>
+
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
                     <Clock size={14} aria-hidden="true" />
                     Last edited page
@@ -444,7 +462,7 @@ export default function ProductPage() {
 
         {/* Product Hierarchy & Page List */}
         <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <section>
+          <section id="product-pages" className="scroll-mt-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
@@ -454,7 +472,7 @@ export default function ProductPage() {
                   Pages and Assets ({product.assets.length})
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Drag pages into place, or use the order controls on each card.
+                  Drag a page card, or use its clearly labelled Up and Down controls.
                 </p>
               </div>
 

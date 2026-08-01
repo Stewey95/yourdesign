@@ -90,10 +90,10 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
               key={cat.id}
               type="button"
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+              className={`flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold md:transition-colors ${
                 isActive
                   ? "border-cyan-400/60 bg-cyan-500/20 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.2)]"
-                  : "border-white/10 bg-slate-900/60 text-slate-400 hover:border-white/20 hover:text-slate-200"
+                  : "border-white/10 bg-slate-900/60 text-slate-400 md:hover:border-white/20 md:hover:text-slate-200"
               }`}
             >
               <span>{cat.label}</span>
@@ -129,7 +129,7 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
               <div
                 key={template.id}
                 onClick={() => onSelectTemplate(template)}
-                className="group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-2.5 transition hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-lg active:scale-[0.99]"
+                className="group relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/80 p-2.5 [-webkit-tap-highlight-color:transparent] md:transition-colors md:hover:border-cyan-500/50 md:hover:bg-slate-900 md:hover:shadow-lg"
               >
                 <div className="relative mb-2">
                   <TemplateThumbnail template={template} />
@@ -143,7 +143,7 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
 
                 <div className="flex flex-1 flex-col justify-between">
                   <div>
-                    <h4 className="break-words text-xs font-bold text-slate-100 transition group-hover:text-cyan-300 md:text-sm">
+                    <h4 className="break-words text-xs font-bold text-slate-100 md:text-sm md:transition-colors md:group-hover:text-cyan-300">
                       {template.name}
                     </h4>
                     <p className="mt-0.5 line-clamp-2 text-[11px] leading-tight text-slate-400 md:leading-snug">
@@ -158,8 +158,11 @@ export default function TemplatesPanel({ onSelectTemplate }: TemplatesPanelProps
 
                     <button
                       type="button"
-                      onClick={() => onSelectTemplate(template)}
-                      className="shrink-0 whitespace-nowrap rounded-lg bg-cyan-600 px-3 py-1 text-xs font-bold text-white shadow-sm transition hover:bg-cyan-500 active:scale-95"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelectTemplate(template);
+                      }}
+                      className="shrink-0 whitespace-nowrap rounded-lg bg-cyan-600 px-3 py-1 text-xs font-bold text-white shadow-sm [-webkit-tap-highlight-color:transparent] md:transition-colors md:hover:bg-cyan-500"
                     >
                       Use Template
                     </button>

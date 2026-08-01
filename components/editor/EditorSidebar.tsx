@@ -38,7 +38,6 @@ type EditorSidebarProps = {
   activeToolbarPanel: ToolbarPanel;
   onToolbarPanelChange: (panel: ToolbarPanel) => void;
   activeProjectId: string | null;
-  projectTitle?: string;
   projectsRevision: number;
   onSelectProject: (project: ProjectRecord) => void;
   onNewProject: () => void;
@@ -68,7 +67,6 @@ export default function EditorSidebar({
   activeToolbarPanel,
   onToolbarPanelChange,
   activeProjectId,
-  projectTitle,
   projectsRevision,
   onSelectProject,
   onNewProject,
@@ -203,7 +201,6 @@ export default function EditorSidebar({
           <div ref={projectsPanelRef}>
             <ProjectsPanel
               activeProjectId={activeProjectId}
-              projectTitle={projectTitle}
               projectsRevision={projectsRevision}
               onSelectProject={onSelectProject}
               onNewProject={onNewProject}
