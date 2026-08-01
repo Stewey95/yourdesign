@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Copy,
   FolderPlus,
@@ -49,6 +49,48 @@ export default function ProjectsPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const projectCardRefs = useRef(new Map<string, HTMLDivElement>());
+  const pendingSelectionAnchorRef = useRef<{
+    projectId: string;
+    viewportTop: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const pendingAnchor = pendingSelectionAnchorRef.current;
+
+    if (!pendingAnchor || pendingAnchor.projectId !== activeProjectId) return;
+
+    pendingSelectionAnchorRef.current = null;
+
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    const selectedCard = projectCardRefs.current.get(pendingAnchor.projectId);
+
+    if (!selectedCard) return;
+
+    const viewportDelta =
+      selectedCard.getBoundingClientRect().top - pendingAnchor.viewportTop;
+
+    if (Math.abs(viewportDelta) > 0.5) {
+      window.scrollBy({ top: viewportDelta, behavior: "auto" });
+    }
+  }, [activeProjectId]);
+
+  const selectProject = (
+    project: ProjectRecord,
+    projectCard: HTMLDivElement | null
+  ) => {
+    if (project.id === activeProjectId) return;
+
+    if (projectCard) {
+      pendingSelectionAnchorRef.current = {
+        projectId: project.id,
+        viewportTop: projectCard.getBoundingClientRect().top,
+      };
+    }
+
+    onSelectProject(project);
+  };
 
   const loadProjectsList = async () => {
     const list = await getAllProjects();
@@ -183,7 +225,14 @@ export default function ProjectsPanel({
             return (
               <div
                 key={project.id}
-                onClick={() => onSelectProject(project)}
+                ref={(element) => {
+                  if (element) {
+                    projectCardRefs.current.set(project.id, element);
+                  } else {
+                    projectCardRefs.current.delete(project.id);
+                  }
+                }}
+                onClick={(event) => selectProject(project, event.currentTarget)}
                 className={`group relative cursor-pointer overflow-hidden rounded-xl border p-2.5 [-webkit-tap-highlight-color:transparent] focus-within:ring-1 focus-within:ring-cyan-400/50 ${
                   isActive
                     ? "border-cyan-400 bg-slate-800/50"
@@ -283,7 +332,10 @@ export default function ProjectsPanel({
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
-                        onSelectProject(project);
+                        selectProject(
+                          project,
+                          event.currentTarget.closest<HTMLDivElement>(".group")
+                        );
                       }}
                       className="cursor-pointer text-[11px] font-semibold text-cyan-400 transition hover:text-cyan-300"
                     >

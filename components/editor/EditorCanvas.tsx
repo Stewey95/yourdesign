@@ -200,6 +200,9 @@ export default function EditorCanvas({
   const workspaceHoveredRef = useRef(false);
   const spacePressedRef = useRef(false);
   const [baseScale, setBaseScale] = useState(1);
+  const [measuredWorkspaceWidth, setMeasuredWorkspaceWidth] = useState<
+    number | null
+  >(null);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
   const [zoomFeedback, setZoomFeedback] = useState<{
     id: number;
@@ -244,6 +247,11 @@ export default function EditorCanvas({
       width: usableWidth,
       height: usableHeight,
     };
+    setMeasuredWorkspaceWidth((currentWidth) =>
+      currentWidth === null || Math.abs(currentWidth - usableWidth) > 0.5
+        ? usableWidth
+        : currentWidth
+    );
 
     const widthScale = usableWidth / canvasSize.width;
     const heightScale = usableHeight / canvasSize.height;
@@ -1275,7 +1283,14 @@ export default function EditorCanvas({
     viewportGestureRef.current = null;
   };
 
-  const displayScale = baseScale * viewport.zoom;
+  const mobileLayoutScale =
+    !isDesktopLayout && measuredWorkspaceWidth
+      ? measuredWorkspaceWidth / canvasSize.width
+      : baseScale;
+  const displayScale = mobileLayoutScale * viewport.zoom;
+  const mobileWorkspaceHeight = Math.round(
+    canvasSize.height * mobileLayoutScale + 12
+  );
 
   return (
     <div className="order-first min-w-0 md:order-none md:flex md:h-full md:min-h-0 md:flex-col">
@@ -1356,7 +1371,7 @@ export default function EditorCanvas({
         style={{
           height: isDesktopLayout
             ? undefined
-            : canvasSize.height * baseScale + 12,
+            : mobileWorkspaceHeight,
         }}
       >
           <div
