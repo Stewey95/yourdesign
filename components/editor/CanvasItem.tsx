@@ -2,18 +2,21 @@
 
 import { Lock } from "lucide-react";
 import CanvasImageItem from "./CanvasImageItem";
+import CanvasElementItem from "./CanvasElementItem";
 import CanvasShapeItem from "./CanvasShapeItem";
 import CanvasTextItem from "./CanvasTextItem";
 import type { TextResizeCorner } from "./CanvasTextItem";
 import type {
   ImageDesignItem,
+  ElementDesignItem,
+  ResizeCorner,
   ResizableDesignItem,
   ShapeDesignItem,
   TextDesignItem,
 } from "./editor.types";
 
 type ImageCanvasItemProps = {
-  item: ImageDesignItem | ShapeDesignItem;
+  item: ImageDesignItem | ShapeDesignItem | ElementDesignItem;
   selected: boolean;
   displayScale: number;
   onPointerDown: (
@@ -27,7 +30,8 @@ type ImageCanvasItemProps = {
   onLockedPointerDown: (id: string) => void;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
-    item: ResizableDesignItem
+    item: ResizableDesignItem,
+    corner: ResizeCorner
   ) => void;
 };
 
@@ -100,12 +104,17 @@ export default function CanvasItem(props: CanvasItemProps) {
         width:
           item.type === "text"
             ? "max-content"
-            : item.type === "shape"
+            : item.type === "shape" || item.type === "element"
               ? item.size.width
               : undefined,
-        height: item.type === "shape" ? item.size.height : undefined,
+        height:
+          item.type === "shape" || item.type === "element"
+            ? item.size.height
+            : undefined,
         maxWidth: textMaximumWidth,
-        transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
+        transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg)`,
+        WebkitBackfaceVisibility: "hidden",
+        backfaceVisibility: "hidden",
         touchAction: "none",
         WebkitUserSelect: "none",
         userSelect: "none",
@@ -121,6 +130,14 @@ export default function CanvasItem(props: CanvasItemProps) {
         />
       ) : item.type === "shape" && "onPointerDown" in props ? (
         <CanvasShapeItem
+          item={item}
+          selected={props.selected && !item.locked}
+          displayScale={props.displayScale}
+          onPointerDown={props.onPointerDown}
+          onResizeStart={props.onResizeStart}
+        />
+      ) : item.type === "element" && "onPointerDown" in props ? (
+        <CanvasElementItem
           item={item}
           selected={props.selected && !item.locked}
           displayScale={props.displayScale}

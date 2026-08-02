@@ -43,10 +43,14 @@ import {
 import type {
   DesignItem,
   Position,
+  ResizeCorner,
   ResizableDesignItem,
 } from "./editor/editor.types";
 import type { ElementAsset } from "./editor/elements/element.types";
-import { getElementSvgDataUrl } from "./editor/elements/elements.catalog";
+import {
+  getElementColourMode,
+  getElementDefaultStrokeWidth,
+} from "./editor/elements/elements.catalog";
 import { getDefaultShapeStyle } from "./editor/shape.constants";
 import {
   DEFAULT_SHAPE_STROKE_WIDTH,
@@ -576,27 +580,10 @@ const getSnappedPosition = (
 };
   const justPinchedRef = useRef(false);
 
-  const selectedTextItem = visibleCanvasItems.find(
-    (item): item is Extract<DesignItem, { type: "text" }> =>
-      item.id === selectedItemId &&
-      item.type === "text"
-  );
-
-  const selectedImageItem = visibleCanvasItems.find(
-    (item): item is Extract<DesignItem, { type: "image" }> =>
-      item.id === selectedItemId &&
-      item.type === "image"
-  );
-  const selectedShapeItem = visibleCanvasItems.find(
-    (item): item is Extract<DesignItem, { type: "shape" }> =>
-      item.id === selectedItemId &&
-      item.type === "shape"
-  );
   const selectedVisibleItem = visibleCanvasItems.find(
     (item) => item.id === selectedItemId
   );
-  const selectedItem =
-    selectedTextItem ?? selectedImageItem ?? selectedShapeItem;
+  const selectedItem = selectedVisibleItem;
   const selectedItemIndex = canvasItems.findIndex(
     (item) => item.id === selectedItemId
   );
@@ -1727,10 +1714,22 @@ if (direction === "back") {
     );
   };
 
+  const changeElementOpacity = (id: string, opacity: number) => {
+    const updateElement = (currentItems: DesignItem[]) =>
+      currentItems.map((item) =>
+        item.id === id && item.type === "element"
+          ? { ...item, opacity: Math.max(0, Math.min(100, opacity)) }
+          : item
+      );
+
+    if (isTransactionActive()) updateItems(updateElement);
+    else commitItems(updateElement);
+  };
+
   const changeShapeFill = (id: string, fill: string | null) => {
     commitItems((currentItems) =>
       currentItems.map((item) =>
-        item.id === id && item.type === "shape"
+        item.id === id && (item.type === "shape" || item.type === "element")
           ? { ...item, fill }
           : item
       )
@@ -1740,7 +1739,7 @@ if (direction === "back") {
   const changeShapeStroke = (id: string, stroke: string | null) => {
     commitItems((currentItems) =>
       currentItems.map((item) =>
-        item.id === id && item.type === "shape"
+        item.id === id && (item.type === "shape" || item.type === "element")
           ? {
               ...item,
               stroke,
@@ -1761,7 +1760,7 @@ if (direction === "back") {
     );
     const updateShape = (currentItems: DesignItem[]) =>
       currentItems.map((item) =>
-        item.id === id && item.type === "shape"
+        item.id === id && (item.type === "shape" || item.type === "element")
           ? { ...item, strokeWidth: nextStrokeWidth }
           : item
       );
@@ -1795,11 +1794,15 @@ if (direction === "back") {
       itemType: selectedItem.type,
       startDistance: getTouchDistance(event.touches),
       startWidth:
-        selectedItem.type === "image" || selectedItem.type === "shape"
+        selectedItem.type === "image" ||
+        selectedItem.type === "shape" ||
+        selectedItem.type === "element"
           ? selectedItem.size.width
           : undefined,
       startHeight:
-        selectedItem.type === "image" || selectedItem.type === "shape"
+        selectedItem.type === "image" ||
+        selectedItem.type === "shape" ||
+        selectedItem.type === "element"
           ? selectedItem.size.height
           : undefined,
       startFontSize:
@@ -1837,7 +1840,11 @@ if (direction === "back") {
           return item;
         }
 
-        if (item.type === "image" || item.type === "shape") {
+        if (
+          item.type === "image" ||
+          item.type === "shape" ||
+          item.type === "element"
+        ) {
           const width =
             (pinchRef.current.startWidth || DEFAULT_IMAGE_MAX_WIDTH) *
             scale;
@@ -1990,23 +1997,26 @@ if (direction === "back") {
       ),
       rotation: 0,
     };
-    const newElement: DesignItem =
+    const colourMode = getElementColourMode(element);
+    const shapeStyle =
       element.insertion.kind === "shape"
-        ? {
-            ...commonProperties,
-            type: "shape",
-            shapeKind: element.insertion.shapeKind,
-            ...getDefaultShapeStyle(element.insertion.shapeKind),
-          }
-        : {
-            ...commonProperties,
-            type: "image",
-            src: getElementSvgDataUrl(element),
-            brightness: 100,
-            contrast: 100,
-            saturation: 100,
-            opacity: 100,
-          };
+        ? getDefaultShapeStyle(element.insertion.shapeKind)
+        : null;
+    const newElement: DesignItem = {
+      ...commonProperties,
+      type: "element",
+      elementId: element.id,
+      displayName: element.name,
+      category: element.category,
+      fill:
+        colourMode === "fill-and-stroke"
+          ? shapeStyle?.fill ?? null
+          : null,
+      stroke: shapeStyle?.stroke ?? "#2563eb",
+      strokeWidth:
+        shapeStyle?.strokeWidth ?? getElementDefaultStrokeWidth(element),
+      opacity: 100,
+    };
 
     commitItems((currentItems) => [...currentItems, newElement]);
     setSelectedItemId(newElement.id);
@@ -2407,12 +2417,15 @@ if (direction === "back") {
 
   const startImageResize = (
     event: React.PointerEvent<HTMLDivElement>,
-    item: ResizableDesignItem
+    item: ResizableDesignItem,
+    corner: ResizeCorner
   ) => {
     const startX = event.clientX;
     const startY = event.clientY;
     const startWidth = item.size.width;
     const startHeight = item.size.height;
+    const horizontalDirection = corner.endsWith("right") ? 1 : -1;
+    const verticalDirection = corner.startsWith("bottom") ? 1 : -1;
     const canvasBounds = canvasRef.current
       ? getCanvasInteractionBounds(canvasRef.current)
       : null;
@@ -2431,11 +2444,11 @@ if (direction === "back") {
         (moveEvent.clientY - startY) / displayScale;
       const rotation = (item.rotation * Math.PI) / 180;
       const horizontalChange =
-        screenHorizontalChange * Math.cos(rotation) +
-        screenVerticalChange * Math.sin(rotation);
+        (screenHorizontalChange * Math.cos(rotation) +
+          screenVerticalChange * Math.sin(rotation)) * horizontalDirection;
       const verticalChange =
-        -screenHorizontalChange * Math.sin(rotation) +
-        screenVerticalChange * Math.cos(rotation);
+        (-screenHorizontalChange * Math.sin(rotation) +
+          screenVerticalChange * Math.cos(rotation)) * verticalDirection;
       const sizeVectorLengthSquared =
         startWidth * startWidth + startHeight * startHeight;
       const requestedScale = Math.max(
@@ -2561,7 +2574,8 @@ if (direction === "back") {
   const toggleShapeStyle = () => {
     if (
       !selectedVisibleItem ||
-      selectedVisibleItem.type !== "shape" ||
+      (selectedVisibleItem.type !== "shape" &&
+        selectedVisibleItem.type !== "element") ||
       selectedVisibleItem.locked
     ) {
       return;
@@ -2675,6 +2689,7 @@ if (direction === "back") {
           onChangeShapeFill={changeShapeFill}
           onChangeShapeStroke={changeShapeStroke}
           onChangeShapeStrokeWidth={changeShapeStrokeWidth}
+          onChangeElementOpacity={changeElementOpacity}
           onAdjustmentStart={startImageAdjustment}
           onAdjustmentEnd={commitHistoryTransaction}
           onAdjustmentChange={changeImageAdjustment}
@@ -2914,6 +2929,7 @@ if (direction === "back") {
           onChangeShapeFill={changeShapeFill}
           onChangeShapeStroke={changeShapeStroke}
           onChangeShapeStrokeWidth={changeShapeStrokeWidth}
+          onChangeElementOpacity={changeElementOpacity}
           onAdjustmentStart={startImageAdjustment}
           onAdjustmentEnd={commitHistoryTransaction}
           onAdjustmentChange={changeImageAdjustment}

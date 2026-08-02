@@ -22,6 +22,7 @@ import type { TextResizeCorner } from "./CanvasTextItem";
 import type {
   DesignItem,
   ResizableDesignItem,
+  ResizeCorner,
   Size,
   TextDesignItem,
 } from "./editor.types";
@@ -66,7 +67,8 @@ type EditorCanvasProps = {
   onLockedItemPointerDown: (id: string) => void;
   onImageResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
-    item: ResizableDesignItem
+    item: ResizableDesignItem,
+    corner: ResizeCorner
   ) => void;
   onTextResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,

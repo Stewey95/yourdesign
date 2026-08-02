@@ -1,5 +1,10 @@
 export type Position = { x: number; y: number };
 export type Size = { width: number; height: number };
+export type ResizeCorner =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 
 export type ShapeKind =
   | "rectangle"
@@ -52,12 +57,33 @@ export type ShapeDesignItem = {
   strokeWidth: number;
 };
 
-export type ResizableDesignItem = ImageDesignItem | ShapeDesignItem;
+export type ElementDesignItem = {
+  id: string;
+  type: "element";
+  elementId: string;
+  displayName: string;
+  category: string;
+  hidden: boolean;
+  locked: boolean;
+  position: Position;
+  size: Size;
+  rotation: number;
+  fill: string | null;
+  stroke: string | null;
+  strokeWidth: number;
+  opacity: number;
+};
+
+export type ResizableDesignItem =
+  | ImageDesignItem
+  | ShapeDesignItem
+  | ElementDesignItem;
 
 export type DesignItem =
   | ImageDesignItem
   | TextDesignItem
-  | ShapeDesignItem;
+  | ShapeDesignItem
+  | ElementDesignItem;
 
 export type ImageAdjustment =
   | "brightness"

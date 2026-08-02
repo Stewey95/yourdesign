@@ -1,6 +1,7 @@
 "use client";
 
 import type { ProjectRecord } from "../../lib/projects/projects.types";
+import ElementSvg from "../editor/ElementSvg";
 
 type ProductPageThumbnailProps = {
   project?: ProjectRecord | null;
@@ -132,6 +133,23 @@ export default function ProductPageThumbnail({
                       : undefined,
                   }}
                   className="pointer-events-none absolute object-cover opacity-90"
+                />
+              );
+            }
+
+            if (item.type === "element") {
+              return (
+                <ElementSvg
+                  key={item.id}
+                  item={item}
+                  style={{
+                    left: itemX,
+                    top: itemY,
+                    width: item.size.width * scale,
+                    height: item.size.height * scale,
+                    transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined,
+                  }}
+                  className="pointer-events-none absolute [&>svg]:h-full [&>svg]:w-full"
                 />
               );
             }

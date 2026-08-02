@@ -156,12 +156,16 @@ export default function LayersPanel({
                 ? getTextLayerName(layer.value)
                 : layer.type === "shape"
                   ? shapeNames.get(layer.id) ?? SHAPE_LABELS[layer.shapeKind]
+                  : layer.type === "element"
+                    ? layer.displayName
                   : imageNames.get(layer.id) ?? "Image";
             const LayerIcon =
               layer.type === "text"
                 ? Type
                 : layer.type === "shape"
                   ? Shapes
+                  : layer.type === "element"
+                    ? Shapes
                   : ImageIcon;
 
             return (

@@ -1,7 +1,8 @@
 "use client";
 
 import ShapeSvg from "./ShapeSvg";
-import type { ShapeDesignItem } from "./editor.types";
+import CornerResizeHandles from "./CornerResizeHandles";
+import type { ResizeCorner, ShapeDesignItem } from "./editor.types";
 
 type CanvasShapeItemProps = {
   item: ShapeDesignItem;
@@ -17,7 +18,8 @@ type CanvasShapeItemProps = {
   ) => boolean;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
-    item: ShapeDesignItem
+    item: ShapeDesignItem,
+    corner: ResizeCorner
   ) => void;
 };
 
@@ -56,28 +58,12 @@ export default function CanvasShapeItem({
       />
 
       {selected && (
-        <div
-          onPointerDown={(event) => onResizeStart(event, item)}
-          className="absolute hidden cursor-se-resize items-center justify-center md:flex"
-          style={{
-            left: "100%",
-            top: "100%",
-            width: 20 / displayScale,
-            height: 20 / displayScale,
-            transform: "translate(-50%, -50%)",
-          }}
-        >
-          <span
-            aria-hidden="true"
-            className="block bg-blue-500"
-            style={{
-              width: 4 / displayScale,
-              height: 4 / displayScale,
-              outline: `${1 / displayScale}px solid white`,
-              borderRadius: 1 / displayScale,
-            }}
-          />
-        </div>
+        <CornerResizeHandles
+          displayScale={displayScale}
+          onResizeStart={(event, corner) =>
+            onResizeStart(event, item, corner)
+          }
+        />
       )}
     </div>
   );

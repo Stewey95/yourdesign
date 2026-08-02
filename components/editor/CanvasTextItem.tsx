@@ -1,13 +1,10 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import type { TextDesignItem } from "./editor.types";
+import CornerResizeHandles from "./CornerResizeHandles";
+import type { ResizeCorner, TextDesignItem } from "./editor.types";
 
-export type TextResizeCorner =
-  | "top-left"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-right";
+export type TextResizeCorner = ResizeCorner;
 
 type CanvasTextItemProps = {
   item: TextDesignItem;
@@ -148,32 +145,6 @@ export default function CanvasTextItem({
     [mobileLayout]
   );
 
-  const resizeHandles: Array<{
-    corner: TextResizeCorner;
-    className: string;
-    style: React.CSSProperties;
-  }> = [
-    {
-      corner: "top-left",
-      className: "cursor-nwse-resize",
-      style: { left: 0, top: 0 },
-    },
-    {
-      corner: "top-right",
-      className: "cursor-nesw-resize",
-      style: { left: "100%", top: 0 },
-    },
-    {
-      corner: "bottom-left",
-      className: "cursor-nesw-resize",
-      style: { left: 0, top: "100%" },
-    },
-    {
-      corner: "bottom-right",
-      className: "cursor-nwse-resize",
-      style: { left: "100%", top: "100%" },
-    },
-  ];
   const measurementValue = item.value.endsWith("\n")
     ? `${item.value}\u200b`
     : item.value || "Type here";
@@ -301,32 +272,14 @@ maxWidth: maximumWidth,
           </div>
         )}
 
-        {selected && resizeHandles.map((handle) => (
-          <div
-            key={handle.corner}
-            onPointerDown={(event) =>
-              onResizeStart(event, item, handle.corner)
+        {selected && (
+          <CornerResizeHandles
+            displayScale={displayScale}
+            onResizeStart={(event, corner) =>
+              onResizeStart(event, item, corner)
             }
-            className={`absolute hidden items-center justify-center md:flex ${handle.className}`}
-            style={{
-              ...handle.style,
-              width: 20 / displayScale,
-              height: 20 / displayScale,
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <span
-              aria-hidden="true"
-              className="block bg-blue-500"
-              style={{
-                width: 4 / displayScale,
-                height: 4 / displayScale,
-                outline: `${1 / displayScale}px solid white`,
-                borderRadius: 1 / displayScale,
-              }}
-            />
-          </div>
-        ))}
+          />
+        )}
     </div>
   );
 }

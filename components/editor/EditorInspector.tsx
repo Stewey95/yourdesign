@@ -13,6 +13,10 @@ import type {
   ImageAdjustment,
 } from "./editor.types";
 import LayersPanel from "./LayersPanel";
+import {
+  getElementAsset,
+  getElementColourMode,
+} from "./elements/elements.catalog";
 import PropertyStepper from "./PropertyStepper";
 import {
   DEFAULT_SHAPE_COLOUR,
@@ -36,6 +40,7 @@ type EditorInspectorProps = {
   onChangeShapeFill: (id: string, fill: string | null) => void;
   onChangeShapeStroke: (id: string, stroke: string | null) => void;
   onChangeShapeStrokeWidth: (id: string, strokeWidth: number) => void;
+  onChangeElementOpacity: (id: string, opacity: number) => void;
   onAdjustmentStart: () => void;
   onAdjustmentEnd: () => void;
   onResetImageAdjustments: (id: string) => void;
@@ -61,6 +66,7 @@ export default function EditorInspector({
   onChangeShapeFill,
   onChangeShapeStroke,
   onChangeShapeStrokeWidth,
+  onChangeElementOpacity,
   onAdjustmentStart,
   onAdjustmentEnd,
   onResetImageAdjustments,
@@ -271,6 +277,64 @@ export default function EditorInspector({
           <RotationControls itemId={item.id} onRotate={onRotate} />
         </div>
       )}
+
+      {item?.type === "element" && !item.locked && (() => {
+        const asset = getElementAsset(item.elementId);
+        const colourMode = asset ? getElementColourMode(asset) : "none";
+        const supportsFill = colourMode === "fill-and-stroke";
+        const supportsStroke = colourMode !== "none";
+
+        return (
+          <div className="space-y-4">
+            {supportsFill && (
+              <ShapeColourControl
+                label="Fill"
+                value={item.fill}
+                fallback={DEFAULT_SHAPE_COLOUR}
+                emptyLabel="No fill"
+                restoreLabel="Add fill"
+                onChange={(fill) => onChangeShapeFill(item.id, fill)}
+              />
+            )}
+            {supportsStroke && (
+              <>
+                <ShapeColourControl
+                  label={supportsFill ? "Border" : "Stroke"}
+                  value={item.stroke}
+                  fallback={DEFAULT_SHAPE_COLOUR}
+                  emptyLabel={supportsFill ? "No border" : "No stroke"}
+                  restoreLabel={supportsFill ? "Add border" : "Add stroke"}
+                  onChange={(stroke) => onChangeShapeStroke(item.id, stroke)}
+                />
+                {item.stroke && (
+                  <PropertyStepper
+                    key={item.id}
+                    label={supportsFill ? "Border width" : "Stroke width"}
+                    value={item.strokeWidth}
+                    min={MIN_SHAPE_STROKE_WIDTH}
+                    max={MAX_SHAPE_STROKE_WIDTH}
+                    suffix="px"
+                    onCommit={(strokeWidth) =>
+                      onChangeShapeStrokeWidth(item.id, strokeWidth)
+                    }
+                    onEditStart={onAdjustmentStart}
+                    onEditEnd={onAdjustmentEnd}
+                  />
+                )}
+              </>
+            )}
+            <InspectorSlider
+              label="Opacity"
+              value={item.opacity}
+              max={100}
+              onStart={onAdjustmentStart}
+              onEnd={onAdjustmentEnd}
+              onChange={(opacity) => onChangeElementOpacity(item.id, opacity)}
+            />
+            <RotationControls itemId={item.id} onRotate={onRotate} />
+          </div>
+        );
+      })()}
     </aside>
   );
 }

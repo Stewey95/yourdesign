@@ -17,6 +17,7 @@ export type ElementAsset = {
   insertion:
     | { kind: "shape"; shapeKind: ShapeKind }
     | { kind: "graphic" };
+  colourMode?: "fill-and-stroke" | "stroke" | "none";
   favourite: boolean;
   recent: boolean;
   metadata?: Readonly<Record<string, ElementAssetMetadataValue>>;

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Template } from "../../lib/templates/templates.types";
+import ElementSvg from "./ElementSvg";
 
 type TemplateThumbnailProps = {
   template: Template;
@@ -74,6 +75,23 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
               >
                 {item.value}
               </div>
+            );
+          }
+
+          if (item.type === "element") {
+            return (
+              <ElementSvg
+                key={item.id}
+                item={item}
+                style={{
+                  left: itemX,
+                  top: itemY,
+                  width: item.size.width * scale,
+                  height: item.size.height * scale,
+                  transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined,
+                }}
+                className="pointer-events-none absolute [&>svg]:h-full [&>svg]:w-full"
+              />
             );
           }
 

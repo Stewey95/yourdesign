@@ -4,6 +4,10 @@ import type {
   TextDesignItem,
 } from "../../components/editor/editor.types";
 import { getShapePath } from "../../components/editor/shape.geometry";
+import {
+  getElementAsset,
+  getElementSvgMarkup,
+} from "../../components/editor/elements/elements.catalog";
 import type {
   JpgExportConfig,
   PngExportConfig,
@@ -257,11 +261,24 @@ async function renderDesignToImage(
         .map((item) => item.src)
     ),
   ];
+  const elementSources = new Map(
+    items.flatMap((item) => {
+      if (item.type !== "element") return [];
+      const asset = getElementAsset(item.elementId);
+      if (!asset) return [];
+      return [[
+        item.id,
+        `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+          getElementSvgMarkup(asset, item)
+        )}`,
+      ] as const];
+    })
+  );
   const loadedImages = new Map<string, HTMLImageElement>();
 
   try {
     const imageEntries = await Promise.all(
-      imageSources.map(
+      [...imageSources, ...elementSources.values()].map(
         async (source) =>
           [source, await loadImage(source)] as const
       )
@@ -279,6 +296,27 @@ async function renderDesignToImage(
 
       if (item.type === "shape") {
         drawShapeItem(context, item);
+        continue;
+      }
+
+      if (item.type === "element") {
+        const source = elementSources.get(item.id);
+        const elementImage = source ? loadedImages.get(source) : undefined;
+
+        if (!elementImage) continue;
+
+        context.save();
+        context.translate(item.position.x, item.position.y);
+        context.rotate((item.rotation * Math.PI) / 180);
+        context.globalAlpha = item.opacity / 100;
+        context.drawImage(
+          elementImage,
+          -item.size.width / 2,
+          -item.size.height / 2,
+          item.size.width,
+          item.size.height
+        );
+        context.restore();
         continue;
       }
 

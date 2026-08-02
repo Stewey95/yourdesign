@@ -61,6 +61,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     svg: svg('<path d="M50 6 94 50 50 94 6 50Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 96 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -72,6 +73,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     svg: svg('<path d="M25 8H75L96 50L75 92H25L4 50Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 104, height: 92 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -83,6 +85,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     svg: svg('<path d="M30 6H70L94 30V70L70 94H30L6 70V30Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 96 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -164,6 +167,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     svg: svg('<path d="M50 5C50 30 70 50 95 50C70 50 50 70 50 95C50 70 30 50 5 50C30 50 50 30 50 5Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 96 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -175,6 +179,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     svg: svg('<path d="M50 86S12 60 12 34a22 22 0 0 1 38-15 22 22 0 0 1 38 15c0 26-38 52-38 52Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 90 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -230,6 +235,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     svg: svg('<path d="M50 8L90 22V48C90 70 72 88 50 95C28 88 10 70 10 48V22L50 8Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 90, height: 100 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -254,6 +260,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     svg: svg('<path d="M12 20h76a8 8 0 0 1 8 8v40a8 8 0 0 1-8 8H45L22 90V76h-10a8 8 0 0 1-8-8V28a8 8 0 0 1 8-8Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 120, height: 96 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -280,6 +287,73 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     recent: false,
   },
 ];
+
+const ELEMENTS_BY_ID = new Map(
+  ELEMENT_CATALOG.map((element) => [element.id, element] as const)
+);
+
+export const getElementAsset = (elementId: string) =>
+  ELEMENTS_BY_ID.get(elementId);
+
+export const getElementColourMode = (element: ElementAsset) =>
+  element.colourMode ??
+  (element.insertion.kind === "shape" &&
+  element.insertion.shapeKind !== "line" &&
+  element.insertion.shapeKind !== "arrow"
+    ? "fill-and-stroke"
+    : "stroke");
+
+export const getElementDefaultStrokeWidth = (element: ElementAsset) => {
+  const match = element.svg.match(/stroke-width="([0-9.]+)"/);
+  const width = match ? Number(match[1]) : 5;
+
+  return Number.isFinite(width) ? width : 5;
+};
+
+export const getElementSvgMarkup = (
+  element: ElementAsset,
+  style?: {
+    fill?: string | null;
+    stroke?: string | null;
+    strokeWidth?: number;
+  }
+) => {
+  const mode = getElementColourMode(element);
+  const safeColour = (colour: string | null) =>
+    colour === null || /^#[0-9a-fA-F]{3,8}$/.test(colour)
+      ? colour
+      : "#2563eb";
+  let markup = element.svg;
+
+  if (mode === "none") return markup;
+
+  if (style?.stroke !== undefined) {
+    const stroke = safeColour(style.stroke);
+
+    markup = markup.replaceAll(
+      /stroke="#[0-9a-fA-F]{3,8}"/g,
+      stroke ? `stroke="${stroke}"` : 'stroke="none"'
+    );
+  }
+
+  if (style?.strokeWidth !== undefined) {
+    markup = markup.replaceAll(
+      /stroke-width="[0-9.]+"/g,
+      `stroke-width="${style.strokeWidth}"`
+    );
+  }
+
+  if (mode === "fill-and-stroke" && style?.fill !== undefined) {
+    const fill = safeColour(style.fill);
+
+    markup = markup.replaceAll(
+      /fill="(?:none|#[0-9a-fA-F]{3,8})"/g,
+      fill ? `fill="${fill}"` : 'fill="none"'
+    );
+  }
+
+  return markup;
+};
 
 const normalizeSearchValue = (value: string) =>
   value.trim().toLocaleLowerCase();

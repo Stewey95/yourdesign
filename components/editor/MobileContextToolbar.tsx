@@ -28,9 +28,14 @@ import {
 import FontPicker from "./FontPicker";
 import type {
   DesignItem,
+  ElementDesignItem,
   ImageAdjustment,
   ShapeDesignItem,
 } from "./editor.types";
+import {
+  getElementAsset,
+  getElementColourMode,
+} from "./elements/elements.catalog";
 import {
   DEFAULT_SHAPE_COLOUR,
   MAX_SHAPE_STROKE_WIDTH,
@@ -64,6 +69,7 @@ type MobileContextToolbarProps = {
   onChangeShapeFill: (id: string, fill: string | null) => void;
   onChangeShapeStroke: (id: string, stroke: string | null) => void;
   onChangeShapeStrokeWidth: (id: string, strokeWidth: number) => void;
+  onChangeElementOpacity: (id: string, opacity: number) => void;
   onAdjustmentStart: () => void;
   onAdjustmentEnd: () => void;
   onAdjustmentChange: (
@@ -105,6 +111,7 @@ export default function MobileContextToolbar({
   onChangeShapeFill,
   onChangeShapeStroke,
   onChangeShapeStrokeWidth,
+  onChangeElementOpacity,
   onAdjustmentStart,
   onAdjustmentEnd,
   onAdjustmentChange,
@@ -389,7 +396,9 @@ export default function MobileContextToolbar({
         </MobileStylePanel>
       )}
 
-      {!item.locked && item.type === "shape" && showShapeStyle && (
+      {!item.locked &&
+        (item.type === "shape" || item.type === "element") &&
+        showShapeStyle && (
         <MobileShapeStylePanel
           item={item}
           onChangeFill={onChangeShapeFill}
@@ -397,6 +406,7 @@ export default function MobileContextToolbar({
           onChangeStrokeWidth={onChangeShapeStrokeWidth}
           onAdjustmentStart={onAdjustmentStart}
           onAdjustmentEnd={onAdjustmentEnd}
+          onChangeElementOpacity={onChangeElementOpacity}
         />
       )}
 
@@ -516,7 +526,7 @@ export default function MobileContextToolbar({
                 </button>
               )}
 
-              {item.type === "shape" && (
+              {(item.type === "shape" || item.type === "element") && (
                 <button
                   type="button"
                   onPointerDown={protectButtonPointer}
@@ -664,12 +674,13 @@ type MobileAdjustmentSliderProps = {
 };
 
 type MobileShapeStylePanelProps = {
-  item: ShapeDesignItem;
+  item: ShapeDesignItem | ElementDesignItem;
   onChangeFill: (id: string, fill: string | null) => void;
   onChangeStroke: (id: string, stroke: string | null) => void;
   onChangeStrokeWidth: (id: string, strokeWidth: number) => void;
   onAdjustmentStart: () => void;
   onAdjustmentEnd: () => void;
+  onChangeElementOpacity: (id: string, opacity: number) => void;
 };
 
 function MobileShapeStylePanel({
@@ -679,14 +690,21 @@ function MobileShapeStylePanel({
   onChangeStrokeWidth,
   onAdjustmentStart,
   onAdjustmentEnd,
+  onChangeElementOpacity,
 }: MobileShapeStylePanelProps) {
-  const strokeOnly = isStrokeOnlyShape(item.shapeKind);
+  const asset = item.type === "element" ? getElementAsset(item.elementId) : null;
+  const colourMode = asset ? getElementColourMode(asset) : "none";
+  const strokeOnly =
+    item.type === "shape"
+      ? isStrokeOnlyShape(item.shapeKind)
+      : colourMode !== "fill-and-stroke";
+  const supportsStroke = item.type === "shape" || colourMode !== "none";
   const strokeLabel = strokeOnly ? "Line" : "Border";
   const hasVisibleStroke = Boolean(item.stroke && item.strokeWidth > 0);
 
   return (
     <MobileStylePanel
-      title="Shape style"
+      title={item.type === "element" ? "Element style" : "Shape style"}
       description="Choose colours and line weight."
       icon={
         <Palette size={18} aria-hidden="true" className="text-cyan-300" />
@@ -704,7 +722,7 @@ function MobileShapeStylePanel({
           />
         )}
 
-        <MobileShapeColourControl
+        {supportsStroke && <MobileShapeColourControl
           label={`${strokeLabel} colour`}
           value={item.stroke}
           fallback={DEFAULT_SHAPE_COLOUR}
@@ -712,9 +730,9 @@ function MobileShapeStylePanel({
           restoreLabel={`Restore ${strokeLabel.toLowerCase()}`}
           allowEmpty={!strokeOnly}
           onChange={(value) => onChangeStroke(item.id, value)}
-        />
+        />}
 
-        <label className="block rounded-xl border border-white/10 bg-slate-800/70 p-3">
+        {supportsStroke && <label className="block rounded-xl border border-white/10 bg-slate-800/70 p-3">
           <span className="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-slate-200">
             <span>{strokeLabel} width</span>
             <span className="tabular-nums text-cyan-300">
@@ -758,9 +776,9 @@ function MobileShapeStylePanel({
               Restore {strokeLabel.toLowerCase()} to adjust its width.
             </span>
           )}
-        </label>
+        </label>}
 
-        <div className="rounded-xl border border-white/10 bg-slate-800/70 p-3">
+        {supportsStroke && <div className="rounded-xl border border-white/10 bg-slate-800/70 p-3">
           <PropertyStepper
             key={item.id}
             label={`${strokeLabel} width`}
@@ -778,7 +796,18 @@ function MobileShapeStylePanel({
             onEditStart={onAdjustmentStart}
             onEditEnd={onAdjustmentEnd}
           />
-        </div>
+        </div>}
+        {item.type === "element" && (
+          <MobileAdjustmentSlider
+            label="Opacity"
+            value={item.opacity}
+            min={0}
+            max={100}
+            onAdjustmentStart={onAdjustmentStart}
+            onAdjustmentEnd={onAdjustmentEnd}
+            onChange={(opacity) => onChangeElementOpacity(item.id, opacity)}
+          />
+        )}
       </div>
     </MobileStylePanel>
   );

@@ -4,6 +4,7 @@ import {
   DEFAULT_TEXT_FONT_SIZE,
   getBoundedImageSize,
 } from "../../components/editor/editor.constants";
+import { getElementAsset } from "../../components/editor/elements/elements.catalog";
 import {
   getDefaultShapeStyle,
   SHAPE_DEFAULT_SIZES,
@@ -161,6 +162,38 @@ const restoreStoredItem = async (
         0,
         finiteNumber(value.strokeWidth, defaults.strokeWidth)
       ),
+    };
+  }
+
+  if (
+    value.type === "element" &&
+    typeof value.elementId === "string" &&
+    typeof value.displayName === "string" &&
+    typeof value.category === "string"
+  ) {
+    const asset = getElementAsset(value.elementId);
+
+    return {
+      ...value,
+      ...common,
+      type: "element",
+      elementId: value.elementId,
+      displayName: value.displayName,
+      category: value.category,
+      size: normaliseSize(value.size, asset?.defaultSize ?? {
+        width: DEFAULT_IMAGE_MAX_WIDTH,
+        height: DEFAULT_IMAGE_MAX_HEIGHT,
+      }),
+      fill:
+        typeof value.fill === "string" || value.fill === null
+          ? value.fill
+          : null,
+      stroke:
+        typeof value.stroke === "string" || value.stroke === null
+          ? value.stroke
+          : "#2563eb",
+      strokeWidth: Math.max(0, finiteNumber(value.strokeWidth, 5)),
+      opacity: Math.max(0, Math.min(100, finiteNumber(value.opacity, 100))),
     };
   }
 

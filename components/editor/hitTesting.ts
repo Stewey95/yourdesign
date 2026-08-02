@@ -1,10 +1,12 @@
 import type {
   DesignItem,
+  ElementDesignItem,
   ImageDesignItem,
   Position,
   ShapeDesignItem,
 } from "./editor.types";
 import { getShapePath } from "./shape.geometry";
+import { getElementAsset } from "./elements/elements.catalog";
 
 export const RASTER_ALPHA_HIT_THRESHOLD = 16;
 export const SHAPE_HIT_TOLERANCE = {
@@ -239,6 +241,52 @@ const hitTestShape: VisibleContentHitTester<ShapeDesignItem> = ({
   return hitsStroke;
 };
 
+const hitTestElement: VisibleContentHitTester<ElementDesignItem> = (
+  context
+) => {
+  const { item, canvasPoint, element } = context;
+  const asset = getElementAsset(item.elementId);
+
+  if (!asset) return true;
+
+  if (asset.insertion.kind === "shape") {
+    return hitTestShape({
+      ...context,
+      item: {
+        ...item,
+        type: "shape",
+        shapeKind: asset.insertion.shapeKind,
+      },
+    });
+  }
+
+  const svg = element.querySelector("svg");
+  if (!svg) return true;
+
+  const localPoint = toUnrotatedLocalPoint(item, canvasPoint);
+  const viewBox = svg.viewBox.baseVal;
+  const point = new DOMPoint(
+    viewBox.x +
+      ((localPoint.x + item.size.width / 2) / item.size.width) *
+        viewBox.width,
+    viewBox.y +
+      ((localPoint.y + item.size.height / 2) / item.size.height) *
+        viewBox.height
+  );
+
+  return Array.from(
+    svg.querySelectorAll<SVGGeometryElement>(
+      "path, rect, circle, ellipse, line, polyline, polygon"
+    )
+  ).some((geometry) => {
+      try {
+        return geometry.isPointInFill(point) || geometry.isPointInStroke(point);
+      } catch {
+        return true;
+      }
+  });
+};
+
 const visibleContentHitTesters: Partial<{
   [Type in DesignItem["type"]]: VisibleContentHitTester<
     Extract<DesignItem, { type: Type }>
@@ -246,6 +294,7 @@ const visibleContentHitTesters: Partial<{
 }> = {
   image: hitTestImage,
   shape: hitTestShape,
+  element: hitTestElement,
 };
 
 export const isPointerInsideVisibleContent = ({

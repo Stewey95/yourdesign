@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { ImageDesignItem } from "./editor.types";
+import CornerResizeHandles from "./CornerResizeHandles";
+import type { ImageDesignItem, ResizeCorner } from "./editor.types";
 
 type CanvasImageItemProps = {
   item: ImageDesignItem;
@@ -17,7 +18,8 @@ type CanvasImageItemProps = {
   ) => boolean;
   onResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
-    item: ImageDesignItem
+    item: ImageDesignItem,
+    corner: ResizeCorner
   ) => void;
 };
 
@@ -84,31 +86,12 @@ export default function CanvasImageItem({
       )}
 
       {selected && (
-        <div
-          onPointerDown={(event) => {
-            event.stopPropagation();
-            onResizeStart(event, item);
-          }}
-          className="absolute hidden cursor-se-resize items-center justify-center md:flex"
-          style={{
-            left: "100%",
-            top: "100%",
-            width: 20 / displayScale,
-            height: 20 / displayScale,
-            transform: "translate(-50%, -50%)",
-          }}
-        >
-          <span
-            aria-hidden="true"
-            className="block bg-blue-500"
-            style={{
-              width: 4 / displayScale,
-              height: 4 / displayScale,
-              outline: `${1 / displayScale}px solid white`,
-              borderRadius: 1 / displayScale,
-            }}
-          />
-        </div>
+        <CornerResizeHandles
+          displayScale={displayScale}
+          onResizeStart={(event, corner) =>
+            onResizeStart(event, item, corner)
+          }
+        />
       )}
     </div>
   );
