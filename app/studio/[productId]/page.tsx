@@ -6,13 +6,17 @@ import {
   ArrowUp,
   Check,
   CheckCircle2,
+  Circle,
   Clock,
   Copy,
+  FileArchive,
+  FileImage,
+  FileText,
   GripVertical,
+  PackageCheck,
   Pencil,
   Plus,
   Trash2,
-  PackageCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -69,6 +73,27 @@ const statusConfig: Record<
     border: "border-emerald-200",
   },
 };
+
+const packageTypes = [
+  {
+    id: "pdf",
+    name: "PDF Package",
+    description: "Combine your pages into one shareable document.",
+    icon: FileText,
+  },
+  {
+    id: "png",
+    name: "PNG Package",
+    description: "Prepare every page as a high-quality image.",
+    icon: FileImage,
+  },
+  {
+    id: "zip",
+    name: "ZIP Package",
+    description: "Bundle product files for delivery or publishing.",
+    icon: FileArchive,
+  },
+] as const;
 
 export default function ProductPage() {
   const params = useParams<{ productId: string }>();
@@ -322,6 +347,22 @@ export default function ProductPage() {
     ? projectsMap.get(activeAsset.projectId)
     : null;
   const currentStatus = statusConfig[product.status] || statusConfig["in-progress"];
+  const hasPages = product.assets.length > 0;
+  const hasProductName = product.name.trim().length > 0;
+  const hasPreparedPackage = product.deliverables.some(
+    (deliverable) => deliverable.status === "ready"
+  );
+  const isReadyToExport =
+    hasPages && hasProductName && hasPreparedPackage;
+  const readinessItems = [
+    { label: "Pages created", complete: hasPages },
+    { label: "Product named", complete: hasProductName },
+    { label: "Package prepared", complete: hasPreparedPackage },
+    { label: "Ready to export", complete: isReadyToExport },
+  ];
+  const completedReadinessItems = readinessItems.filter(
+    (item) => item.complete
+  ).length;
 
   return (
     <main className="studio-page">
@@ -650,48 +691,116 @@ export default function ProductPage() {
             </div>
           </section>
 
-          {/* Workflow & Deliverables Sidebar */}
+          {/* Product readiness and future package workflow */}
           <aside className="flex flex-col gap-6">
             <div className="studio-card p-5">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <CheckCircle2 size={20} aria-hidden="true" />
               </span>
               <h2 className="mt-3 text-base font-black text-slate-900">
-                Product Workflow
+                Product Readiness
               </h2>
               <p className="mt-1 text-xs leading-5 text-slate-600">
-                Turn your pages into a cohesive product bundle. Pages sync live with Focus Studio.
+                See what is complete and what your product needs next.
               </p>
-              <div className="mt-4 flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-                <div className="flex items-center justify-between">
-                  <span>Total pages</span>
-                  <span className="font-bold text-slate-900">
-                    {product.assets.length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Lifecycle status</span>
-                  <span className="font-bold text-slate-900">
-                    {currentStatus.label}
-                  </span>
-                </div>
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  {completedReadinessItems} of {readinessItems.length} complete
+                </p>
+                <ul className="mt-3 space-y-2.5">
+                  {readinessItems.map((item) => (
+                    <li
+                      key={item.label}
+                      className={`flex items-center gap-2 text-xs font-semibold ${
+                        item.complete ? "text-slate-800" : "text-slate-500"
+                      }`}
+                    >
+                      {item.complete ? (
+                        <CheckCircle2
+                          size={15}
+                          className="shrink-0 text-emerald-600"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Circle
+                          size={15}
+                          className="shrink-0 text-slate-400"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
-            <div className="studio-card p-5">
+            <section
+              aria-labelledby="product-package-title"
+              className="studio-card p-5"
+            >
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
                 <PackageCheck size={20} aria-hidden="true" />
               </span>
-              <h2 className="mt-3 text-base font-black text-slate-900">
-                Deliverables
+              <h2
+                id="product-package-title"
+                className="mt-3 text-base font-black text-slate-900"
+              >
+                Product Package
               </h2>
               <p className="mt-1 text-xs leading-5 text-slate-600">
-                Digital product packages and export bundles will build from your pages.
+                Your pages will become downloadable packages ready to share or
+                sell.
               </p>
-              <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center text-xs font-medium text-slate-500">
-                No deliverables planned yet
+              <div className="mt-4 space-y-2.5">
+                {packageTypes.map((packageType) => {
+                  const PackageIcon = packageType.icon;
+                  const prepared = product.deliverables.some(
+                    (deliverable) =>
+                      deliverable.status === "ready" &&
+                      deliverable.name
+                        .toLowerCase()
+                        .includes(packageType.id)
+                  );
+
+                  return (
+                    <div
+                      key={packageType.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm ring-1 ring-slate-200">
+                          <PackageIcon size={15} aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center justify-between gap-1.5">
+                            <h3 className="text-xs font-bold text-slate-900">
+                              {packageType.name}
+                            </h3>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                                prepared
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  : "border-slate-200 bg-white text-slate-500"
+                              }`}
+                            >
+                              {prepared ? "Prepared" : "Not prepared"}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                            {packageType.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+              <div className="mt-4 rounded-xl border border-dashed border-violet-200 bg-violet-50/60 px-3 py-3 text-[11px] leading-4 text-violet-800">
+                Package generation will become available here in a future
+                export sprint. No files are generated yet.
+              </div>
+            </section>
           </aside>
         </div>
       </div>
