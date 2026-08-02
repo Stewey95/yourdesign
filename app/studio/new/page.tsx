@@ -12,8 +12,7 @@ import { createProduct } from "../../../lib/products/productsManager";
 
 export default function NewProductPage() {
   const router = useRouter();
-  const [selectedType, setSelectedType] =
-    useState<ProductType>("printable-planner");
+  const [selectedType, setSelectedType] = useState<ProductType | null>(null);
   const [name, setName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +20,9 @@ export default function NewProductPage() {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const scrollAnimationRef = useRef<number | null>(null);
 
-  const selectedDefinition =
-    PRODUCT_TYPE_DEFINITIONS.find(({ id }) => id === selectedType) ??
-    PRODUCT_TYPE_DEFINITIONS[0];
+  const selectedDefinition = PRODUCT_TYPE_DEFINITIONS.find(
+    ({ id }) => id === selectedType
+  );
 
   useEffect(() => {
     const cancelScrollHandoff = () => {
@@ -111,7 +110,7 @@ export default function NewProductPage() {
   };
 
   const handleCreate = async () => {
-    if (isCreating) return;
+    if (isCreating || !selectedType || !selectedDefinition) return;
     setIsCreating(true);
     setError(null);
 
@@ -208,14 +207,18 @@ export default function NewProductPage() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") void handleCreate();
               }}
-              placeholder={`My ${selectedDefinition.name}`}
+              placeholder={
+                selectedDefinition
+                  ? `My ${selectedDefinition.name}`
+                  : "Choose a product type first"
+              }
               maxLength={80}
               className="studio-input min-w-0 flex-1 text-base font-semibold placeholder:font-normal"
             />
             <button
               type="button"
               onClick={() => void handleCreate()}
-              disabled={isCreating}
+              disabled={isCreating || !selectedDefinition}
               className="studio-button studio-button-primary min-h-12"
             >
               {isCreating ? "Preparing your product…" : "Create Product"}
