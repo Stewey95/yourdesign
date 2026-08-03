@@ -4,7 +4,6 @@ import {
   ArrowDown,
   ArrowUp,
   BringToFront,
-  Palette,
   RotateCcw,
   RotateCw,
   SendToBack,
@@ -12,6 +11,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { TEXT_FONT_SIZE_STEP } from "./editor.constants";
 import FontPicker from "./FontPicker";
+import GripixColorPicker from "./ColorPicker";
 import type { TextDesignItem } from "./editor.types";
 
 type TextToolbarProps = {
@@ -212,21 +212,12 @@ export default function TextToolbar({
   <BringToFront size={16} aria-hidden="true" />
 </button>
 
-          <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-slate-700 px-3 py-1 text-sm font-bold text-white">
-            <Palette size={15} aria-hidden="true" />
-
-            <input
-              type="color"
-              value={item.color}
-              onPointerDown={(event) =>
-                event.stopPropagation()
-              }
-              onChange={(event) =>
-                onChangeTextColor(item.id, event.target.value)
-              }
-              className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
-            />
-          </label>
+          <GripixColorPicker
+            value={item.color}
+            onChange={(color) => onChangeTextColor(item.id, color)}
+            ariaLabel="Text colour"
+            buttonClassName="rounded-full bg-slate-700 hover:bg-slate-600 px-3 py-1 border-0"
+          />
 
           <FontPicker
             itemId={item.id}

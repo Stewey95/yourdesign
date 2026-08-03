@@ -18,6 +18,7 @@ import type {
 type ImageCanvasItemProps = {
   item: ImageDesignItem | ShapeDesignItem | ElementDesignItem;
   selected: boolean;
+  mobileLayout?: boolean;
   displayScale: number;
   onPointerDown: (
     id: string,
@@ -124,6 +125,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasImageItem
           item={item}
           selected={props.selected && !item.locked}
+          mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
@@ -132,6 +134,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasShapeItem
           item={item}
           selected={props.selected && !item.locked}
+          mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
@@ -140,6 +143,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasElementItem
           item={item}
           selected={props.selected && !item.locked}
+          mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}

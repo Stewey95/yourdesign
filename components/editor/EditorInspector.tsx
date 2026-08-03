@@ -8,6 +8,7 @@ import {
   TEXT_FONT_SIZE_STEP,
 } from "./editor.constants";
 import FontPicker from "./FontPicker";
+import GripixColorPicker from "./ColorPicker";
 import type {
   DesignItem,
   ImageAdjustment,
@@ -152,14 +153,12 @@ export default function EditorInspector({
           </InspectorField>
 
           <InspectorField label="Colour">
-            <input
-              type="color"
+            <GripixColorPicker
               value={item.color}
-              onChange={(event) =>
-                onChangeTextColor(item.id, event.target.value)
-              }
-              className="h-9 w-full cursor-pointer rounded-lg border border-white/10 bg-slate-800 p-1"
-              aria-label="Text colour"
+              onChange={(color) => onChangeTextColor(item.id, color)}
+              ariaLabel="Text colour"
+              buttonClassName="w-full justify-between"
+              showHexText
             />
           </InspectorField>
 
@@ -357,12 +356,12 @@ function ShapeColourControl({
   return (
     <InspectorField label={label}>
       <div className="flex items-center gap-2">
-        <input
-          type="color"
+        <GripixColorPicker
           value={value ?? fallback}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-9 min-w-0 flex-1 cursor-pointer rounded-lg border border-white/10 bg-slate-800 p-1"
-          aria-label={`${label} colour`}
+          onChange={(color) => onChange(color)}
+          ariaLabel={`${label} colour`}
+          buttonClassName="flex-1 justify-between min-w-0"
+          showHexText
         />
         <button
           type="button"

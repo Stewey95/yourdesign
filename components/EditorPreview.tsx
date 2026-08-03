@@ -1896,6 +1896,7 @@ if (direction === "back") {
       const newImage: DesignItem = {
         id: crypto.randomUUID(),
         type: "image",
+        name: file.name,
         hidden: false,
         locked: false,
         src: uploadedImage.src,

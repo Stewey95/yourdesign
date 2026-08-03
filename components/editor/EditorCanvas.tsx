@@ -1438,6 +1438,7 @@ export default function EditorCanvas({
                   key={item.id}
                   item={item}
                   selected={selectedItemId === item.id}
+                  mobileLayout={!isDesktopLayout}
                   displayScale={displayScale}
                   onPointerDown={onImagePointerDown}
                   onLockedPointerDown={onLockedItemPointerDown}

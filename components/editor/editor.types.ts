@@ -18,6 +18,7 @@ export type ShapeKind =
 export type ImageDesignItem = {
   id: string;
   type: "image";
+  name?: string;
   hidden: boolean;
   locked: boolean;
   src: string;
