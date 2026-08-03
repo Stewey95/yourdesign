@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { GripVertical, Pipette, X } from "lucide-react";
+import { Pipette, X } from "lucide-react";
 
 const POPOVER_WIDTH = 256;
 const VIEWPORT_MARGIN = 8;
@@ -533,8 +533,7 @@ export default function GripixColorPicker({
             onPointerDown={startPanelDrag}
             className="mb-3 flex cursor-grab items-center justify-between active:cursor-grabbing"
           >
-            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
-              <GripVertical size={12} className="text-slate-500" aria-hidden="true" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
               Colour
             </span>
             <button
