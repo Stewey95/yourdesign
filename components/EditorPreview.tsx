@@ -611,6 +611,8 @@ const getSnappedPosition = (
     startHeight?: number;
     startFontSize?: number;
   } | null>(null);
+  const pendingPinchDistanceRef = useRef<number | null>(null);
+  const pinchFrameRef = useRef<number | null>(null);
 
   const canvasTapRef = useRef<{
     pointerId: number;
@@ -1803,17 +1805,10 @@ if (direction === "back") {
     }
   };
 
-  const moveCanvasPinch = (
-    event: React.TouchEvent<HTMLDivElement>
-  ) => {
-    if (event.touches.length !== 2 || !pinchRef.current) return;
+  const applyPinchDistance = (distance: number) => {
+    if (!pinchRef.current) return;
 
-    event.preventDefault();
-    event.stopPropagation();
-
-    const newDistance = getTouchDistance(event.touches);
-    const scale =
-      newDistance / pinchRef.current.startDistance;
+    const scale = distance / pinchRef.current.startDistance;
 
     updateItems((currentItems) =>
       currentItems.map((item) => {
@@ -1850,8 +1845,54 @@ if (direction === "back") {
     );
   };
 
+  const flushPinchDistance = () => {
+    if (pinchFrameRef.current !== null) {
+      cancelAnimationFrame(pinchFrameRef.current);
+      pinchFrameRef.current = null;
+    }
+
+    const pendingDistance = pendingPinchDistanceRef.current;
+    pendingPinchDistanceRef.current = null;
+
+    if (pendingDistance !== null) {
+      applyPinchDistance(pendingDistance);
+    }
+  };
+
+  const moveCanvasPinch = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Every touchmove sample is recorded, but the state update (and the
+    // resulting React re-render) is coalesced to once per animation frame.
+    // Safari can deliver touchmove bursts faster than a synchronous
+    // setState-per-event can render, which visibly "steps" the resize
+    // instead of tracking the fingers continuously; Chrome's pipeline
+    // happened to keep up, masking the same missing throttle. This mirrors
+    // the existing requestAnimationFrame coalescing already used for
+    // dragging (see updateDraggedItemPosition above).
+    pendingPinchDistanceRef.current = getTouchDistance(event.touches);
+
+    if (pinchFrameRef.current !== null) return;
+
+    pinchFrameRef.current = requestAnimationFrame(() => {
+      pinchFrameRef.current = null;
+      const distance = pendingPinchDistanceRef.current;
+      pendingPinchDistanceRef.current = null;
+
+      if (distance !== null) {
+        applyPinchDistance(distance);
+      }
+    });
+  };
+
   const endCanvasPinch = () => {
     if (pinchRef.current) {
+      flushPinchDistance();
       commitHistoryTransaction();
       justPinchedRef.current = true;
 
