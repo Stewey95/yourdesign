@@ -1099,6 +1099,47 @@ export default function EditorCanvas({
     [cancelZoomAnimation]
   );
 
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+
+    if (!workspace) return;
+
+    const preventSafariNativeGesture = (event: Event) => {
+      event.preventDefault();
+    };
+
+    workspace.addEventListener(
+      "gesturestart",
+      preventSafariNativeGesture,
+      { passive: false }
+    );
+    workspace.addEventListener(
+      "gesturechange",
+      preventSafariNativeGesture,
+      { passive: false }
+    );
+    workspace.addEventListener(
+      "gestureend",
+      preventSafariNativeGesture,
+      { passive: false }
+    );
+
+    return () => {
+      workspace.removeEventListener(
+        "gesturestart",
+        preventSafariNativeGesture
+      );
+      workspace.removeEventListener(
+        "gesturechange",
+        preventSafariNativeGesture
+      );
+      workspace.removeEventListener(
+        "gestureend",
+        preventSafariNativeGesture
+      );
+    };
+  }, []);
+
   const handleWorkspaceDoubleClick: React.MouseEventHandler<
     HTMLDivElement
   > = (event) => {
@@ -1399,7 +1440,7 @@ export default function EditorCanvas({
               onPointerCancel={onPointerCancel}
               onLostPointerCapture={onPointerCancel}
               onPointerDown={onPointerDown}
-              className="editor-canvas-surface relative touch-pan-y overflow-hidden rounded-xl bg-white text-slate-500 select-none md:touch-none"
+              className="editor-canvas-surface relative touch-pan-y rounded-xl bg-white text-slate-500 select-none md:touch-none"
               style={{
                 width: canvasSize.width,
                 height: canvasSize.height,

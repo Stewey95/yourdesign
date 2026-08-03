@@ -1,7 +1,27 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pipette, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { GripVertical, Pipette, X } from "lucide-react";
+
+const POPOVER_WIDTH = 256;
+const VIEWPORT_MARGIN = 8;
+
+const clampToViewport = (
+  top: number,
+  left: number,
+  width: number,
+  height: number
+) => ({
+  top: Math.min(
+    Math.max(VIEWPORT_MARGIN, top),
+    Math.max(VIEWPORT_MARGIN, window.innerHeight - height - VIEWPORT_MARGIN)
+  ),
+  left: Math.min(
+    Math.max(VIEWPORT_MARGIN, left),
+    Math.max(VIEWPORT_MARGIN, window.innerWidth - width - VIEWPORT_MARGIN)
+  ),
+});
 
 // --- Color Helpers ---
 
@@ -165,9 +185,15 @@ export default function GripixColorPicker({
 }: GripixColorPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const squareRef = useRef<HTMLDivElement | null>(null);
   const hueSliderRef = useRef<HTMLDivElement | null>(null);
   const alphaSliderRef = useRef<HTMLDivElement | null>(null);
+  const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   const initialRgb = hexToRgb(value || "#2563EB");
   const initialHsv = rgbToHsv(initialRgb.r, initialRgb.g, initialRgb.b);
@@ -187,17 +213,21 @@ export default function GripixColorPicker({
     setHexInput(value ? value.toUpperCase() : "#2563EB");
   }
 
-  // Handle clicking outside to close
+  // Handle clicking outside (either the trigger or the floating panel) to close
   useEffect(() => {
     if (!isOpen) return;
 
     const handlePointerDownOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+
       if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        containerRef.current?.contains(target) ||
+        popoverRef.current?.contains(target)
       ) {
-        setIsOpen(false);
+        return;
       }
+
+      setIsOpen(false);
     };
 
     document.addEventListener("pointerdown", handlePointerDownOutside);
@@ -205,6 +235,82 @@ export default function GripixColorPicker({
       document.removeEventListener("pointerdown", handlePointerDownOutside);
     };
   }, [isOpen]);
+
+  // Escape key closes the floating panel
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  // Anchor the floating panel beneath the trigger, clamped to the viewport
+  // using an estimated panel height (refined once real drag events occur).
+  const openPopoverNearTrigger = () => {
+    const trigger = containerRef.current;
+    if (!trigger) return;
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const estimatedHeight = allowAlpha ? 460 : 420;
+
+    setPopoverPosition(
+      clampToViewport(
+        triggerRect.bottom + 8,
+        triggerRect.left,
+        POPOVER_WIDTH,
+        estimatedHeight
+      )
+    );
+    setIsOpen(true);
+  };
+
+  const startPanelDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const panel = popoverRef.current;
+    if (!panel) return;
+
+    const rect = panel.getBoundingClientRect();
+
+    dragOffsetRef.current = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const offset = dragOffsetRef.current;
+      if (!offset) return;
+
+      const panelRect = panel.getBoundingClientRect();
+
+      setPopoverPosition(
+        clampToViewport(
+          moveEvent.clientY - offset.y,
+          moveEvent.clientX - offset.x,
+          panelRect.width,
+          panelRect.height
+        )
+      );
+    };
+
+    const onPointerUp = () => {
+      dragOffsetRef.current = null;
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
 
   const updateColorFromHsv = useCallback(
     (newHsv: { h: number; s: number; v: number }, newAlpha = alpha) => {
@@ -394,7 +500,7 @@ export default function GripixColorPicker({
         type="button"
         aria-label={ariaLabel}
         title={label || ariaLabel}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => (isOpen ? setIsOpen(false) : openPopoverNearTrigger())}
         onPointerDown={(e) => e.stopPropagation()}
         className={`group flex items-center gap-2 rounded-lg border border-white/10 bg-slate-800 p-1.5 transition hover:border-cyan-400/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${buttonClassName}`}
       >
@@ -410,21 +516,31 @@ export default function GripixColorPicker({
         )}
       </button>
 
-      {/* Popover */}
-      {isOpen && (
-        <div
-          data-editor-retain-selection
-          onPointerDown={(e) => e.stopPropagation()}
-          className="absolute left-0 top-full z-[120] mt-2 w-64 rounded-xl border border-white/15 bg-slate-900/95 p-3.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
-        >
-          {/* Header */}
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+      {/* Floating Popover (portaled so it can never be clipped or dismissed by ancestor scrolling) */}
+      {isOpen &&
+        popoverPosition &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            data-editor-retain-selection
+            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed z-[1000] w-64 rounded-xl border border-white/15 bg-slate-900/95 p-3.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+            style={{ top: popoverPosition.top, left: popoverPosition.left }}
+          >
+          {/* Header (drag handle) */}
+          <div
+            onPointerDown={startPanelDrag}
+            className="mb-3 flex cursor-grab items-center justify-between active:cursor-grabbing"
+          >
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+              <GripVertical size={12} className="text-slate-500" aria-hidden="true" />
               Colour
             </span>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
+              onPointerDown={(e) => e.stopPropagation()}
               className="rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white"
               aria-label="Close colour picker"
             >
@@ -580,8 +696,9 @@ export default function GripixColorPicker({
               ))}
             </div>
           </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

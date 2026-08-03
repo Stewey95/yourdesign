@@ -34,6 +34,7 @@ export default function CanvasShapeItem({
 }: CanvasShapeItemProps) {
   return (
     <div
+      className="relative"
       style={{ width: item.size.width, height: item.size.height }}
     >
       <ShapeSvg

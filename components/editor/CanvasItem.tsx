@@ -74,17 +74,7 @@ export default function CanvasItem(props: CanvasItemProps) {
   const selected = "selected" in props && props.selected;
   const textMaximumWidth =
     item.type === "text" && "canvasWidth" in props
-      ? Math.max(
-          1,
-          Math.min(
-            props.canvasWidth,
-            2 *
-              Math.min(
-                item.position.x,
-                props.canvasWidth - item.position.x
-              )
-          )
-        )
+      ? props.canvasWidth
       : undefined;
 
   return (

@@ -214,15 +214,8 @@ export default function EditorPreview({
   const mobileContextScrollRequestIdRef = useRef(0);
   const latestItemsRef = useRef(items);
   const canvasItems = useMemo(
-    () =>
-      items.map((item) => ({
-        ...item,
-        position: {
-          x: Math.min(canvasSize.width, Math.max(0, item.position.x)),
-          y: Math.min(canvasSize.height, Math.max(0, item.position.y)),
-        },
-      })),
-    [canvasSize.height, canvasSize.width, items]
+    () => items,
+    [items]
   );
   const visibleCanvasItems = useMemo(
     () => canvasItems.filter((item) => item.hidden !== true),
@@ -330,13 +323,7 @@ export default function EditorPreview({
         width: size.width,
         height: size.height,
       },
-      items: current.items.map((item) => ({
-        ...item,
-        position: {
-          x: Math.min(size.width, Math.max(0, item.position.x)),
-          y: Math.min(size.height, Math.max(0, item.position.y)),
-        },
-      })),
+      items: current.items,
     }));
     setCanvasPresetFitRequest((request) => request + 1);
   };
@@ -736,14 +723,8 @@ const getSnappedPosition = (
       duplicateId = crypto.randomUUID();
       duplicate.id = duplicateId;
       duplicate.position = {
-        x: Math.min(
-          canvasSize.width,
-          Math.max(0, sourceItem.position.x + horizontalOffset)
-        ),
-        y: Math.min(
-          canvasSize.height,
-          Math.max(0, sourceItem.position.y + verticalOffset)
-        ),
+        x: sourceItem.position.x + horizontalOffset,
+        y: sourceItem.position.y + verticalOffset,
       };
 
       return [...currentItems, duplicate];
