@@ -7,6 +7,13 @@ export type ElementAssetMetadataValue =
   | boolean
   | readonly string[];
 
+export type ElementVisibleBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type ElementAsset = {
   id: string;
   name: string;
@@ -21,6 +28,14 @@ export type ElementAsset = {
   favourite: boolean;
   recent: boolean;
   metadata?: Readonly<Record<string, ElementAssetMetadataValue>>;
+  /**
+   * Tight bounding box (in the asset's native 0-100 viewBox units) of the
+   * artwork actually painted by `svg`, stroke included. Used only for canvas
+   * placement (selection/resize/drag bounds) so those hug the visible
+   * artwork instead of the full authoring viewBox; catalog thumbnails still
+   * render the untouched `svg` at its native viewBox.
+   */
+  visibleBounds?: ElementVisibleBounds;
 };
 
 export type ElementSearchOptions = {
