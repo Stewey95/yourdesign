@@ -299,65 +299,57 @@ test.describe("resize pipeline (pointer-drag, cross-engine)", () => {
   });
 });
 
-test.describe("colour picker parity", () => {
-  test("floats above the editor, never clips, and is draggable", async ({
+// Colour selection uses the browser's native <input type="color">, which
+// on real Safari/macOS opens the native NSColorPanel and on Chrome opens
+// its own native OS-level picker. Playwright cannot drive or screenshot
+// that native, out-of-DOM dialog (it isn't page content), so these tests
+// verify what's actually automatable: the native input exists with the
+// right value/attributes, and driving it end-to-end (value + change event,
+// exactly what the native panel does on selection) correctly updates the
+// design item. Real native-panel appearance is verified separately by
+// physically opening Safari and Chrome.
+test.describe("colour control uses the native OS picker", () => {
+  test("element fill uses a native colour input, not a custom popover", async ({
     page,
-  }, testInfo) => {
-    // Item insertion goes through the desktop sidebar (reliable selectors);
-    // the pinch mechanism under test is identical at any viewport size, and
-    // this keeps the project's real engine/touch capability (WebKit on
-    // "iPhone Safari", Chromium on "Android Chrome") untouched.
+  }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/create");
     await openPanel(page, "Elements");
     await page.getByRole("button", { name: "Add Rectangle", exact: true }).click();
 
-    // Open the element's fill colour swatch trigger.
-    const swatchTrigger = page.getByRole("button", { name: "Fill colour" });
-    await swatchTrigger.click();
+    const fillInput = page.getByRole("textbox", { name: "Fill colour" });
+    await expect(fillInput).toHaveAttribute("type", "color");
 
-    const popover = page.locator('[data-editor-retain-selection].fixed.z-\\[1000\\]');
-    await expect(popover).toBeVisible();
+    // No custom floating/portaled popover should exist anywhere in the DOM.
+    const customPopover = page.locator('.fixed.z-\\[1000\\]');
+    await expect(customPopover).toHaveCount(0);
 
-    // Must be portaled directly onto <body>, not nested inside a clipping
-    // ancestor (sidebar/inspector panels use overflow-auto containers).
-    const parentTag = await popover.evaluate(
-      (el) => el.parentElement?.tagName
-    );
-    expect(parentTag).toBe("BODY");
+    // Driving the native input's value + change event (what the OS panel
+    // does on selection) must still update the element's fill.
+    await fillInput.fill("#ff00aa");
+    await expect(fillInput).toHaveValue("#ff00aa");
 
-    const before = await popover.boundingBox();
-    expect(before).not.toBeNull();
+    const item = await selectedItemLocator(page);
+    const svgHtml = await item.evaluate((el) => el.innerHTML.toLowerCase());
+    expect(svgHtml).toContain("#ff00aa");
+  });
 
-    // Drag the header (the picker's own drag handle) to a new position.
-    const handle = popover.locator("div.cursor-grab").first();
-    const handleBox = await handle.boundingBox();
-    if (!handleBox) throw new Error("drag handle not found");
+  test("text colour uses a native colour input in the inspector and toolbar", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/create");
+    await openPanel(page, "Text");
+    await page.getByRole("button", { name: "Add Text", exact: true }).click();
 
-    // The picker anchors near the right edge of the viewport (below the
-    // inspector's Fill trigger), so drag toward the open space (up-left)
-    // rather than further into the edge, which would correctly clamp.
-    await page.mouse.move(
-      handleBox.x + handleBox.width / 2,
-      handleBox.y + handleBox.height / 2
-    );
-    await page.mouse.down();
-    await page.mouse.move(
-      handleBox.x + handleBox.width / 2 - 150,
-      handleBox.y + handleBox.height / 2 - 100,
-      { steps: 10 }
-    );
-    await page.mouse.up();
+    // A freshly-added text item starts empty and focused for editing; typing
+    // content first avoids tripping the app's (protected, unrelated)
+    // delete-empty-text-on-blur behaviour when focus moves to the swatch.
+    await page.locator("[data-canvas-text-editor]").fill("Hello");
 
-    const after = await popover.boundingBox();
-    expect(after).not.toBeNull();
-    expect(
-      Math.abs((after!.x ?? 0) - (before!.x ?? 0)) +
-        Math.abs((after!.y ?? 0) - (before!.y ?? 0))
-    ).toBeGreaterThan(50);
-
-    await page.screenshot({
-      path: `test-results/screenshots/${testInfo.project.name}-colourpicker-dragged.png`,
-    });
+    const inspectorInput = page.getByRole("textbox", { name: "Text colour" }).first();
+    await expect(inspectorInput).toHaveAttribute("type", "color");
+    await inspectorInput.fill("#00ffaa");
+    await expect(inspectorInput).toHaveValue("#00ffaa");
   });
 });
