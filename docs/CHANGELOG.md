@@ -2,6 +2,14 @@
 
 All notable changes to the Gripix project are documented in this file based strictly on repository commit history.
 
+## 2026-08-04
+
+- `founder-qa-elements-resize`: **Elements Pinch-Resize Root-Cause Fix**: Traced why Elements pinch-resized in visible stepped increments on mobile Chrome and mobile Safari while Images and Text stayed smooth. Root cause (confirmed against the `react-dom` source): `ElementSvg.tsx` passed a brand-new `{ __html }` object to `dangerouslySetInnerHTML` on every render; React diffs that prop by object identity, not string content, so every pinch-resize frame (item.size changing, not fill/stroke) forced a full `domElement.innerHTML =` re-parse of the SVG subtree even though the markup never changed. Images (`<img>`, CSS-only resize) and Text (plain style writes) never paid this cost. Fix: memoized the `{ __html }` object in `ElementSvg.tsx` on `[asset, item.fill, item.stroke, item.strokeWidth]`, excluding size/position/rotation, so resize/drag/rotate no longer touch the SVG subtree at all. Verified with a Playwright `MutationObserver` regression test that fails on the pre-fix code (24 subtree replacements per gesture) and passes after the fix (0), across Chromium (Desktop Chrome, Android Chrome mobile emulation) and, via an equivalent pointer-drag test on the same render path, WebKit (Desktop Safari, iPhone Safari). Images and Text were not modified.
+- `founder-qa-colourpicker-restore`: **Gripix Colour Picker Restoration**: Restored `ColorPicker.tsx` to the last verified-good, hand-built version (portal-rendered into `document.body`, draggable header, Escape-to-close, EyeDropper, HEX/RGB, hue/saturation/value square, opacity slider, preset swatches), after an intermediate "recovery sprint" commit had reimplemented it with subtly different behaviour (e.g. `click` vs `pointerdown` outside-close listener, always-rendered disabled EyeDropper button). No API changes; drop-in replacement for all existing call sites in `EditorInspector.tsx` / `TextToolbar.tsx` / `MobileContextToolbar.tsx`.
+- Verified with `npm run lint` (0 errors, 4 pre-existing `<img>` warnings unchanged), `npx tsc --noEmit` (0 errors), `npm run build` (clean production build), and a real, visible Playwright pass across Desktop Chrome, Desktop Safari, iPhone Safari, and Android Chrome.
+
+---
+
 ## 2026-07-27
 
 - `projects-sprint`: **Saved Projects & Multi-Draft Studio Manager**: Implemented persistent multi-project management system powered by IndexedDB (`lib/projects/projectsManager.ts` and `lib/projects/projects.types.ts`). Created inline design title editing in `EditorHeader.tsx`, dedicated "Projects" tab in `EditorSidebar.tsx`, searchable & filterable `ProjectsPanel.tsx` with vector canvas thumbnail previews (`ProjectThumbnail.tsx`), project creation, duplication, renaming, deletion, and active project switching. Integrated seamlessly with `EditorPreview.tsx` preserving all gestures, undo/redo history, and auto-save capabilities.

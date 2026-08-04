@@ -190,7 +190,6 @@ export default function GripixColorPicker({
   const hueSliderRef = useRef<HTMLDivElement | null>(null);
   const alphaSliderRef = useRef<HTMLDivElement | null>(null);
   const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
-  const suppressOutsideClickRef = useRef(false);
   const [popoverPosition, setPopoverPosition] = useState<{
     top: number;
     left: number;
@@ -218,12 +217,7 @@ export default function GripixColorPicker({
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (suppressOutsideClickRef.current) {
-        suppressOutsideClickRef.current = false;
-        return;
-      }
-
+    const handlePointerDownOutside = (event: PointerEvent) => {
       const target = event.target as Node;
 
       if (
@@ -236,9 +230,9 @@ export default function GripixColorPicker({
       setIsOpen(false);
     };
 
-    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("pointerdown", handlePointerDownOutside);
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("pointerdown", handlePointerDownOutside);
     };
   }, [isOpen]);
 
@@ -296,8 +290,6 @@ export default function GripixColorPicker({
       const offset = dragOffsetRef.current;
       if (!offset) return;
 
-      suppressOutsideClickRef.current = true;
-
       const panelRect = panel.getBoundingClientRect();
 
       setPopoverPosition(
@@ -314,9 +306,6 @@ export default function GripixColorPicker({
       dragOffsetRef.current = null;
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
-      window.setTimeout(() => {
-        suppressOutsideClickRef.current = false;
-      }, 0);
     };
 
     window.addEventListener("pointermove", onPointerMove);
@@ -537,16 +526,12 @@ export default function GripixColorPicker({
             data-editor-retain-selection
             onPointerDown={(e) => e.stopPropagation()}
             className="fixed z-[1000] w-64 rounded-xl border border-white/15 bg-slate-900/95 p-3.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
-            style={{
-              top: popoverPosition.top,
-              left: popoverPosition.left,
-              zIndex: 1000,
-            }}
+            style={{ top: popoverPosition.top, left: popoverPosition.left }}
           >
           {/* Header (drag handle) */}
           <div
             onPointerDown={startPanelDrag}
-            className="mb-3 flex touch-none cursor-grab items-center justify-between active:cursor-grabbing"
+            className="mb-3 flex cursor-grab items-center justify-between active:cursor-grabbing"
           >
             <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
               Colour
@@ -566,7 +551,7 @@ export default function GripixColorPicker({
           <div
             ref={squareRef}
             onPointerDown={startSquareDrag}
-            className="relative h-36 w-full touch-none cursor-crosshair overflow-hidden rounded-lg select-none"
+            className="relative h-36 w-full cursor-crosshair overflow-hidden rounded-lg select-none"
             style={{
               backgroundColor: pureHueHex,
               backgroundImage:
@@ -588,12 +573,7 @@ export default function GripixColorPicker({
             <div
               ref={hueSliderRef}
               onPointerDown={startHueDrag}
-              role="slider"
-              aria-label="Hue"
-              aria-valuemin={0}
-              aria-valuemax={359}
-              aria-valuenow={hsv.h}
-              className="relative h-3.5 w-full touch-none cursor-pointer rounded-full select-none"
+              className="relative h-3.5 w-full cursor-pointer rounded-full select-none"
               style={{
                 background:
                   "linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)",
@@ -610,12 +590,7 @@ export default function GripixColorPicker({
               <div
                 ref={alphaSliderRef}
                 onPointerDown={startAlphaDrag}
-                role="slider"
-                aria-label="Opacity"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(alpha * 100)}
-                className="relative h-3.5 w-full touch-none cursor-pointer rounded-full bg-[linear-gradient(45deg,#334155_25%,transparent_25%),linear-gradient(-45deg,#334155_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#334155_75%),linear-gradient(-45deg,transparent_75%,#334155_75%)] bg-[length:10px_10px] bg-[position:0_0,0_5px,5px_-5px,-5px_0px] select-none"
+                className="relative h-3.5 w-full cursor-pointer rounded-full bg-[linear-gradient(45deg,#334155_25%,transparent_25%),linear-gradient(-45deg,#334155_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#334155_75%),linear-gradient(-45deg,transparent_75%,#334155_75%)] bg-[length:10px_10px] bg-[position:0_0,0_5px,5px_-5px,-5px_0px] select-none"
               >
                 <div
                   className="h-full w-full rounded-full"
@@ -637,20 +612,17 @@ export default function GripixColorPicker({
 
           {/* HEX & EyeDropper Controls */}
           <div className="mt-3 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleEyeDropper}
-              disabled={!supportsEyeDropper}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-slate-800 disabled:hover:text-slate-300"
-              title={
-                supportsEyeDropper
-                  ? "Pick colour from screen"
-                  : "EyeDropper is not supported by this browser"
-              }
-              aria-label="EyeDropper colour picker"
-            >
-              <Pipette size={14} />
-            </button>
+            {supportsEyeDropper && (
+              <button
+                type="button"
+                onClick={handleEyeDropper}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white"
+                title="Pick colour from screen"
+                aria-label="EyeDropper colour picker"
+              >
+                <Pipette size={14} />
+              </button>
+            )}
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800 px-2 py-1">
               <span className="text-xs font-bold text-slate-400">HEX</span>
