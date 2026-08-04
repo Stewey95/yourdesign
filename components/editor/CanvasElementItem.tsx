@@ -7,14 +7,12 @@ import type { ElementDesignItem, ResizeCorner } from "./editor.types";
 export default function CanvasElementItem({
   item,
   selected,
-  mobileLayout,
   displayScale,
   onPointerDown,
   onResizeStart,
 }: {
   item: ElementDesignItem;
   selected: boolean;
-  mobileLayout?: boolean;
   displayScale: number;
   onPointerDown: (
     id: string,
@@ -54,7 +52,7 @@ export default function CanvasElementItem({
         item={item}
         className="h-full w-full cursor-move select-none [&>svg]:h-full [&>svg]:w-full [&>svg]:overflow-visible"
       />
-      {selected && !mobileLayout && (
+      {selected && (
         <CornerResizeHandles
           displayScale={displayScale}
           onResizeStart={(event, corner) =>

@@ -214,8 +214,15 @@ export default function EditorPreview({
   const mobileContextScrollRequestIdRef = useRef(0);
   const latestItemsRef = useRef(items);
   const canvasItems = useMemo(
-    () => items,
-    [items]
+    () =>
+      items.map((item) => ({
+        ...item,
+        position: {
+          x: Math.min(canvasSize.width, Math.max(0, item.position.x)),
+          y: Math.min(canvasSize.height, Math.max(0, item.position.y)),
+        },
+      })),
+    [canvasSize.height, canvasSize.width, items]
   );
   const visibleCanvasItems = useMemo(
     () => canvasItems.filter((item) => item.hidden !== true),
@@ -323,7 +330,13 @@ export default function EditorPreview({
         width: size.width,
         height: size.height,
       },
-      items: current.items,
+      items: current.items.map((item) => ({
+        ...item,
+        position: {
+          x: Math.min(size.width, Math.max(0, item.position.x)),
+          y: Math.min(size.height, Math.max(0, item.position.y)),
+        },
+      })),
     }));
     setCanvasPresetFitRequest((request) => request + 1);
   };
@@ -611,8 +624,6 @@ const getSnappedPosition = (
     startHeight?: number;
     startFontSize?: number;
   } | null>(null);
-  const pendingPinchDistanceRef = useRef<number | null>(null);
-  const pinchFrameRef = useRef<number | null>(null);
 
   const canvasTapRef = useRef<{
     pointerId: number;
@@ -725,8 +736,14 @@ const getSnappedPosition = (
       duplicateId = crypto.randomUUID();
       duplicate.id = duplicateId;
       duplicate.position = {
-        x: sourceItem.position.x + horizontalOffset,
-        y: sourceItem.position.y + verticalOffset,
+        x: Math.min(
+          canvasSize.width,
+          Math.max(0, sourceItem.position.x + horizontalOffset)
+        ),
+        y: Math.min(
+          canvasSize.height,
+          Math.max(0, sourceItem.position.y + verticalOffset)
+        ),
       };
 
       return [...currentItems, duplicate];
@@ -1805,10 +1822,17 @@ if (direction === "back") {
     }
   };
 
-  const applyPinchDistance = (distance: number) => {
-    if (!pinchRef.current) return;
+  const moveCanvasPinch = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
 
-    const scale = distance / pinchRef.current.startDistance;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const newDistance = getTouchDistance(event.touches);
+    const scale =
+      newDistance / pinchRef.current.startDistance;
 
     updateItems((currentItems) =>
       currentItems.map((item) => {
@@ -1845,54 +1869,8 @@ if (direction === "back") {
     );
   };
 
-  const flushPinchDistance = () => {
-    if (pinchFrameRef.current !== null) {
-      cancelAnimationFrame(pinchFrameRef.current);
-      pinchFrameRef.current = null;
-    }
-
-    const pendingDistance = pendingPinchDistanceRef.current;
-    pendingPinchDistanceRef.current = null;
-
-    if (pendingDistance !== null) {
-      applyPinchDistance(pendingDistance);
-    }
-  };
-
-  const moveCanvasPinch = (
-    event: React.TouchEvent<HTMLDivElement>
-  ) => {
-    if (event.touches.length !== 2 || !pinchRef.current) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Every touchmove sample is recorded, but the state update (and the
-    // resulting React re-render) is coalesced to once per animation frame.
-    // Safari can deliver touchmove bursts faster than a synchronous
-    // setState-per-event can render, which visibly "steps" the resize
-    // instead of tracking the fingers continuously; Chrome's pipeline
-    // happened to keep up, masking the same missing throttle. This mirrors
-    // the existing requestAnimationFrame coalescing already used for
-    // dragging (see updateDraggedItemPosition above).
-    pendingPinchDistanceRef.current = getTouchDistance(event.touches);
-
-    if (pinchFrameRef.current !== null) return;
-
-    pinchFrameRef.current = requestAnimationFrame(() => {
-      pinchFrameRef.current = null;
-      const distance = pendingPinchDistanceRef.current;
-      pendingPinchDistanceRef.current = null;
-
-      if (distance !== null) {
-        applyPinchDistance(distance);
-      }
-    });
-  };
-
   const endCanvasPinch = () => {
     if (pinchRef.current) {
-      flushPinchDistance();
       commitHistoryTransaction();
       justPinchedRef.current = true;
 
@@ -1918,7 +1896,6 @@ if (direction === "back") {
       const newImage: DesignItem = {
         id: crypto.randomUUID(),
         type: "image",
-        name: file.name,
         hidden: false,
         locked: false,
         src: uploadedImage.src,

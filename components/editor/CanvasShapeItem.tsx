@@ -7,7 +7,6 @@ import type { ResizeCorner, ShapeDesignItem } from "./editor.types";
 type CanvasShapeItemProps = {
   item: ShapeDesignItem;
   selected: boolean;
-  mobileLayout?: boolean;
   displayScale: number;
   onPointerDown: (
     id: string,
@@ -27,14 +26,12 @@ type CanvasShapeItemProps = {
 export default function CanvasShapeItem({
   item,
   selected,
-  mobileLayout,
   displayScale,
   onPointerDown,
   onResizeStart,
 }: CanvasShapeItemProps) {
   return (
     <div
-      className="relative"
       style={{ width: item.size.width, height: item.size.height }}
     >
       <ShapeSvg
@@ -60,7 +57,7 @@ export default function CanvasShapeItem({
         }}
       />
 
-      {selected && !mobileLayout && (
+      {selected && (
         <CornerResizeHandles
           displayScale={displayScale}
           onResizeStart={(event, corner) =>

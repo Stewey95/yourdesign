@@ -272,7 +272,7 @@ maxWidth: maximumWidth,
           </div>
         )}
 
-        {selected && !mobileLayout && (
+        {selected && (
           <CornerResizeHandles
             displayScale={displayScale}
             onResizeStart={(event, corner) =>

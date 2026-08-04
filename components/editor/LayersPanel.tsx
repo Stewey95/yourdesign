@@ -64,24 +64,20 @@ export default function LayersPanel({
 
   const imageNames = useMemo(() => {
     const names = new Map<string, string>();
-    const counts = new Map<string, number>();
+    let imageNumber = 0;
 
     items.forEach((item) => {
       if (item.type !== "image") return;
 
-      const baseLabel = item.name ? item.name : "Photo";
-      const count = (counts.get(baseLabel) ?? 0) + 1;
-      counts.set(baseLabel, count);
-
+      imageNumber += 1;
       names.set(
         item.id,
-        count === 1 ? baseLabel : `${baseLabel} ${count}`
+        imageNumber === 1 ? "Image" : `Image ${imageNumber}`
       );
     });
 
     return names;
   }, [items]);
-
   const shapeNames = useMemo(() => {
     const names = new Map<string, string>();
     const counts = new Map<string, number>();
@@ -98,24 +94,6 @@ export default function LayersPanel({
 
     return names;
   }, [items]);
-
-  const elementNames = useMemo(() => {
-    const names = new Map<string, string>();
-    const counts = new Map<string, number>();
-
-    items.forEach((item) => {
-      if (item.type !== "element") return;
-
-      const label = item.displayName || "Element";
-      const count = (counts.get(label) ?? 0) + 1;
-
-      counts.set(label, count);
-      names.set(item.id, count === 1 ? label : `${label} ${count}`);
-    });
-
-    return names;
-  }, [items]);
-
   const visibleItems = [...items].reverse();
 
   const finishDrop = (targetId: string) => {
@@ -179,8 +157,8 @@ export default function LayersPanel({
                 : layer.type === "shape"
                   ? shapeNames.get(layer.id) ?? SHAPE_LABELS[layer.shapeKind]
                   : layer.type === "element"
-                    ? elementNames.get(layer.id) ?? layer.displayName ?? "Element"
-                  : imageNames.get(layer.id) ?? layer.name ?? "Photo";
+                    ? layer.displayName
+                  : imageNames.get(layer.id) ?? "Image";
             const LayerIcon =
               layer.type === "text"
                 ? Type

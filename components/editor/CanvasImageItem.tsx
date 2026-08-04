@@ -7,7 +7,6 @@ import type { ImageDesignItem, ResizeCorner } from "./editor.types";
 type CanvasImageItemProps = {
   item: ImageDesignItem;
   selected: boolean;
-  mobileLayout?: boolean;
   displayScale: number;
   onPointerDown: (
     id: string,
@@ -27,7 +26,6 @@ type CanvasImageItemProps = {
 export default function CanvasImageItem({
   item,
   selected,
-  mobileLayout,
   displayScale,
   onPointerDown,
   onResizeStart,
@@ -87,7 +85,7 @@ export default function CanvasImageItem({
         </div>
       )}
 
-      {selected && !mobileLayout && (
+      {selected && (
         <CornerResizeHandles
           displayScale={displayScale}
           onResizeStart={(event, corner) =>

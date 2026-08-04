@@ -5,35 +5,29 @@ const HANDLES: Array<{
   cursor: string;
   left: number | string;
   top: number | string;
-  transform: string;
+  transform?: string;
 }> = [
-  {
-    corner: "top-left",
-    cursor: "cursor-nwse-resize",
-    left: 0,
-    top: 0,
-    transform: "translate(-50%, -50%)",
-  },
+  { corner: "top-left", cursor: "cursor-nwse-resize", left: 0, top: 0 },
   {
     corner: "top-right",
     cursor: "cursor-nesw-resize",
     left: "100%",
     top: 0,
-    transform: "translate(-50%, -50%)",
+    transform: "translateX(-100%)",
   },
   {
     corner: "bottom-left",
     cursor: "cursor-nesw-resize",
     left: 0,
     top: "100%",
-    transform: "translate(-50%, -50%)",
+    transform: "translateY(-100%)",
   },
   {
     corner: "bottom-right",
     cursor: "cursor-nwse-resize",
     left: "100%",
     top: "100%",
-    transform: "translate(-50%, -50%)",
+    transform: "translate(-100%, -100%)",
   },
 ];
 
