@@ -26,6 +26,7 @@ import {
   TEXT_FONT_SIZE_STEP,
 } from "./editor.constants";
 import FontPicker from "./FontPicker";
+import GripixColorPicker from "./ColorPicker";
 import type {
   DesignItem,
   ElementDesignItem,
@@ -452,23 +453,13 @@ export default function MobileContextToolbar({
                 onEditEnd={onAdjustmentEnd}
               />
 
-              <label
-                className="flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full bg-slate-700 px-2 text-sm font-bold text-white"
-                title="Text colour"
-              >
-                <Palette size={15} aria-hidden="true" />
-                <span className="sr-only">Text colour</span>
-                <input
-                  type="color"
-                  value={item.color}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onChange={(event) =>
-                    onChangeTextColor(item.id, event.target.value)
-                  }
-                  className="h-6 w-7 cursor-pointer border-0 bg-transparent p-0"
-                  aria-label="Text colour"
-                />
-              </label>
+              <GripixColorPicker
+                value={item.color}
+                onChange={(color) => onChangeTextColor(item.id, color)}
+                allowAlpha
+                ariaLabel="Text colour"
+                buttonClassName="h-9 shrink-0 rounded-full bg-slate-700 hover:bg-slate-600 px-3 py-1 border-0"
+              />
 
               <FontPicker
                 itemId={item.id}
@@ -837,30 +828,23 @@ function MobileShapeColourControl({
   return (
     <div className="rounded-xl border border-white/10 bg-slate-800/70 p-3">
       <div className="flex items-center gap-3">
-        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="h-9 w-9 shrink-0 rounded-lg border-2 border-white/20 shadow-inner"
-            style={{ backgroundColor: value ?? "transparent" }}
-          />
-          <span className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <span className="block text-xs font-bold text-slate-200">
               {label}
             </span>
             <span className="block truncate text-[10px] uppercase text-slate-400">
               {value ?? "None"}
             </span>
-          </span>
-          <input
-            type="color"
+          </div>
+          <GripixColorPicker
             value={activeColour}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => event.stopPropagation()}
-            onChange={(event) => onChange(event.target.value)}
-            className="h-9 w-11 shrink-0 cursor-pointer rounded-lg border border-white/10 bg-slate-700 p-1"
-            aria-label={`${label} colour`}
+            onChange={(color) => onChange(color)}
+            allowAlpha
+            ariaLabel={`${label} colour`}
+            buttonClassName="h-9 shrink-0"
           />
-        </label>
+        </div>
       </div>
 
       {(allowEmpty || !value) && (

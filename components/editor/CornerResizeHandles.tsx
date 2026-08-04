@@ -5,29 +5,35 @@ const HANDLES: Array<{
   cursor: string;
   left: number | string;
   top: number | string;
-  transform?: string;
+  transform: string;
 }> = [
-  { corner: "top-left", cursor: "cursor-nwse-resize", left: 0, top: 0 },
+  {
+    corner: "top-left",
+    cursor: "cursor-nwse-resize",
+    left: 0,
+    top: 0,
+    transform: "translate(-50%, -50%)",
+  },
   {
     corner: "top-right",
     cursor: "cursor-nesw-resize",
     left: "100%",
     top: 0,
-    transform: "translateX(-100%)",
+    transform: "translate(-50%, -50%)",
   },
   {
     corner: "bottom-left",
     cursor: "cursor-nesw-resize",
     left: 0,
     top: "100%",
-    transform: "translateY(-100%)",
+    transform: "translate(-50%, -50%)",
   },
   {
     corner: "bottom-right",
     cursor: "cursor-nwse-resize",
     left: "100%",
     top: "100%",
-    transform: "translate(-100%, -100%)",
+    transform: "translate(-50%, -50%)",
   },
 ];
 
@@ -46,7 +52,7 @@ export default function CornerResizeHandles({
       key={corner}
       role="button"
       aria-label={`Resize from ${corner.replace("-", " ")}`}
-      className={`absolute z-30 flex items-center justify-center ${cursor}`}
+      className={`absolute z-30 hidden items-center justify-center md:flex ${cursor}`}
       style={{
         left,
         top,

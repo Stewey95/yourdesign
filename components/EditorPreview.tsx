@@ -214,15 +214,8 @@ export default function EditorPreview({
   const mobileContextScrollRequestIdRef = useRef(0);
   const latestItemsRef = useRef(items);
   const canvasItems = useMemo(
-    () =>
-      items.map((item) => ({
-        ...item,
-        position: {
-          x: Math.min(canvasSize.width, Math.max(0, item.position.x)),
-          y: Math.min(canvasSize.height, Math.max(0, item.position.y)),
-        },
-      })),
-    [canvasSize.height, canvasSize.width, items]
+    () => items,
+    [items]
   );
   const visibleCanvasItems = useMemo(
     () => canvasItems.filter((item) => item.hidden !== true),
@@ -330,13 +323,7 @@ export default function EditorPreview({
         width: size.width,
         height: size.height,
       },
-      items: current.items.map((item) => ({
-        ...item,
-        position: {
-          x: Math.min(size.width, Math.max(0, item.position.x)),
-          y: Math.min(size.height, Math.max(0, item.position.y)),
-        },
-      })),
+      items: current.items,
     }));
     setCanvasPresetFitRequest((request) => request + 1);
   };
@@ -624,6 +611,8 @@ const getSnappedPosition = (
     startHeight?: number;
     startFontSize?: number;
   } | null>(null);
+  const pendingPinchDistanceRef = useRef<number | null>(null);
+  const pinchFrameRef = useRef<number | null>(null);
 
   const canvasTapRef = useRef<{
     pointerId: number;
@@ -736,14 +725,8 @@ const getSnappedPosition = (
       duplicateId = crypto.randomUUID();
       duplicate.id = duplicateId;
       duplicate.position = {
-        x: Math.min(
-          canvasSize.width,
-          Math.max(0, sourceItem.position.x + horizontalOffset)
-        ),
-        y: Math.min(
-          canvasSize.height,
-          Math.max(0, sourceItem.position.y + verticalOffset)
-        ),
+        x: sourceItem.position.x + horizontalOffset,
+        y: sourceItem.position.y + verticalOffset,
       };
 
       return [...currentItems, duplicate];
@@ -1822,17 +1805,10 @@ if (direction === "back") {
     }
   };
 
-  const moveCanvasPinch = (
-    event: React.TouchEvent<HTMLDivElement>
-  ) => {
-    if (event.touches.length !== 2 || !pinchRef.current) return;
+  const applyPinchDistance = (distance: number) => {
+    if (!pinchRef.current) return;
 
-    event.preventDefault();
-    event.stopPropagation();
-
-    const newDistance = getTouchDistance(event.touches);
-    const scale =
-      newDistance / pinchRef.current.startDistance;
+    const scale = distance / pinchRef.current.startDistance;
 
     updateItems((currentItems) =>
       currentItems.map((item) => {
@@ -1869,8 +1845,46 @@ if (direction === "back") {
     );
   };
 
+  const flushPinchDistance = () => {
+    if (pinchFrameRef.current !== null) {
+      cancelAnimationFrame(pinchFrameRef.current);
+      pinchFrameRef.current = null;
+    }
+
+    const pendingDistance = pendingPinchDistanceRef.current;
+    pendingPinchDistanceRef.current = null;
+
+    if (pendingDistance !== null) {
+      applyPinchDistance(pendingDistance);
+    }
+  };
+
+  const moveCanvasPinch = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    pendingPinchDistanceRef.current = getTouchDistance(event.touches);
+
+    if (pinchFrameRef.current !== null) return;
+
+    pinchFrameRef.current = requestAnimationFrame(() => {
+      pinchFrameRef.current = null;
+      const distance = pendingPinchDistanceRef.current;
+      pendingPinchDistanceRef.current = null;
+
+      if (distance !== null) {
+        applyPinchDistance(distance);
+      }
+    });
+  };
+
   const endCanvasPinch = () => {
     if (pinchRef.current) {
+      flushPinchDistance();
       commitHistoryTransaction();
       justPinchedRef.current = true;
 

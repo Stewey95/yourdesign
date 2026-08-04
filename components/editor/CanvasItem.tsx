@@ -18,6 +18,7 @@ import type {
 type ImageCanvasItemProps = {
   item: ImageDesignItem | ShapeDesignItem | ElementDesignItem;
   selected: boolean;
+  mobileLayout?: boolean;
   displayScale: number;
   onPointerDown: (
     id: string,
@@ -73,17 +74,7 @@ export default function CanvasItem(props: CanvasItemProps) {
   const selected = "selected" in props && props.selected;
   const textMaximumWidth =
     item.type === "text" && "canvasWidth" in props
-      ? Math.max(
-          1,
-          Math.min(
-            props.canvasWidth,
-            2 *
-              Math.min(
-                item.position.x,
-                props.canvasWidth - item.position.x
-              )
-          )
-        )
+      ? props.canvasWidth
       : undefined;
 
   return (
@@ -124,6 +115,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasImageItem
           item={item}
           selected={props.selected && !item.locked}
+          mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
@@ -132,6 +124,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasShapeItem
           item={item}
           selected={props.selected && !item.locked}
+          mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
@@ -140,6 +133,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasElementItem
           item={item}
           selected={props.selected && !item.locked}
+          mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
           onResizeStart={props.onResizeStart}
