@@ -22,7 +22,12 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
   }, [items]);
 
   const maxDim = Math.max(width, height);
-  const scale = 120 / maxDim;
+  // Keep a small padding inside thumbnails and avoid excessive upscaling
+  // which can make large fonts or strokes overflow visually.
+  const THUMB_SIZE = 120;
+  const THUMB_PADDING = 8;
+  const usableSize = Math.max(32, THUMB_SIZE - THUMB_PADDING * 2);
+  const scale = Math.min(1, usableSize / maxDim);
   const containerWidth = Math.round(width * scale);
   const containerHeight = Math.round(height * scale);
 
@@ -54,7 +59,7 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
                   height: `${itemHeight}px`,
                   backgroundColor: item.fill || "transparent",
                   borderColor: item.stroke || "transparent",
-                  borderWidth: item.stroke ? Math.max(1, item.strokeWidth * scale) : 0,
+                  borderWidth: item.stroke ? Math.max(0.5, item.strokeWidth * scale) : 0,
                   transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined,
                   borderRadius:
                     item.shapeKind === "circle"
@@ -62,6 +67,7 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
                       : item.shapeKind === "roundedRectangle"
                         ? "4px"
                         : "0px",
+                  boxSizing: "border-box",
                 }}
                 className="absolute pointer-events-none"
               />
@@ -69,6 +75,7 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
           }
 
           if (item.type === "text") {
+            // Scale down very large font sizes to avoid overflow in thumbnails
             const fontSize = Math.max(6, Math.round(item.fontSize * scale));
 
             return (
@@ -82,6 +89,8 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
                   fontFamily: item.fontFamily,
                   lineHeight: 1.1,
                   transform: item.rotation ? `rotate(${item.rotation}deg)` : undefined,
+                  transformOrigin: "left top",
+                  boxSizing: "border-box",
                 }}
                 className="absolute max-w-full overflow-hidden whitespace-pre pointer-events-none font-bold select-none opacity-90"
               >

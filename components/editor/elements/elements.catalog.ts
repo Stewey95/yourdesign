@@ -22,6 +22,18 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     recent: false,
   },
   {
+    id: "basic-square",
+    name: "Square",
+    category: "Basic shapes",
+    tags: ["box", "square", "block", "frame", "shape"],
+    svg: svg('<rect x="8" y="8" width="84" height="84" fill="none" stroke="#2563eb" stroke-width="5"/>'),
+    defaultSize: { width: 96, height: 96 },
+    geometryBounds: { x: 8, y: 8, width: 84, height: 84 },
+    insertion: { kind: "shape", shapeKind: "rectangle" },
+    favourite: false,
+    recent: false,
+  },
+  {
     id: "basic-rounded-rectangle",
     name: "Rounded Rectangle",
     category: "Basic shapes",
@@ -537,12 +549,22 @@ export const searchElementCatalog = ({
 const svgDataUrlCache = new Map<string, string>();
 
 export const getElementSvgDataUrl = (element: ElementAsset) => {
-  const cachedUrl = svgDataUrlCache.get(element.id);
+  // Use a thumbnail-specific cache key so we don't interfere with any
+  // other consumers that might rely on the raw `element.svg` markup.
+  const cacheKey = `${element.id}:thumb`;
+  const cachedUrl = svgDataUrlCache.get(cacheKey);
 
   if (cachedUrl) return cachedUrl;
 
-  const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(element.svg)}`;
+  // Produce a neutral, high-contrast thumbnail appearance by replacing
+  // any explicit stroke/fill hex colours with black for thumbnails. Keep
+  // `fill="none"` as-is (the regex below won't match `fill="none"`).
+  const thumbMarkup = element.svg
+    .replace(/stroke="#([0-9a-fA-F]{3,8})"/g, 'stroke="#000000"')
+    .replace(/fill="#([0-9a-fA-F]{3,8})"/g, 'fill="#000000"');
 
-  svgDataUrlCache.set(element.id, dataUrl);
+  const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(thumbMarkup)}`;
+
+  svgDataUrlCache.set(cacheKey, dataUrl);
   return dataUrl;
 };

@@ -148,8 +148,16 @@ export default function UniversalSearch({
     document.body.style.overflow = "hidden";
 
     requestAnimationFrame(() => {
+      // On desktop focus the search input, but on mobile explicitly blur
+      // the active element to avoid the virtual keyboard popping up when
+      // the dialog opens. Users can tap the search field to begin typing.
       if (window.matchMedia("(min-width: 768px)").matches) {
         searchRef.current?.focus();
+      } else {
+        // Blur any currently-focused element (e.g. an input that was
+        // focused before opening) to prevent mobile keyboards from
+        // appearing automatically.
+        (document.activeElement as HTMLElement | null)?.blur();
       }
     });
 
