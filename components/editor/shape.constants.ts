@@ -4,7 +4,7 @@ import type {
   Size,
 } from "./editor.types";
 
-export const DEFAULT_SHAPE_COLOUR = "#2563eb";
+export const DEFAULT_SHAPE_COLOUR = "#000000";
 export const DEFAULT_SHAPE_STROKE_WIDTH = 2;
 export const MIN_SHAPE_STROKE_WIDTH = 1;
 export const MAX_SHAPE_STROKE_WIDTH = 40;

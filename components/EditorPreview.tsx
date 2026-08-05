@@ -55,7 +55,7 @@ import {
   getElementDefaultStrokeWidth,
   getElementVisibleBounds,
 } from "./editor/elements/elements.catalog";
-import { getDefaultShapeStyle } from "./editor/shape.constants";
+import { getDefaultShapeStyle, DEFAULT_SHAPE_COLOUR } from "./editor/shape.constants";
 import {
   DEFAULT_SHAPE_STROKE_WIDTH,
   MAX_SHAPE_STROKE_WIDTH,
@@ -2113,7 +2113,7 @@ if (direction === "back") {
         colourMode === "fill-and-stroke"
           ? shapeStyle?.fill ?? null
           : null,
-      stroke: shapeStyle?.stroke ?? "#2563eb",
+      stroke: shapeStyle?.stroke ?? DEFAULT_SHAPE_COLOUR,
       strokeWidth:
         shapeStyle?.strokeWidth ?? getElementDefaultStrokeWidth(element),
       opacity: 100,

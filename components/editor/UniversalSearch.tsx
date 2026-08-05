@@ -485,7 +485,9 @@ export default function UniversalSearch({
         </div>
         <div
           className={
-            layout === "list" ? "space-y-0.5" : "grid grid-cols-4 gap-2"
+            layout === "list"
+              ? "space-y-0.5"
+              : "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
           }
         >
           {rows.map(renderRow)}
@@ -647,15 +649,15 @@ export default function UniversalSearch({
           ) : category === "fonts" ? (
             <div className="space-y-0.5">{fontResults.map(toFontRow).map(renderFontRow)}</div>
           ) : category === "elements" ? (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {elementResults.map(toElementRow).map(renderElementRow)}
             </div>
           ) : category === "templates" ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {templateResults.map(toTemplateRow).map(renderTemplateRow)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {projectResults.map(toProjectRow).map(renderProjectRow)}
             </div>
           )}
