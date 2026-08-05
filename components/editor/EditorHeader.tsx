@@ -9,6 +9,7 @@ import {
   Pencil,
   Plus,
   Redo2,
+  Search,
   Undo2,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ type EditorHeaderProps = {
   productStudioHref?: string;
   onTitleChange: (newTitle: string) => void;
   onOpenProjects: () => void;
+  onOpenSearch: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -36,6 +38,7 @@ export default function EditorHeader({
   productStudioHref,
   onTitleChange,
   onOpenProjects,
+  onOpenSearch,
   canUndo,
   canRedo,
   onUndo,
@@ -147,6 +150,17 @@ export default function EditorHeader({
 
       {/* Header Tools */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {/* Universal search */}
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          aria-label="Search fonts, elements, templates, and projects"
+          title="Search (fonts, elements, templates, projects)"
+          className="editor-toolbar-control flex h-8 w-8 cursor-pointer items-center justify-center"
+        >
+          <Search size={15} aria-hidden="true" />
+        </button>
+
         {/* Document utilities */}
         <button
           type="button"

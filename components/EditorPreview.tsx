@@ -19,6 +19,7 @@ import ExportDialog from "./editor/ExportDialog";
 import LayerToolbar from "./editor/LayerToolbar";
 import MobileContextToolbar from "./editor/MobileContextToolbar";
 import NewDesignDialog from "./editor/NewDesignDialog";
+import UniversalSearch from "./editor/UniversalSearch";
 import {
   clampFontSize,
   DEFAULT_IMAGE_MAX_HEIGHT,
@@ -178,6 +179,7 @@ export default function EditorPreview({
   });
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showNewDesignDialog, setShowNewDesignDialog] = useState(false);
+  const [showUniversalSearch, setShowUniversalSearch] = useState(false);
   const [isStartingNewDesign, setIsStartingNewDesign] = useState(false);
   const [newDesignError, setNewDesignError] = useState<string | null>(null);
   const [draftSaveError, setDraftSaveError] = useState<string | null>(null);
@@ -2744,6 +2746,7 @@ if (direction === "back") {
         }
         onTitleChange={handleTitleChange}
         onOpenProjects={() => setActiveToolbarPanel("projects")}
+        onOpenSearch={() => setShowUniversalSearch(true)}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={performUndo}
@@ -3077,6 +3080,24 @@ if (direction === "back") {
           setShowNewDesignDialog(false);
         }}
         onConfirm={() => void startNewDesign()}
+      />
+
+      <UniversalSearch
+        open={showUniversalSearch}
+        onClose={() => setShowUniversalSearch(false)}
+        hasSelectedTextItem={Boolean(
+          selectedItem &&
+            selectedItem.type === "text" &&
+            !selectedItem.locked
+        )}
+        onSelectFont={(fontFamily) => {
+          if (selectedItem && selectedItem.type === "text") {
+            changeTextFont(selectedItem.id, fontFamily);
+          }
+        }}
+        onInsertElement={addElement}
+        onSelectTemplate={handleSelectTemplate}
+        onSelectProject={(project) => void handleSelectProject(project)}
       />
     </>
   );

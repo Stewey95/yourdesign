@@ -79,6 +79,21 @@ const restoreProjectRecord = async (
   };
 };
 
+export const filterProjects = (
+  projects: readonly ProjectRecord[],
+  query: string
+): ProjectRecord[] => {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) return [...projects];
+
+  return projects.filter(
+    (project) =>
+      project.title.toLowerCase().includes(normalizedQuery) ||
+      project.presetId.toLowerCase().includes(normalizedQuery)
+  );
+};
+
 export const getActiveProjectId = (): string | null => {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(ACTIVE_PROJECT_KEY);

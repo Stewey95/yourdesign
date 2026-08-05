@@ -14,6 +14,7 @@ import type { ProjectRecord } from "../../lib/projects/projects.types";
 import {
   deleteProject,
   duplicateProject,
+  filterProjects,
   getAllProjects,
   renameProject,
 } from "../../lib/projects/projectsManager";
@@ -111,15 +112,10 @@ export default function ProjectsPanel({
     };
   }, [projectsRevision]);
 
-  const filteredProjects = useMemo(() => {
-    if (!searchQuery.trim()) return projects;
-    const q = searchQuery.toLowerCase();
-    return projects.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.presetId.toLowerCase().includes(q)
-    );
-  }, [projects, searchQuery]);
+  const filteredProjects = useMemo(
+    () => filterProjects(projects, searchQuery),
+    [projects, searchQuery]
+  );
 
   const handleDuplicate = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
