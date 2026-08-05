@@ -77,6 +77,11 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
           if (item.type === "text") {
             // Scale down very large font sizes to avoid overflow in thumbnails
             const fontSize = Math.max(6, Math.round(item.fontSize * scale));
+            // Wrap long copy within the remaining canvas width from its own
+            // position, same as the real editor - long single-line strings
+            // (subtitles, body text) would otherwise render as one
+            // unbroken line and spill past the card edge.
+            const maxTextWidth = Math.max(16, containerWidth - itemX);
 
             return (
               <div
@@ -84,6 +89,7 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
                 style={{
                   left: `${itemX}px`,
                   top: `${itemY}px`,
+                  maxWidth: `${maxTextWidth}px`,
                   fontSize: `${fontSize}px`,
                   color: item.color,
                   fontFamily: item.fontFamily,
@@ -92,7 +98,7 @@ export default function TemplateThumbnail({ template }: TemplateThumbnailProps) 
                   transformOrigin: "left top",
                   boxSizing: "border-box",
                 }}
-                className="absolute max-w-full overflow-hidden whitespace-pre pointer-events-none font-bold select-none opacity-90"
+                className="absolute overflow-hidden whitespace-pre-wrap [overflow-wrap:anywhere] pointer-events-none font-bold select-none opacity-90"
               >
                 {item.value}
               </div>

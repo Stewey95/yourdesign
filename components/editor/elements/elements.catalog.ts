@@ -548,6 +548,22 @@ export const searchElementCatalog = ({
 
 const svgDataUrlCache = new Map<string, string>();
 
+// Paints an opaque white rect spanning the artwork's own viewBox as the
+// first shape in the markup, so the thumbnail always reads as "black
+// artwork on a white canvas" regardless of the dark UI it's displayed
+// inside - every consumer (ElementsPanel cards, its recents/favourites
+// row, and Universal Search) renders this same data URL via a square,
+// `background-size: contain` box, so the rect exactly fills it edge to
+// edge with no dark UI showing through.
+const withWhiteCanvasBackground = (svgMarkup: string) => {
+  const viewBoxAttribute = svgMarkup.match(/viewBox="([^"]*)"/)?.[1] ?? "0 0 100 100";
+  const [minX = "0", minY = "0", boxWidth = "100", boxHeight = "100"] =
+    viewBoxAttribute.split(/\s+/);
+  const backgroundRect = `<rect x="${minX}" y="${minY}" width="${boxWidth}" height="${boxHeight}" fill="#ffffff"/>`;
+
+  return svgMarkup.replace(/(<svg[^>]*>)/, `$1${backgroundRect}`);
+};
+
 export const getElementSvgDataUrl = (element: ElementAsset) => {
   // Use a thumbnail-specific cache key so we don't interfere with any
   // other consumers that might rely on the raw `element.svg` markup.
@@ -559,9 +575,11 @@ export const getElementSvgDataUrl = (element: ElementAsset) => {
   // Produce a neutral, high-contrast thumbnail appearance by replacing
   // any explicit stroke/fill hex colours with black for thumbnails. Keep
   // `fill="none"` as-is (the regex below won't match `fill="none"`).
-  const thumbMarkup = element.svg
-    .replace(/stroke="#([0-9a-fA-F]{3,8})"/g, 'stroke="#000000"')
-    .replace(/fill="#([0-9a-fA-F]{3,8})"/g, 'fill="#000000"');
+  const thumbMarkup = withWhiteCanvasBackground(
+    element.svg
+      .replace(/stroke="#([0-9a-fA-F]{3,8})"/g, 'stroke="#000000"')
+      .replace(/fill="#([0-9a-fA-F]{3,8})"/g, 'fill="#000000"')
+  );
 
   const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(thumbMarkup)}`;
 
