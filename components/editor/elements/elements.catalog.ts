@@ -16,7 +16,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["box", "square", "block", "frame", "shape"],
     svg: svg('<rect x="8" y="18" width="84" height="64" fill="none" stroke="#2563eb" stroke-width="5"/>'),
     defaultSize: { width: 120, height: 92.09 },
-    visibleBounds: { x: 7, y: 17, width: 86, height: 66 },
+    geometryBounds: { x: 8, y: 18, width: 84, height: 64 },
     insertion: { kind: "shape", shapeKind: "rectangle" },
     favourite: false,
     recent: false,
@@ -28,7 +28,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["box", "card", "button", "round", "pill", "container"],
     svg: svg('<rect x="8" y="18" width="84" height="64" rx="14" fill="none" stroke="#2563eb" stroke-width="5"/>'),
     defaultSize: { width: 120, height: 92.09 },
-    visibleBounds: { x: 7, y: 17, width: 86, height: 66 },
+    geometryBounds: { x: 8, y: 18, width: 84, height: 64 },
     insertion: { kind: "shape", shapeKind: "roundedRectangle" },
     favourite: false,
     recent: false,
@@ -40,7 +40,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["round", "ellipse", "dot", "badge", "ring", "disc"],
     svg: svg('<circle cx="50" cy="50" r="41" fill="none" stroke="#2563eb" stroke-width="5"/>'),
     defaultSize: { width: 96, height: 96 },
-    visibleBounds: { x: 8, y: 8, width: 84, height: 84 },
+    geometryBounds: { x: 9, y: 9, width: 82, height: 82 },
     insertion: { kind: "shape", shapeKind: "circle" },
     favourite: false,
     recent: false,
@@ -52,7 +52,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["shape", "three sides", "play", "delta", "pyramid"],
     svg: svg('<path d="M50 8 93 89H7Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 100, height: 94.32 },
-    visibleBounds: { x: 6, y: 7, width: 88, height: 83 },
+    geometryBounds: { x: 7, y: 8, width: 86, height: 81 },
     insertion: { kind: "shape", shapeKind: "triangle" },
     favourite: false,
     recent: false,
@@ -64,7 +64,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["rhombus", "gem", "rotate", "crystal", "card"],
     svg: svg('<path d="M50 6 94 50 50 94 6 50Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 96 },
-    visibleBounds: { x: 3.5, y: 3.5, width: 93, height: 93 },
+    geometryBounds: { x: 6, y: 6, width: 88, height: 88 },
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -77,7 +77,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["polygon", "6 sides", "honeycomb", "geometry", "nut"],
     svg: svg('<path d="M25 8H75L96 50L75 92H25L4 50Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 104, height: 95.42 },
-    visibleBounds: { x: 1.5, y: 5.5, width: 97, height: 89 },
+    geometryBounds: { x: 4, y: 8, width: 92, height: 84 },
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -90,7 +90,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["stop sign", "polygon", "8 sides", "badge"],
     svg: svg('<path d="M30 6H70L94 30V70L70 94H30L6 70V30Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 96 },
-    visibleBounds: { x: 3.5, y: 3.5, width: 93, height: 93 },
+    geometryBounds: { x: 6, y: 6, width: 88, height: 88 },
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -105,7 +105,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["divider", "rule", "straight", "stroke", "border"],
     svg: svg('<path d="M5 50H95" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round"/>'),
     defaultSize: { width: 140, height: 3.04 },
-    visibleBounds: { x: 4, y: 49, width: 92, height: 2 },
+    geometryBounds: { x: 5, y: 50, width: 90, height: 0 },
     insertion: { kind: "shape", shapeKind: "line" },
     favourite: false,
     recent: false,
@@ -117,7 +117,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["dash", "divider", "separator", "dotted", "border"],
     svg: svg('<path d="M5 50H95" fill="none" stroke="#2563eb" stroke-width="8" stroke-dasharray="14 10" stroke-linecap="round"/>'),
     defaultSize: { width: 140, height: 11.43 },
-    visibleBounds: { x: 1, y: 46, width: 98, height: 8 },
+    geometryBounds: { x: 5, y: 50, width: 90, height: 0 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -129,7 +129,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["direction", "pointer", "right", "next", "forward"],
     svg: svg('<path d="M7 50H84M62 27l23 23-23 23" fill="none" stroke="#2563eb" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>'),
     defaultSize: { width: 140, height: 84 },
-    visibleBounds: { x: 6, y: 26, width: 80, height: 48 },
+    geometryBounds: { x: 7, y: 27, width: 78, height: 46 },
     insertion: { kind: "shape", shapeKind: "arrow" },
     favourite: false,
     recent: false,
@@ -141,7 +141,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["both sides", "expand", "width", "pointer", "swap"],
     svg: svg('<path d="M18 50h64M38 27L16 50l22 23M62 27l22 23-22 23" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'),
     defaultSize: { width: 140, height: 99.47 },
-    visibleBounds: { x: 12, y: 23, width: 76, height: 54 },
+    geometryBounds: { x: 16, y: 27, width: 68, height: 46 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -153,7 +153,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["turn", "rotate", "u-turn", "curve", "loop"],
     svg: svg('<path d="M15 82C15 38 38 18 80 18M58 5l25 13-25 15" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'),
     defaultSize: { width: 98.35, height: 110 },
-    visibleBounds: { x: 11, y: 1, width: 76, height: 85 },
+    geometryBounds: { x: 15, y: 5, width: 68, height: 77 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -167,7 +167,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["favourite", "rating", "sparkle", "award", "favorite", "5 point"],
     svg: svg('<path d="m50 7 13.3 27L93 38.3 71.5 59.2 76.6 88 50 74 23.4 88l5.1-28.8L7 38.3 36.7 34Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 100, height: 94.32 },
-    visibleBounds: { x: 6, y: 6, width: 88, height: 83 },
+    geometryBounds: { x: 7, y: 7, width: 86, height: 81 },
     insertion: { kind: "shape", shapeKind: "star" },
     favourite: false,
     recent: false,
@@ -179,7 +179,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["magic", "shine", "glimmer", "starburst", "clean", "ai"],
     svg: svg('<path d="M50 5C50 30 70 50 95 50C70 50 50 70 50 95C50 70 30 50 5 50C30 50 50 30 50 5Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 96 },
-    visibleBounds: { x: 2.5, y: 2.5, width: 95, height: 95 },
+    geometryBounds: { x: 5, y: 5, width: 90, height: 90 },
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -192,7 +192,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["love", "like", "favourite", "valentine", "health", "care"],
     svg: svg('<path d="M50 86S12 60 12 34a22 22 0 0 1 38-15 22 22 0 0 1 38 15c0 26-38 52-38 52Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 96, height: 93.51 },
-    visibleBounds: { x: 9.5, y: 9.6, width: 81, height: 78.9 },
+    geometryBounds: { x: 12, y: 12.099, width: 76, height: 73.901 },
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -205,7 +205,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["check", "tick", "done", "complete", "approved", "correct"],
     svg: svg('<path d="M12 53 38 79 89 20" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>'),
     defaultSize: { width: 100, height: 79.31 },
-    visibleBounds: { x: 7, y: 15, width: 87, height: 69 },
+    geometryBounds: { x: 12, y: 20, width: 77, height: 59 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -217,7 +217,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["x", "close", "cancel", "remove", "incorrect", "no"],
     svg: svg('<path d="M18 18 82 82M82 18 18 82" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>'),
     defaultSize: { width: 92, height: 92 },
-    visibleBounds: { x: 13, y: 13, width: 74, height: 74 },
+    geometryBounds: { x: 18, y: 18, width: 64, height: 64 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -229,7 +229,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["map", "marker", "place", "address", "destination", "travel"],
     svg: svg('<path d="M50 94S20 66 20 40a30 30 0 1 1 60 0c0 26-30 54-30 54Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/><circle cx="50" cy="40" r="10" fill="none" stroke="#2563eb" stroke-width="5"/>'),
     defaultSize: { width: 73.03, height: 100 },
-    visibleBounds: { x: 17.5, y: 7.5, width: 65, height: 89 },
+    geometryBounds: { x: 20, y: 10, width: 60, height: 84 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -241,7 +241,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["sun", "rays", "badge", "burst", "bright", "starburst"],
     svg: svg('<path d="M50 18V6M50 94V82M18 50H6M94 50H82M27 27L18 18M82 82l-9-9M27 73l-9 9M82 18l-9 9" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="50" r="18" fill="none" stroke="#2563eb" stroke-width="5"/>'),
     defaultSize: { width: 100, height: 100 },
-    visibleBounds: { x: 3, y: 3, width: 94, height: 94 },
+    geometryBounds: { x: 6, y: 6, width: 88, height: 88 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -253,7 +253,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["security", "protection", "badge", "guard", "safe", "crest"],
     svg: svg('<path d="M50 8L90 22V48C90 70 72 88 50 95C28 88 10 70 10 48V22L50 8Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 92.39, height: 100 },
-    visibleBounds: { x: 7.5, y: 5.5, width: 85, height: 92 },
+    geometryBounds: { x: 10, y: 8, width: 80, height: 87 },
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -266,7 +266,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["award", "ribbon", "winner", "certificate", "medal", "first"],
     svg: svg('<circle cx="50" cy="38" r="28" fill="none" stroke="#2563eb" stroke-width="5"/><path d="M36 62L25 92L50 80L75 92L64 62" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 77.13, height: 110 },
-    visibleBounds: { x: 19.5, y: 7.5, width: 61, height: 87 },
+    geometryBounds: { x: 22, y: 10, width: 56, height: 82 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -280,7 +280,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["talk", "chat", "quote", "dialogue", "message", "comment"],
     svg: svg('<path d="M12 20h76a8 8 0 0 1 8 8v40a8 8 0 0 1-8 8H45L22 90V76h-10a8 8 0 0 1-8-8V28a8 8 0 0 1 8-8Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 120, height: 92.78 },
-    visibleBounds: { x: 1.5, y: 17.5, width: 97, height: 75 },
+    geometryBounds: { x: 4, y: 20, width: 92, height: 70 },
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -293,7 +293,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["think", "idea", "cloud", "dream", "mind", "bubble"],
     svg: svg('<path d="M25 55a18 18 0 0 1 4-35 24 24 0 0 1 42-2 18 18 0 0 1 20 18 18 18 0 0 1-10 32H25a18 18 0 0 1 0-13Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/><circle cx="28" cy="78" r="6" stroke="#2563eb" stroke-width="4" fill="none"/><circle cx="18" cy="90" r="3.5" stroke="#2563eb" stroke-width="3" fill="none"/>'),
     defaultSize: { width: 118.84, height: 120 },
-    visibleBounds: { x: 10.18, y: 4.06, width: 90.06, height: 90.94 },
+    geometryBounds: { x: 12.684, y: 6.563, width: 85.057, height: 86.937 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -305,7 +305,7 @@ export const ELEMENT_CATALOG: readonly ElementAsset[] = [
     tags: ["ribbon", "headline", "tag", "label", "heading", "flag"],
     svg: svg('<path d="M10 30L25 45L10 60H85L70 45L85 30H10Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 130, height: 56.88 },
-    visibleBounds: { x: 7.5, y: 27.5, width: 80, height: 35 },
+    geometryBounds: { x: 10, y: 30, width: 75, height: 30 },
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,
@@ -334,6 +334,33 @@ export const getElementDefaultStrokeWidth = (element: ElementAsset) => {
   return Number.isFinite(width) ? width : 5;
 };
 
+// Inflates an asset's stroke-EXCLUDED geometry bounds by the current
+// stroke's half-width to get the true, currently-visible bounds. Pure
+// arithmetic, no DOM measurement - safe to call on every render so bounds
+// stay correct as stroke/border width changes live. Shared by every
+// element: there is exactly one geometry formula, not one per shape kind.
+export const getElementVisibleBounds = (
+  geometryBounds: ElementAsset["geometryBounds"],
+  strokeWidth: number,
+  hasStroke: boolean
+) => {
+  if (!geometryBounds) return null;
+
+  const pad =
+    hasStroke && Number.isFinite(strokeWidth) && strokeWidth > 0
+      ? strokeWidth / 2
+      : 0;
+
+  return {
+    x: geometryBounds.x - pad,
+    y: geometryBounds.y - pad,
+    // A pure-stroke shape (e.g. the Line) has zero geometric extent on one
+    // axis; keep a minimal positive extent so the viewBox never collapses.
+    width: Math.max(0.01, geometryBounds.width + pad * 2),
+    height: Math.max(0.01, geometryBounds.height + pad * 2),
+  };
+};
+
 export const getElementSvgMarkup = (
   element: ElementAsset,
   style?: {
@@ -349,45 +376,56 @@ export const getElementSvgMarkup = (
       : "#2563eb";
   let markup = element.svg;
 
-  // Crop the render-time viewBox to the artwork's tight, stroke-inclusive
-  // bounds (precomputed per asset) so canvas placement - selection ring,
-  // resize handles, drag hit area - hugs the visible artwork instead of
-  // the full authoring viewBox. Catalog thumbnails are unaffected: they
-  // render `element.svg` directly via getElementSvgDataUrl, not this
-  // function.
-  if (element.visibleBounds) {
-    const { x, y, width, height } = element.visibleBounds;
+  if (mode !== "none") {
+    if (style?.stroke !== undefined) {
+      const stroke = safeColour(style.stroke);
 
+      markup = markup.replaceAll(
+        /stroke="#[0-9a-fA-F]{3,8}"/g,
+        stroke ? `stroke="${stroke}"` : 'stroke="none"'
+      );
+    }
+
+    if (style?.strokeWidth !== undefined) {
+      markup = markup.replaceAll(
+        /stroke-width="[0-9.]+"/g,
+        `stroke-width="${style.strokeWidth}"`
+      );
+    }
+
+    if (mode === "fill-and-stroke" && style?.fill !== undefined) {
+      const fill = safeColour(style.fill);
+
+      markup = markup.replaceAll(
+        /fill="(?:none|#[0-9a-fA-F]{3,8})"/g,
+        fill ? `fill="${fill}"` : 'fill="none"'
+      );
+    }
+  }
+
+  // Crop the render-time viewBox to the artwork's true, currently-visible
+  // bounds so canvas placement - selection ring, resize handles, drag hit
+  // area, rotation pivot - hugs the rendered artwork exactly, including
+  // after stroke/border width changes. Read the stroke state back off the
+  // markup produced above (rather than trusting `style` directly) so this
+  // always reflects exactly what will be painted, regardless of `mode` or
+  // which style fields were provided. Catalog thumbnails are unaffected:
+  // they render `element.svg` directly via getElementSvgDataUrl.
+  const strokeMatch = markup.match(/stroke="([^"]*)"/);
+  const strokeWidthMatch = markup.match(/stroke-width="([0-9.]+)"/);
+  const hasStroke = strokeMatch ? strokeMatch[1] !== "none" : false;
+  const strokeWidth = strokeWidthMatch ? Number(strokeWidthMatch[1]) : 0;
+
+  const bounds = getElementVisibleBounds(
+    element.geometryBounds,
+    strokeWidth,
+    hasStroke
+  );
+
+  if (bounds) {
     markup = markup.replace(
       /viewBox="[^"]*"/,
-      `viewBox="${x} ${y} ${width} ${height}" preserveAspectRatio="none"`
-    );
-  }
-
-  if (mode === "none") return markup;
-
-  if (style?.stroke !== undefined) {
-    const stroke = safeColour(style.stroke);
-
-    markup = markup.replaceAll(
-      /stroke="#[0-9a-fA-F]{3,8}"/g,
-      stroke ? `stroke="${stroke}"` : 'stroke="none"'
-    );
-  }
-
-  if (style?.strokeWidth !== undefined) {
-    markup = markup.replaceAll(
-      /stroke-width="[0-9.]+"/g,
-      `stroke-width="${style.strokeWidth}"`
-    );
-  }
-
-  if (mode === "fill-and-stroke" && style?.fill !== undefined) {
-    const fill = safeColour(style.fill);
-
-    markup = markup.replaceAll(
-      /fill="(?:none|#[0-9a-fA-F]{3,8})"/g,
-      fill ? `fill="${fill}"` : 'fill="none"'
+      `viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" preserveAspectRatio="none"`
     );
   }
 

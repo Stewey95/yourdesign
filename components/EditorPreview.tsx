@@ -26,6 +26,7 @@ import {
   DEFAULT_TEXT_FONT_SIZE,
   DEFAULT_DESKTOP_CANVAS_PRESET_ID,
   DEFAULT_MOBILE_CANVAS_PRESET_ID,
+  getBoundedElementSize,
   getBoundedImageSize,
   getCanvasPreset,
   getInitialImageSize,
@@ -48,8 +49,10 @@ import type {
 } from "./editor/editor.types";
 import type { ElementAsset } from "./editor/elements/element.types";
 import {
+  getElementAsset,
   getElementColourMode,
   getElementDefaultStrokeWidth,
+  getElementVisibleBounds,
 } from "./editor/elements/elements.catalog";
 import { getDefaultShapeStyle } from "./editor/shape.constants";
 import {
@@ -1719,20 +1722,86 @@ if (direction === "back") {
     );
   };
 
+  // Elements crop their SVG viewBox to geometryBounds inflated by the
+  // current stroke's half-width (see getElementVisibleBounds), so the true
+  // visible bounds shift whenever stroke width or stroke presence changes.
+  // item.size (the wrapper the selection ring/handles/drag area all read)
+  // stays a fixed multiple - the user's chosen zoom - of those true
+  // bounds; when the true bounds change, item.size must be rescaled by
+  // that same fixed multiple, or the wrapper stops matching the artwork
+  // (which is exactly the "selection box doesn't grow with border width"
+  // regression). Shapes are unaffected: their own path geometry is
+  // recomputed straight from item.size on every render, so they are
+  // already exact and need no rescale.
+  const rescaleElementSizeForStrokeChange = (
+    item: Extract<DesignItem, { type: "element" }>,
+    nextStrokeWidth: number,
+    nextStroke: string | null
+  ) => {
+    const asset = getElementAsset(item.elementId);
+    if (!asset?.geometryBounds) return item.size;
+
+    const mode = getElementColourMode(asset);
+    const oldHasStroke = mode !== "none" && item.stroke !== null;
+    const newHasStroke = mode !== "none" && nextStroke !== null;
+
+    const oldBounds = getElementVisibleBounds(
+      asset.geometryBounds,
+      item.strokeWidth,
+      oldHasStroke
+    );
+    const newBounds = getElementVisibleBounds(
+      asset.geometryBounds,
+      nextStrokeWidth,
+      newHasStroke
+    );
+
+    if (
+      !oldBounds ||
+      !newBounds ||
+      oldBounds.width <= 0 ||
+      oldBounds.height <= 0
+    ) {
+      return item.size;
+    }
+
+    const scale =
+      (item.size.width / oldBounds.width +
+        item.size.height / oldBounds.height) /
+      2;
+
+    return getBoundedElementSize(
+      newBounds.width * scale,
+      newBounds.height * scale
+    );
+  };
+
   const changeShapeStroke = (id: string, stroke: string | null) => {
     commitItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === id && (item.type === "shape" || item.type === "element")
-          ? {
-              ...item,
-              stroke,
-              strokeWidth:
-                stroke && item.strokeWidth < MIN_SHAPE_STROKE_WIDTH
-                  ? DEFAULT_SHAPE_STROKE_WIDTH
-                  : item.strokeWidth,
-            }
-          : item
-      )
+      currentItems.map((item) => {
+        if (item.id !== id || (item.type !== "shape" && item.type !== "element")) {
+          return item;
+        }
+
+        const nextStrokeWidth =
+          stroke && item.strokeWidth < MIN_SHAPE_STROKE_WIDTH
+            ? DEFAULT_SHAPE_STROKE_WIDTH
+            : item.strokeWidth;
+
+        return {
+          ...item,
+          stroke,
+          strokeWidth: nextStrokeWidth,
+          size:
+            item.type === "element"
+              ? rescaleElementSizeForStrokeChange(
+                  item,
+                  nextStrokeWidth,
+                  stroke
+                )
+              : item.size,
+        };
+      })
     );
   };
 
@@ -1742,11 +1811,24 @@ if (direction === "back") {
       Math.min(MAX_SHAPE_STROKE_WIDTH, strokeWidth)
     );
     const updateShape = (currentItems: DesignItem[]) =>
-      currentItems.map((item) =>
-        item.id === id && (item.type === "shape" || item.type === "element")
-          ? { ...item, strokeWidth: nextStrokeWidth }
-          : item
-      );
+      currentItems.map((item) => {
+        if (item.id !== id || (item.type !== "shape" && item.type !== "element")) {
+          return item;
+        }
+
+        return {
+          ...item,
+          strokeWidth: nextStrokeWidth,
+          size:
+            item.type === "element"
+              ? rescaleElementSizeForStrokeChange(
+                  item,
+                  nextStrokeWidth,
+                  item.stroke
+                )
+              : item.size,
+        };
+      });
 
     if (isTransactionActive()) {
       updateItems(updateShape);
@@ -1830,7 +1912,10 @@ if (direction === "back") {
 
           return {
             ...item,
-            size: getBoundedImageSize(width, height),
+            size:
+              item.type === "image"
+                ? getBoundedImageSize(width, height)
+                : getBoundedElementSize(width, height),
           };
         }
 
@@ -2005,7 +2090,7 @@ if (direction === "back") {
         x: canvasSize.width / 2,
         y: canvasSize.height / 2,
       },
-      size: getBoundedImageSize(
+      size: getBoundedElementSize(
         element.defaultSize.width,
         element.defaultSize.height
       ),
@@ -2473,10 +2558,16 @@ if (direction === "back") {
               verticalChange * startHeight)) /
             sizeVectorLengthSquared
       );
-      const nextSize = getBoundedImageSize(
-        startWidth * requestedScale,
-        startHeight * requestedScale
-      );
+      const nextSize =
+        item.type === "image"
+          ? getBoundedImageSize(
+              startWidth * requestedScale,
+              startHeight * requestedScale
+            )
+          : getBoundedElementSize(
+              startWidth * requestedScale,
+              startHeight * requestedScale
+            );
 
       updateItems((currentItems) =>
         currentItems.map((currentItem) =>

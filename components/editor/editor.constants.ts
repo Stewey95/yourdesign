@@ -213,6 +213,40 @@ export const getBoundedImageSize = (
   };
 };
 
+// Shapes/vector elements can be intentionally extreme aspect ratios (a
+// horizontal Line is ~1px tall by design), unlike photos. Bounding by the
+// *shorter* dimension (as getBoundedImageSize does, correctly, for photos)
+// forces the long axis to balloon to absurd widths just so a naturally
+// thin axis can reach a minimum - that's the bug: constrain by the
+// *longer* dimension instead, so a thin shape can shrink to whatever
+// thinness the gesture asks for while the item as a whole never becomes
+// too small to see or grab.
+export const ELEMENT_MIN_GRIP_SIZE = 20;
+export const ELEMENT_MIN_SIZE = 1;
+export const ELEMENT_MAX_SIZE = 5000;
+
+export const getBoundedElementSize = (
+  width: number,
+  height: number
+) => {
+  const safeWidth =
+    Number.isFinite(width) && width > 0 ? width : ELEMENT_MIN_GRIP_SIZE;
+  const safeHeight =
+    Number.isFinite(height) && height > 0 ? height : ELEMENT_MIN_GRIP_SIZE;
+  const longerDimension = Math.max(safeWidth, safeHeight);
+  const minimumScale = ELEMENT_MIN_GRIP_SIZE / longerDimension;
+  const maximumScale = ELEMENT_MAX_SIZE / longerDimension;
+  const scale = Math.min(
+    maximumScale,
+    Math.max(minimumScale, 1)
+  );
+
+  return {
+    width: Math.max(ELEMENT_MIN_SIZE, safeWidth * scale),
+    height: Math.max(ELEMENT_MIN_SIZE, safeHeight * scale),
+  };
+};
+
 export const getInitialImageSize = (
   naturalWidth: number,
   naturalHeight: number

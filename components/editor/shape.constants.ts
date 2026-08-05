@@ -7,7 +7,7 @@ import type {
 export const DEFAULT_SHAPE_COLOUR = "#2563eb";
 export const DEFAULT_SHAPE_STROKE_WIDTH = 2;
 export const MIN_SHAPE_STROKE_WIDTH = 1;
-export const MAX_SHAPE_STROKE_WIDTH = 20;
+export const MAX_SHAPE_STROKE_WIDTH = 40;
 
 export const SHAPE_LABELS: Record<ShapeKind, string> = {
   rectangle: "Rectangle",

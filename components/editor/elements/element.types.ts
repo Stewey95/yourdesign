@@ -7,7 +7,7 @@ export type ElementAssetMetadataValue =
   | boolean
   | readonly string[];
 
-export type ElementVisibleBounds = {
+export type ElementGeometryBounds = {
   x: number;
   y: number;
   width: number;
@@ -29,13 +29,16 @@ export type ElementAsset = {
   recent: boolean;
   metadata?: Readonly<Record<string, ElementAssetMetadataValue>>;
   /**
-   * Tight bounding box (in the asset's native 0-100 viewBox units) of the
-   * artwork actually painted by `svg`, stroke included. Used only for canvas
-   * placement (selection/resize/drag bounds) so those hug the visible
-   * artwork instead of the full authoring viewBox; catalog thumbnails still
-   * render the untouched `svg` at its native viewBox.
+   * Pure geometric bounding box (in the asset's native 0-100 viewBox units)
+   * of the path/shape geometry painted by `svg` - stroke EXCLUDED, so it is
+   * invariant to the item's current stroke/border width. Used only for
+   * canvas placement: at render time `getElementSvgMarkup` inflates this by
+   * the item's *current* stroke width to get the true visible bounds, so
+   * the selection ring/resize handles/drag area stay correct automatically
+   * as stroke width changes. Catalog thumbnails render the untouched `svg`
+   * at its native viewBox and are unaffected.
    */
-  visibleBounds?: ElementVisibleBounds;
+  geometryBounds?: ElementGeometryBounds;
 };
 
 export type ElementSearchOptions = {
