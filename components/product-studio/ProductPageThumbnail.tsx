@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import type { ProjectRecord } from "../../lib/projects/projects.types";
 import ElementSvg from "../editor/ElementSvg";
+import { getFontOption } from "../editor/fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "../editor/fonts/googleFontLoader";
 
 type ProductPageThumbnailProps = {
   project?: ProjectRecord | null;
@@ -12,6 +15,14 @@ export default function ProductPageThumbnail({
   project,
   className = "",
 }: ProductPageThumbnailProps) {
+  useEffect(() => {
+    project?.items.forEach((item) => {
+      if (item.type === "text") {
+        ensureGoogleFontLoaded(getFontOption(item.fontFamily));
+      }
+    });
+  }, [project]);
+
   if (!project) {
     return (
       <div

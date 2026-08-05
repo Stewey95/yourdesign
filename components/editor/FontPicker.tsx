@@ -11,9 +11,14 @@ import {
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import {
+  FONT_CATEGORIES,
   filterFonts,
   getFontOption,
+  type FontCategoryId,
 } from "./fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
+
+type CategoryFilter = FontCategoryId | "all";
 
 type FontPickerProps = {
   itemId: string;
@@ -43,12 +48,16 @@ export default function FontPicker({
   const listboxId = useId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<CategoryFilter>("all");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [panelPosition, setPanelPosition] =
     useState<PanelPosition | null>(null);
   const [showTopOverflow, setShowTopOverflow] = useState(false);
   const [showBottomOverflow, setShowBottomOverflow] = useState(false);
-  const fonts = useMemo(() => filterFonts(query), [query]);
+  const fonts = useMemo(
+    () => filterFonts(query, category),
+    [query, category]
+  );
   const activeFont = getFontOption(value);
   const highlightedFont = fonts[highlightedIndex];
 
@@ -69,8 +78,8 @@ export default function FontPicker({
     const availableAbove = bounds.top - viewportPadding;
     const openBelow = availableBelow >= 220 || availableBelow >= availableAbove;
     const maxHeight = Math.max(
-      180,
-      Math.min(320, openBelow ? availableBelow : availableAbove)
+      220,
+      Math.min(340, openBelow ? availableBelow : availableAbove)
     );
     const left = Math.min(
       window.innerWidth - width - viewportPadding,
@@ -86,6 +95,7 @@ export default function FontPicker({
   const closePicker = (restoreButtonFocus = false) => {
     setOpen(false);
     setQuery("");
+    setCategory("all");
     setPanelPosition(null);
     setShowTopOverflow(false);
     setShowBottomOverflow(false);
@@ -96,12 +106,13 @@ export default function FontPicker({
   };
 
   const openPicker = () => {
-    const completeFonts = filterFonts("");
+    const completeFonts = filterFonts("", "all");
     const selectedIndex = completeFonts.findIndex(
       (font) => font.family === value
     );
 
     setQuery("");
+    setCategory("all");
     setHighlightedIndex(Math.max(0, selectedIndex));
     setOpen(true);
     updatePanelPosition();
@@ -116,18 +127,38 @@ export default function FontPicker({
   };
 
   const selectFont = (fontFamily: string) => {
+    ensureGoogleFontLoaded(getFontOption(fontFamily));
     onChange(fontFamily);
     closePicker(true);
   };
 
+  const resetListScroll = () => {
+    const list = listboxRef.current;
+
+    if (list) list.scrollTop = 0;
+  };
+
   const updateQuery = (nextQuery: string) => {
-    const nextFonts = filterFonts(nextQuery);
+    const nextFonts = filterFonts(nextQuery, category);
     const activeIndex = nextFonts.findIndex(
       (font) => font.family === value
     );
 
     setQuery(nextQuery);
     setHighlightedIndex(activeIndex >= 0 ? activeIndex : 0);
+    resetListScroll();
+    requestAnimationFrame(() => updateOverflowIndicators());
+  };
+
+  const updateCategory = (nextCategory: CategoryFilter) => {
+    const nextFonts = filterFonts(query, nextCategory);
+    const activeIndex = nextFonts.findIndex(
+      (font) => font.family === value
+    );
+
+    setCategory(nextCategory);
+    setHighlightedIndex(activeIndex >= 0 ? activeIndex : 0);
+    resetListScroll();
     requestAnimationFrame(() => updateOverflowIndicators());
   };
 
@@ -218,6 +249,36 @@ export default function FontPicker({
     };
   }, [open, updatePanelPosition]);
 
+  // Only fetch a font's stylesheet once its preview row actually scrolls
+  // into view, so opening the library never downloads the whole catalog.
+  useEffect(() => {
+    if (!open) return;
+
+    const list = listboxRef.current;
+
+    if (!list) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          const fontId = (entry.target as HTMLElement).dataset.fontId;
+          const font = fonts.find((candidate) => candidate.id === fontId);
+
+          ensureGoogleFontLoaded(font);
+        });
+      },
+      { root: list, rootMargin: "200px 0px", threshold: 0.01 }
+    );
+
+    optionRefs.current.forEach((element) => {
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [open, fonts]);
+
   const buttonClasses =
     variant === "inspector"
       ? "h-9 w-full rounded-lg border border-white/10 bg-slate-800 px-2 text-left text-sm font-semibold"
@@ -270,6 +331,35 @@ export default function FontPicker({
           )}
         </div>
 
+        <div
+          role="tablist"
+          aria-label="Font categories"
+          className="mt-2 flex shrink-0 items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {[{ id: "all" as const, label: "All" }, ...FONT_CATEGORIES].map(
+            (categoryOption) => {
+              const active = category === categoryOption.id;
+
+              return (
+                <button
+                  key={categoryOption.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => updateCategory(categoryOption.id)}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+                    active
+                      ? "bg-blue-500/25 text-white ring-1 ring-blue-400/40"
+                      : "bg-slate-800 text-slate-300 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {categoryOption.label}
+                </button>
+              );
+            }
+          )}
+        </div>
+
         <div className="relative mt-2 min-h-0 flex-1 overflow-hidden">
           <div
             ref={listboxRef}
@@ -292,6 +382,7 @@ export default function FontPicker({
                   <button
                     key={font.id}
                     id={`${listboxId}-${font.id}`}
+                    data-font-id={font.id}
                     ref={(element) => {
                       optionRefs.current[index] = element;
                     }}
@@ -306,7 +397,12 @@ export default function FontPicker({
                         : "text-slate-300 hover:bg-white/5 hover:text-white"
                     }`}
                   >
-                    <span className="min-w-0 flex-1 truncate">
+                    <span
+                      className="min-w-0 flex-1 truncate text-base"
+                      style={{
+                        fontFamily: `${font.family}, ${font.fallback}`,
+                      }}
+                    >
                       {font.label}
                     </span>
                     {selected && (

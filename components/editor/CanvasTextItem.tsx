@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import CornerResizeHandles from "./CornerResizeHandles";
 import type { ResizeCorner, TextDesignItem } from "./editor.types";
+import { getFontOption } from "./fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
 
 export type TextResizeCorner = ResizeCorner;
 
@@ -50,6 +52,10 @@ export default function CanvasTextItem({
   onResizeStart,
 }: CanvasTextItemProps) {
   const focusScrollCleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    ensureGoogleFontLoaded(getFontOption(item.fontFamily));
+  }, [item.fontFamily]);
 
   const initialiseEditingTextarea = useCallback(
     (textarea: HTMLTextAreaElement | null) => {

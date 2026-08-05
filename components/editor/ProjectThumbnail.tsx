@@ -1,8 +1,10 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import ElementSvg from "./ElementSvg";
 import type { ProjectRecord } from "../../lib/projects/projects.types";
+import { getFontOption } from "./fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
 
 type ProjectThumbnailProps = {
   project: ProjectRecord;
@@ -10,6 +12,15 @@ type ProjectThumbnailProps = {
 
 function ProjectThumbnail({ project }: ProjectThumbnailProps) {
   const { canvasSize, items } = project;
+
+  useEffect(() => {
+    items.forEach((item) => {
+      if (item.type === "text") {
+        ensureGoogleFontLoaded(getFontOption(item.fontFamily));
+      }
+    });
+  }, [items]);
+
   const width = canvasSize.width;
   const height = canvasSize.height;
   const maxDim = Math.max(width, height);

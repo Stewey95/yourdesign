@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import type { Template } from "../../lib/templates/templates.types";
 import ElementSvg from "./ElementSvg";
+import { getFontOption } from "./fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
 
 type TemplateThumbnailProps = {
   template: Template;
@@ -9,6 +12,15 @@ type TemplateThumbnailProps = {
 
 export default function TemplateThumbnail({ template }: TemplateThumbnailProps) {
   const { width, height, items, backgroundColor = "#0f172a" } = template;
+
+  useEffect(() => {
+    items.forEach((item) => {
+      if (item.type === "text") {
+        ensureGoogleFontLoaded(getFontOption(item.fontFamily));
+      }
+    });
+  }, [items]);
+
   const maxDim = Math.max(width, height);
   const scale = 120 / maxDim;
   const containerWidth = Math.round(width * scale);

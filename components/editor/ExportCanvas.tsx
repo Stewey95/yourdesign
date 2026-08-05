@@ -1,9 +1,11 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 import type { DesignItem } from "./editor.types";
 import ShapeSvg from "./ShapeSvg";
 import ElementSvg from "./ElementSvg";
+import { getFontOption } from "./fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
 
 type ExportCanvasProps = {
   items: DesignItem[];
@@ -13,6 +15,14 @@ type ExportCanvasProps = {
 
 const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
   function ExportCanvas({ items, width, height }, ref) {
+    useEffect(() => {
+      items.forEach((item) => {
+        if (item.type === "text") {
+          ensureGoogleFontLoaded(getFontOption(item.fontFamily));
+        }
+      });
+    }, [items]);
+
     return (
       <div
         ref={ref}

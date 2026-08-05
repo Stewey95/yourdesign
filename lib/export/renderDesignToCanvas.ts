@@ -8,6 +8,8 @@ import {
   getElementAsset,
   getElementSvgMarkup,
 } from "../../components/editor/elements/elements.catalog";
+import { getFontOption } from "../../components/editor/fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "../../components/editor/fonts/googleFontLoader";
 import type {
   JpgExportConfig,
   PngExportConfig,
@@ -214,16 +216,22 @@ async function renderDesignToImage(
   quality?: number
 ) {
   if (document.fonts) {
+    const textItems = items.filter(
+      (item): item is TextDesignItem => item.type === "text"
+    );
+
+    textItems.forEach((item) =>
+      ensureGoogleFontLoaded(getFontOption(item.fontFamily))
+    );
+
     await Promise.all([
       document.fonts.ready,
-      ...items
-        .filter((item): item is TextDesignItem => item.type === "text")
-        .map((item) =>
-          document.fonts.load(
-            `700 ${item.fontSize}px ${quoteFontFamily(item.fontFamily)}`,
-            item.value || " "
-          )
-        ),
+      ...textItems.map((item) =>
+        document.fonts.load(
+          `700 ${item.fontSize}px ${quoteFontFamily(item.fontFamily)}`,
+          item.value || " "
+        )
+      ),
     ]);
   }
 
