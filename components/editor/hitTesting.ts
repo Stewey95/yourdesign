@@ -241,10 +241,65 @@ const hitTestShape: VisibleContentHitTester<ShapeDesignItem> = ({
   return hitsStroke;
 };
 
+// Converts an SVG geometry primitive into an equivalent Path2D so it can be
+// hit-tested through the same Canvas2D isPointInPath/isPointInStroke calls
+// shapes use - unlike SVGGeometryElement.isPointInStroke(), Canvas2D lets us
+// set an arbitrary lineWidth, which is exactly what adds click tolerance.
+const buildPath2DForGeometry = (
+  geometry: SVGGeometryElement
+): Path2D | null => {
+  const tag = geometry.tagName.toLowerCase();
+  const num = (name: string) => Number(geometry.getAttribute(name) ?? 0);
+
+  if (tag === "path") {
+    const d = geometry.getAttribute("d");
+    return d ? new Path2D(d) : null;
+  }
+
+  const path = new Path2D();
+
+  if (tag === "circle") {
+    path.arc(num("cx"), num("cy"), num("r"), 0, Math.PI * 2);
+    return path;
+  }
+
+  if (tag === "ellipse") {
+    path.ellipse(num("cx"), num("cy"), num("rx"), num("ry"), 0, 0, Math.PI * 2);
+    return path;
+  }
+
+  if (tag === "rect") {
+    path.rect(num("x"), num("y"), num("width"), num("height"));
+    return path;
+  }
+
+  if (tag === "line") {
+    path.moveTo(num("x1"), num("y1"));
+    path.lineTo(num("x2"), num("y2"));
+    return path;
+  }
+
+  if (tag === "polyline" || tag === "polygon") {
+    const points = (geometry.getAttribute("points") ?? "")
+      .trim()
+      .split(/[\s,]+/)
+      .map(Number);
+
+    for (let i = 0; i + 1 < points.length; i += 2) {
+      if (i === 0) path.moveTo(points[0], points[1]);
+      else path.lineTo(points[i], points[i + 1]);
+    }
+    if (tag === "polygon") path.closePath();
+    return path;
+  }
+
+  return null;
+};
+
 const hitTestElement: VisibleContentHitTester<ElementDesignItem> = (
   context
 ) => {
-  const { item, canvasPoint, element } = context;
+  const { item, canvasPoint, element, canvasScale, pointerType } = context;
   const asset = getElementAsset(item.elementId);
 
   if (!asset) return true;
@@ -274,16 +329,70 @@ const hitTestElement: VisibleContentHitTester<ElementDesignItem> = (
         viewBox.height
   );
 
+  const canvasContext = getShapeHitTestContext();
+  if (!canvasContext) return true;
+
+  // Thin or open artwork (a hashtag, a line-art icon) has almost no fill
+  // area to land on, so every catalog element needs the same forgiving
+  // click tolerance shapes already get - without this, hitting the exact
+  // 1-2px-wide painted stroke is what was making some elements take
+  // several attempts to reselect. Screen-pixel tolerance is converted into
+  // this SVG's own viewBox units, since that's the space isPointInStroke
+  // operates in, and that scale changes with the item's size and zoom.
+  const screenTolerance =
+    pointerType === "touch" ? SHAPE_HIT_TOLERANCE.touch : SHAPE_HIT_TOLERANCE.desktop;
+  const screenPxPerViewBoxUnit =
+    (item.size.width * canvasScale) / (viewBox.width || 1);
+  const logicalTolerance =
+    screenPxPerViewBoxUnit > 0 ? screenTolerance / screenPxPerViewBoxUnit : 0;
+
   return Array.from(
     svg.querySelectorAll<SVGGeometryElement>(
       "path, rect, circle, ellipse, line, polyline, polygon"
     )
   ).some((geometry) => {
-      try {
-        return geometry.isPointInFill(point) || geometry.isPointInStroke(point);
-      } catch {
+    try {
+      const path = buildPath2DForGeometry(geometry);
+      if (!path) return true;
+
+      const fillAttr = geometry.getAttribute("fill");
+      const hasVisibleFill = fillAttr !== null && fillAttr !== "none";
+
+      if (
+        hasVisibleFill &&
+        canvasContext.isPointInPath(path, point.x, point.y)
+      ) {
         return true;
       }
+
+      const strokeAttr = geometry.getAttribute("stroke");
+      const hasVisibleStroke = strokeAttr !== null && strokeAttr !== "none";
+      const strokeWidth = hasVisibleStroke
+        ? Number(geometry.getAttribute("stroke-width") ?? 1)
+        : 0;
+
+      // Even a fill-only shape (no stroke) still gets tolerance around its
+      // own outline, so thin fill slivers aren't harder to hit than
+      // stroked ones - clamp to a minimum so zero-stroke shapes aren't
+      // hit-tested with a zero-width line.
+      const effectiveStrokeWidth = Math.max(strokeWidth, 0.01);
+
+      canvasContext.save();
+      canvasContext.lineWidth = effectiveStrokeWidth + logicalTolerance * 2;
+      canvasContext.lineCap = "round";
+      canvasContext.lineJoin = "round";
+
+      const hitsStroke = canvasContext.isPointInStroke(
+        path,
+        point.x,
+        point.y
+      );
+
+      canvasContext.restore();
+      return hitsStroke;
+    } catch {
+      return true;
+    }
   });
 };
 

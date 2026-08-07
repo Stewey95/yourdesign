@@ -283,6 +283,10 @@ export default function EditorInspector({
         const colourMode = asset ? getElementColourMode(asset) : "none";
         const supportsFill = colourMode === "fill-and-stroke";
         const supportsStroke = colourMode !== "none";
+        const effectiveMaxStrokeWidth = Math.min(
+          MAX_SHAPE_STROKE_WIDTH,
+          asset?.maxStrokeWidth ?? MAX_SHAPE_STROKE_WIDTH
+        );
 
         return (
           <div className="space-y-4">
@@ -312,7 +316,7 @@ export default function EditorInspector({
                     label={supportsFill ? "Border width" : "Stroke width"}
                     value={item.strokeWidth}
                     min={MIN_SHAPE_STROKE_WIDTH}
-                    max={MAX_SHAPE_STROKE_WIDTH}
+                    max={effectiveMaxStrokeWidth}
                     suffix="px"
                     onCommit={(strokeWidth) =>
                       onChangeShapeStrokeWidth(item.id, strokeWidth)

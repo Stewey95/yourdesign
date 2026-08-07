@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Heart, Search, Shapes, Star, X } from "lucide-react";
+import { ChevronLeft, Clock3, Heart, Search, Shapes, Star, X } from "lucide-react";
 import {
   useCallback,
   useDeferredValue,
@@ -23,11 +23,18 @@ type ElementsPanelProps = {
 const FAVORITES_STORAGE_KEY = "gripix_favourite_elements_v1";
 const RECENTS_STORAGE_KEY = "gripix_recent_elements_v1";
 
+// A dedicated view mode for browsing the full Recent/Favourites collections
+// (as normal, favouritable, insertable cards) - distinct from category
+// filtering so the two can't collide, and cleared whenever the user starts
+// a search or picks a real category so there's never an ambiguous state.
+type CollectionView = "recent" | "favourites" | null;
+
 export default function ElementsPanel({
   onInsertElement,
 }: ElementsPanelProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | undefined>();
+  const [collectionView, setCollectionView] = useState<CollectionView>(null);
 
   // Lazy state initialization to read from localStorage without effect setState cascading renders
   const [favouriteIds, setFavouriteIds] = useState<string[]>(() => {
@@ -65,18 +72,25 @@ export default function ElementsPanel({
 
   const handleElementClick = useCallback(
     (element: ElementAsset) => {
-      // Record recent element insertion
-      setRecentIds((prev) => {
-        const next = [element.id, ...prev.filter((id) => id !== element.id)].slice(0, 12);
-        try {
-          localStorage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(next));
-        } catch {}
-        return next;
-      });
+      // Record recent element insertion. The localStorage write happens as
+      // a plain statement here rather than inside the setRecentIds updater,
+      // because onInsertElement below auto-selects the new item, which on
+      // mobile unmounts this whole panel in the same React batch - if the
+      // write only happened inside the updater, React would never run it
+      // for a fiber that's being torn down in the same commit, silently
+      // dropping the recent-insertion record.
+      const nextRecentIds = [
+        element.id,
+        ...recentIds.filter((id) => id !== element.id),
+      ].slice(0, 12);
+      try {
+        localStorage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(nextRecentIds));
+      } catch {}
+      setRecentIds(nextRecentIds);
 
       onInsertElement(element);
     },
-    [onInsertElement]
+    [onInsertElement, recentIds]
   );
 
   const deferredQuery = useDeferredValue(query);
@@ -121,6 +135,22 @@ export default function ElementsPanel({
     }
   };
 
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    if (value) setCollectionView(null);
+  };
+
+  const selectCategory = (nextCategory: string | undefined) => {
+    setCategory(nextCategory);
+    if (nextCategory) setCollectionView(null);
+  };
+
+  const openCollection = (view: Exclude<CollectionView, null>) => {
+    setCollectionView(view);
+    setQuery("");
+    setCategory(undefined);
+  };
+
   return (
     <div className="min-w-0 max-w-full space-y-4">
       {/* Search Bar */}
@@ -134,7 +164,7 @@ export default function ElementsPanel({
         <input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => updateQuery(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Search elements..."
           className="h-10 w-full rounded-lg border border-white/10 bg-slate-900/70 pl-9 pr-8 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/30 md:pl-8 md:text-[11px]"
@@ -152,13 +182,14 @@ export default function ElementsPanel({
       </label>
 
       {/* Recents & Favourites Row */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-2">
         <LibrarySectionHeader
           icon={Clock3}
           title="Recent"
           count={recentElements.length}
           elements={recentElements}
           onInsertElement={handleElementClick}
+          onSeeAll={() => openCollection("recent")}
         />
         <LibrarySectionHeader
           icon={Heart}
@@ -166,6 +197,7 @@ export default function ElementsPanel({
           count={favouriteElements.length}
           elements={favouriteElements}
           onInsertElement={handleElementClick}
+          onSeeAll={() => openCollection("favourites")}
         />
       </div>
 
@@ -181,7 +213,7 @@ export default function ElementsPanel({
           {category && (
             <button
               type="button"
-              onClick={() => setCategory(undefined)}
+              onClick={() => selectCategory(undefined)}
               className="text-[10px] text-blue-400 hover:underline"
             >
               Clear filter
@@ -192,7 +224,7 @@ export default function ElementsPanel({
           <button
             type="button"
             aria-pressed={category === undefined}
-            onClick={() => setCategory(undefined)}
+            onClick={() => selectCategory(undefined)}
             className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
               category === undefined
                 ? "border-blue-400/50 bg-blue-500/20 text-cyan-200"
@@ -208,7 +240,7 @@ export default function ElementsPanel({
                 key={catName}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => setCategory(selected ? undefined : catName)}
+                onClick={() => selectCategory(selected ? undefined : catName)}
                 className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
                   selected
                     ? "border-blue-400/50 bg-blue-500/20 text-cyan-200"
@@ -227,20 +259,84 @@ export default function ElementsPanel({
         <div className="mb-2 flex items-center justify-between gap-2">
           <h3
             id="element-results-heading"
-            className="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+            className="flex min-w-0 items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400"
           >
-            {query
-              ? "Search Results"
-              : category
-                ? category
-                : "All Elements"}
+            {collectionView && (
+              <button
+                type="button"
+                onClick={() => setCollectionView(null)}
+                aria-label="Back to all elements"
+                className="-ml-1 shrink-0 rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white"
+              >
+                <ChevronLeft size={14} aria-hidden="true" />
+              </button>
+            )}
+            <span className="truncate">
+              {collectionView === "recent"
+                ? "Recent"
+                : collectionView === "favourites"
+                  ? "Favourites"
+                  : query
+                    ? "Search Results"
+                    : category
+                      ? category
+                      : "All Elements"}
+            </span>
           </h3>
-          <span className="text-[10px] tabular-nums text-slate-500">
-            {searchResult.total} {searchResult.total === 1 ? "element" : "elements"}
+          <span className="shrink-0 text-[10px] tabular-nums text-slate-500">
+            {collectionView === "recent"
+              ? recentElements.length
+              : collectionView === "favourites"
+                ? favouriteElements.length
+                : searchResult.total}{" "}
+            {(collectionView === "recent"
+              ? recentElements.length
+              : collectionView === "favourites"
+                ? favouriteElements.length
+                : searchResult.total) === 1
+              ? "element"
+              : "elements"}
           </span>
         </div>
 
-        {searchResult.items.length === 0 ? (
+        {collectionView ? (
+          (() => {
+            const collectionElements =
+              collectionView === "recent" ? recentElements : favouriteElements;
+
+            return collectionElements.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/10 bg-slate-900/40 px-3 py-6 text-center">
+                <Shapes
+                  size={20}
+                  aria-hidden="true"
+                  className="mx-auto mb-2 text-slate-500"
+                />
+                <p className="text-xs font-semibold text-slate-300">
+                  {collectionView === "recent"
+                    ? "No recent elements yet"
+                    : "No favourites yet"}
+                </p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {collectionView === "recent"
+                    ? "Elements you insert will show up here."
+                    : "Tap the star on any element to save it here."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 md:grid-cols-2">
+                {collectionElements.map((element) => (
+                  <ElementCard
+                    key={element.id}
+                    element={element}
+                    onInsert={handleElementClick}
+                    onToggleFavourite={toggleFavourite}
+                    isFavourite={favouriteIds.includes(element.id)}
+                  />
+                ))}
+              </div>
+            );
+          })()
+        ) : searchResult.items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-white/10 bg-slate-900/40 px-3 py-6 text-center">
             <Shapes
               size={20}
@@ -269,7 +365,7 @@ export default function ElementsPanel({
                     </span>
                     <button
                       type="button"
-                      onClick={() => setCategory(catName)}
+                      onClick={() => selectCategory(catName)}
                       className="shrink-0 whitespace-nowrap text-[10px] font-medium text-blue-400 hover:text-blue-300"
                     >
                       See all ({catItems.length})
@@ -330,12 +426,17 @@ function ElementCard({
       tabIndex={0}
       onClick={insertElement}
       onKeyDown={(event) => {
+        // Ignore Enter/Space bubbling up from the nested favourite button -
+        // without this, keyboard-activating the star also inserted the
+        // element, since preventDefault() here suppressed the star's own
+        // default click-on-Enter behaviour before it could fire.
+        if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           insertElement();
         }
       }}
-      className="group relative min-w-0 rounded-xl border border-white/10 bg-slate-800/60 p-2 text-left transition hover:border-blue-400/50 hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+      className="group min-w-0 rounded-xl border border-white/10 bg-slate-800/60 p-2 text-left transition hover:border-blue-400/50 hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
       aria-label={`Add ${element.name}`}
       title={`Add ${element.name}`}
     >
@@ -346,21 +447,27 @@ function ElementCard({
           backgroundImage: `url("${getElementSvgDataUrl(element)}")`,
         }}
       />
-      <span className="block truncate text-[10px] font-semibold leading-tight text-slate-200 md:line-clamp-2 md:min-h-[2.5em] md:whitespace-normal md:text-center md:text-[11px]">
-        {element.name}
-      </span>
-      <button
-        type="button"
-        onClick={(e) => onToggleFavourite(element.id, e)}
-        className={`absolute right-1.5 top-1.5 rounded-md p-1 transition ${
-          isFavourite
-            ? "text-amber-400 opacity-100"
-            : "text-slate-400 opacity-0 group-hover:opacity-100 hover:text-amber-300"
-        }`}
-        aria-label={isFavourite ? `Remove ${element.name} from favourites` : `Add ${element.name} to favourites`}
-      >
-        <Star size={12} fill={isFavourite ? "currentColor" : "none"} />
-      </button>
+      {/* Favourite control lives permanently beside the name, rather than
+          overlapping the thumbnail on hover-only, so it's visible on touch
+          devices (no hover state) and has a real tap target of its own. */}
+      <div className="flex min-w-0 items-center gap-1">
+        <span className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-tight text-slate-200 md:text-[11px]">
+          {element.name}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => onToggleFavourite(element.id, e)}
+          className={`-m-1 shrink-0 rounded-md p-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+            isFavourite
+              ? "text-amber-400 hover:text-amber-300"
+              : "text-slate-400 hover:text-amber-300"
+          }`}
+          aria-label={isFavourite ? `Remove ${element.name} from favourites` : `Add ${element.name} to favourites`}
+          aria-pressed={isFavourite}
+        >
+          <Star size={13} fill={isFavourite ? "currentColor" : "none"} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -371,6 +478,7 @@ type LibrarySectionHeaderProps = {
   count: number;
   elements: ElementAsset[];
   onInsertElement: (element: ElementAsset) => void;
+  onSeeAll: () => void;
 };
 
 function LibrarySectionHeader({
@@ -379,24 +487,37 @@ function LibrarySectionHeader({
   count,
   elements,
   onInsertElement,
+  onSeeAll,
 }: LibrarySectionHeaderProps) {
   return (
     <div className="min-w-0 rounded-lg border border-white/10 bg-slate-900/50 p-2">
-      <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1.5 min-w-0">
+      {/* Full-width row (not a cramped 2-column half) so the title and
+          count always have enough room - this is what was clipping. */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
           <Icon size={13} aria-hidden="true" className="shrink-0 text-slate-400" />
           <span className="truncate text-[11px] font-semibold text-slate-300">
             {title}
           </span>
+          <span className="shrink-0 text-[10px] font-medium text-slate-500 tabular-nums">
+            ({count})
+          </span>
         </div>
-        <span className="text-[10px] font-medium text-slate-500 tabular-nums">
-          {count}
-        </span>
+        {count > 0 && (
+          <button
+            type="button"
+            onClick={onSeeAll}
+            aria-label={`See all ${title}`}
+            className="shrink-0 whitespace-nowrap text-[10px] font-medium text-blue-400 hover:text-blue-300"
+          >
+            See all
+          </button>
+        )}
       </div>
 
-      {count > 0 && (
+      {count > 0 ? (
         <div className="mt-2 flex max-w-full gap-1 overflow-x-auto overscroll-x-contain pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {elements.slice(0, 5).map((element) => (
+          {elements.slice(0, 8).map((element) => (
             <button
               key={element.id}
               type="button"
@@ -409,6 +530,12 @@ function LibrarySectionHeader({
             />
           ))}
         </div>
+      ) : (
+        <p className="mt-1 text-[10px] text-slate-500">
+          {title === "Recent"
+            ? "Elements you insert will show up here."
+            : "Tap the star on any element to save it here."}
+        </p>
       )}
     </div>
   );

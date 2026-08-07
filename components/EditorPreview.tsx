@@ -1524,6 +1524,33 @@ const getSnappedPosition = (
     setShowMobileContextToolbar(true);
   };
 
+  const getTemplateItemPosition = (item: DesignItem) => {
+    const position = item.position;
+
+    if (item.type === "shape" || item.type === "image" || item.type === "element") {
+      return {
+        x: position.x + item.size.width / 2,
+        y: position.y + item.size.height / 2,
+      };
+    }
+
+    if (item.type === "text") {
+      const lines = item.value.split("\n");
+      const lineHeight = item.fontSize * 1.15;
+      const textHeight = Math.max(1, lines.length) * lineHeight;
+      const maxLineLength = Math.max(...lines.map((line) => line.length));
+      const approximateCharWidth = item.fontSize * 0.55;
+      const textWidth = Math.max(1, maxLineLength * approximateCharWidth);
+
+      return {
+        x: position.x + textWidth / 2,
+        y: position.y + textHeight / 2,
+      };
+    }
+
+    return position;
+  };
+
   const handleSelectTemplate = useCallback(
     (template: Template) => {
       activeResizeCleanupRef.current?.();
@@ -1539,6 +1566,7 @@ const getSnappedPosition = (
       const freshItems: DesignItem[] = template.items.map((item, index) => ({
         ...item,
         id: `item-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
+        position: getTemplateItemPosition(item),
       }));
 
       hasUserSelectedCanvasPresetRef.current = true;
@@ -1724,6 +1752,23 @@ if (direction === "back") {
     );
   };
 
+  // Some catalog elements have detailed artwork with multiple close
+  // internal negative-space regions (e.g. a pencil's banding) that a
+  // stroke width the shared MAX_SHAPE_STROKE_WIDTH allows would swallow,
+  // turning the artwork into a solid blob - element.maxStrokeWidth (set
+  // per-element from an empirical audit) caps those specific elements
+  // below that shared ceiling. Every other shape/element keeps the full
+  // shared range; this never lowers it, only tightens it per-element.
+  const getEffectiveMaxStrokeWidth = (
+    item: Extract<DesignItem, { type: "shape" | "element" }>
+  ) => {
+    if (item.type !== "element") return MAX_SHAPE_STROKE_WIDTH;
+
+    const asset = getElementAsset(item.elementId);
+
+    return Math.min(MAX_SHAPE_STROKE_WIDTH, asset?.maxStrokeWidth ?? MAX_SHAPE_STROKE_WIDTH);
+  };
+
   // Elements crop their SVG viewBox to geometryBounds inflated by the
   // current stroke's half-width (see getElementVisibleBounds), so the true
   // visible bounds shift whenever stroke width or stroke presence changes.
@@ -1808,15 +1853,17 @@ if (direction === "back") {
   };
 
   const changeShapeStrokeWidth = (id: string, strokeWidth: number) => {
-    const nextStrokeWidth = Math.max(
-      MIN_SHAPE_STROKE_WIDTH,
-      Math.min(MAX_SHAPE_STROKE_WIDTH, strokeWidth)
-    );
     const updateShape = (currentItems: DesignItem[]) =>
       currentItems.map((item) => {
         if (item.id !== id || (item.type !== "shape" && item.type !== "element")) {
           return item;
         }
+
+        const effectiveMax = getEffectiveMaxStrokeWidth(item);
+        const nextStrokeWidth = Math.max(
+          MIN_SHAPE_STROKE_WIDTH,
+          Math.min(effectiveMax, strokeWidth)
+        );
 
         return {
           ...item,

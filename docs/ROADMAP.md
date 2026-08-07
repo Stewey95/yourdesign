@@ -91,3 +91,4 @@ Legend:
 - 💡 **Marketplace Integrations & Selling Tools**: Direct storefront integrations and digital product distribution *[Confirmed in AGENTS.md]*.
 - 🔹 **Multi-Page Canvas Engine**: Multi-page document editing within a single design session *[Recommendation]*.
 - 🔹 **Multi-Item Grouping & Alignment**: Grouping elements and distribution tools *[Recommendation]*.
+- 🔹 **Multi-Part Editable Elements**: Independently recolourable regions within a single vector element (e.g. per-bar colours in a bar chart), extending the same illustration architecture to multi-region assets *[Recommendation - data model documented in `docs/POLISH_BACKLOG.md` §4]*.

@@ -694,6 +694,10 @@ function MobileShapeStylePanel({
 }: MobileShapeStylePanelProps) {
   const asset = item.type === "element" ? getElementAsset(item.elementId) : null;
   const colourMode = asset ? getElementColourMode(asset) : "none";
+  const effectiveMaxStrokeWidth = Math.min(
+    MAX_SHAPE_STROKE_WIDTH,
+    asset?.maxStrokeWidth ?? MAX_SHAPE_STROKE_WIDTH
+  );
   const strokeOnly =
     item.type === "shape"
       ? isStrokeOnlyShape(item.shapeKind)
@@ -746,7 +750,7 @@ function MobileShapeStylePanel({
           <input
             type="range"
             min={MIN_SHAPE_STROKE_WIDTH}
-            max={MAX_SHAPE_STROKE_WIDTH}
+            max={effectiveMaxStrokeWidth}
             step={1}
             value={Math.max(MIN_SHAPE_STROKE_WIDTH, item.strokeWidth)}
             disabled={!hasVisibleStroke}
@@ -787,7 +791,7 @@ function MobileShapeStylePanel({
               item.strokeWidth
             )}
             min={MIN_SHAPE_STROKE_WIDTH}
-            max={MAX_SHAPE_STROKE_WIDTH}
+            max={effectiveMaxStrokeWidth}
             suffix="px"
             disabled={!hasVisibleStroke}
             onCommit={(strokeWidth) =>

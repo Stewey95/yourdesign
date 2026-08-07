@@ -39,6 +39,16 @@ export type ElementAsset = {
    * at its native viewBox and are unaffected.
    */
   geometryBounds?: ElementGeometryBounds;
+  /**
+   * Optional per-element ceiling on stroke width, below the shared global
+   * MAX_SHAPE_STROKE_WIDTH. Detailed artwork with multiple close internal
+   * negative-space regions (e.g. a pencil's banding, a waffle pattern) can
+   * have those gaps swallowed by a stroke width that a simple single-outline
+   * shape handles fine - this lets each element declare the real ceiling its
+   * own geometry supports, rather than weakening the shared default for
+   * every element. Omit for elements with no such fragile internal detail.
+   */
+  maxStrokeWidth?: number;
 };
 
 export type ElementSearchOptions = {

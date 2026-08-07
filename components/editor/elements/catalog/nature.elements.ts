@@ -11,6 +11,7 @@ export const NATURE_ELEMENTS: readonly ElementAsset[] = [
     defaultSize: { width: 100, height: 100 },
     geometryBounds: { x: 14, y: 14, width: 72, height: 72 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -74,6 +75,7 @@ export const NATURE_ELEMENTS: readonly ElementAsset[] = [
     defaultSize: { width: 71.707, height: 98 },
     geometryBounds: { x: 20, y: 8, width: 60, height: 82 },
     insertion: { kind: "graphic" },
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -85,6 +87,7 @@ export const NATURE_ELEMENTS: readonly ElementAsset[] = [
     svg: svg('<circle cx="70" cy="50" r="13" fill="#2563eb" stroke="#2563eb" stroke-width="3"/><circle cx="60" cy="67.3" r="13" fill="#2563eb" stroke="#2563eb" stroke-width="3"/><circle cx="40" cy="67.3" r="13" fill="#2563eb" stroke="#2563eb" stroke-width="3"/><circle cx="30" cy="50" r="13" fill="#2563eb" stroke="#2563eb" stroke-width="3"/><circle cx="40" cy="32.7" r="13" fill="#2563eb" stroke="#2563eb" stroke-width="3"/><circle cx="60" cy="32.7" r="13" fill="#2563eb" stroke="#2563eb" stroke-width="3"/><circle cx="50" cy="50" r="11" fill="#2563eb" stroke="#2563eb" stroke-width="3"/>'),
     defaultSize: { width: 86, height: 78.964 },
     geometryBounds: { x: 17, y: 19.7, width: 66, height: 60.6 },
+    maxStrokeWidth: 8,
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
@@ -131,22 +134,19 @@ export const NATURE_ELEMENTS: readonly ElementAsset[] = [
     name: "Moon",
     category: "Nature",
     tags: ["night", "crescent", "lunar", "sleep", "astronomy", "dark"],
-    svg: svg('<path d="M20 50A32 32 0 1 0 84 50A32 32 0 1 0 20 50M36 50A26 26 0 1 0 88 50A26 26 0 1 0 36 50" fill="#2563eb" fill-rule="evenodd" stroke="none"/>'),
-    defaultSize: { width: 82, height: 77.176 },
-    // Unlike every other element, this one always renders with hasStroke
-    // false (its path's stroke stays literally "none" - see note below), so
-    // getElementVisibleBounds never adds any padding: geometryBounds must
-    // equal the raw measured bounds directly, not bounds-minus-half-stroke.
-    geometryBounds: { x: 20, y: 18, width: 68, height: 64 },
+    // Single-path crescent (two arcs sharing both endpoints) rather than
+    // the previous two-full-circles-plus-evenodd construction: that version
+    // had no real stroke (stroking it would have outlined both full circles
+    // and destroyed the crescent silhouette), so it could never join the
+    // normal fill-and-stroke system and instead rendered with its baseline
+    // fill frozen forever at the raw #2563eb placeholder colour - visible,
+    // but always blue, never the intended default black. This path has one
+    // genuine boundary, so it now behaves exactly like every other graphic.
+    svg: svg('<path d="M87.5 53.29A37.5 37.5 0 1 1 46.71 12.5A29.17 29.17 0 0 0 87.5 53.29Z" fill="#2563eb" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
+    defaultSize: { width: 82, height: 82 },
+    geometryBounds: { x: 12.659, y: 12.5, width: 74.841, height: 74.841 },
     insertion: { kind: "graphic" },
-    // No colourMode override (defaults to "stroke"): this crescent is one
-    // evenodd compound path combining two circle subpaths - stroking it
-    // would outline both full circles and destroy the crescent silhouette,
-    // so it can't use "fill-and-stroke" like other solid graphics without
-    // going invisible (insertion always defaults item.fill to null for
-    // graphic-kind elements, which "fill-and-stroke" mode then substitutes
-    // to fill="none"). Staying in "stroke" mode leaves this fill frozen at
-    // its authored colour - visible, on-brand, just not user-recolourable.
+    colourMode: "fill-and-stroke",
     favourite: false,
     recent: false,
   },
@@ -158,6 +158,7 @@ export const NATURE_ELEMENTS: readonly ElementAsset[] = [
     svg: svg('<path d="M58 5L28 55H48L38 95L75 42H53Z" fill="#2563eb" stroke="#2563eb" stroke-width="4" stroke-linejoin="round"/>'),
     defaultSize: { width: 56.4, height: 108 },
     geometryBounds: { x: 28, y: 5, width: 47, height: 90 },
+    maxStrokeWidth: 6,
     insertion: { kind: "graphic" },
     colourMode: "fill-and-stroke",
     favourite: false,
