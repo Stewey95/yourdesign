@@ -10,14 +10,16 @@ import {
 } from "../../components/editor/elements/elements.catalog";
 import { getFontOption } from "../../components/editor/fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "../../components/editor/fonts/googleFontLoader";
+import {
+  getTextMaximumWidth,
+  TEXT_FONT_WEIGHT,
+  TEXT_LINE_HEIGHT,
+} from "../../components/editor/textLayout";
 import type {
   JpgExportConfig,
   PngExportConfig,
 } from "../../types/export";
 import { getScaledExportDimensions } from "./exportDimensions";
-
-const TEXT_MAX_WIDTH = 460;
-const TEXT_LINE_HEIGHT = 1.15;
 
 const quoteFontFamily = (fontFamily: string) =>
   `"${fontFamily.replaceAll("\"", "\\\"")}"`;
@@ -103,7 +105,8 @@ const wrapParagraph = (
 
 const drawTextItem = (
   context: CanvasRenderingContext2D,
-  item: TextDesignItem
+  item: TextDesignItem,
+  canvasWidth: number
 ) => {
   if (!item.value) return;
 
@@ -113,7 +116,7 @@ const drawTextItem = (
   context.save();
   context.translate(item.position.x, item.position.y);
   context.rotate((item.rotation * Math.PI) / 180);
-  context.font = `700 ${item.fontSize}px ${fontFamily}`;
+  context.font = `${TEXT_FONT_WEIGHT} ${item.fontSize}px ${fontFamily}`;
   context.fillStyle = item.color;
   context.textAlign = "center";
   context.textBaseline = "middle";
@@ -124,7 +127,11 @@ const drawTextItem = (
   const lines = item.value
     .split("\n")
     .flatMap((paragraph) =>
-      wrapParagraph(context, paragraph, TEXT_MAX_WIDTH)
+      wrapParagraph(
+        context,
+        paragraph,
+        getTextMaximumWidth(canvasWidth)
+      )
     );
   const blockHeight = lines.length * lineHeight;
 
@@ -194,6 +201,30 @@ const addRoundedRectangle = (
   context.closePath();
 };
 
+const getContainedImageBounds = (
+  image: HTMLImageElement,
+  width: number,
+  height: number
+) => {
+  const naturalWidth = image.naturalWidth || image.width;
+  const naturalHeight = image.naturalHeight || image.height;
+
+  if (naturalWidth <= 0 || naturalHeight <= 0) {
+    return { x: 0, y: 0, width, height };
+  }
+
+  const scale = Math.min(width / naturalWidth, height / naturalHeight);
+  const containedWidth = naturalWidth * scale;
+  const containedHeight = naturalHeight * scale;
+
+  return {
+    x: (width - containedWidth) / 2,
+    y: (height - containedHeight) / 2,
+    width: containedWidth,
+    height: containedHeight,
+  };
+};
+
 const canvasToBlob = (
   canvas: HTMLCanvasElement,
   type: "image/png" | "image/jpeg",
@@ -220,19 +251,21 @@ async function renderDesignToImage(
       (item): item is TextDesignItem => item.type === "text"
     );
 
-    textItems.forEach((item) =>
-      ensureGoogleFontLoaded(getFontOption(item.fontFamily))
+    await Promise.all(
+      textItems.map((item) =>
+        ensureGoogleFontLoaded(getFontOption(item.fontFamily))
+      )
     );
 
-    await Promise.all([
-      document.fonts.ready,
-      ...textItems.map((item) =>
+    await document.fonts.ready;
+    await Promise.all(
+      textItems.map((item) =>
         document.fonts.load(
-          `700 ${item.fontSize}px ${quoteFontFamily(item.fontFamily)}`,
+          `${TEXT_FONT_WEIGHT} ${item.fontSize}px ${quoteFontFamily(item.fontFamily)}`,
           item.value || " "
         )
-      ),
-    ]);
+      )
+    );
   }
 
   const dimensions = getScaledExportDimensions(
@@ -298,7 +331,7 @@ async function renderDesignToImage(
 
     for (const item of items) {
       if (item.type === "text") {
-        drawTextItem(context, item);
+        drawTextItem(context, item, config.canvas.width);
         continue;
       }
 
@@ -336,6 +369,11 @@ async function renderDesignToImage(
 
       const x = -item.size.width / 2;
       const y = -item.size.height / 2;
+      const containedBounds = getContainedImageBounds(
+        image,
+        item.size.width,
+        item.size.height
+      );
 
       context.save();
       context.translate(item.position.x, item.position.y);
@@ -353,10 +391,10 @@ async function renderDesignToImage(
       context.clip();
       context.drawImage(
         image,
-        x,
-        y,
-        item.size.width,
-        item.size.height
+        x + containedBounds.x,
+        y + containedBounds.y,
+        containedBounds.width,
+        containedBounds.height
       );
       context.restore();
     }

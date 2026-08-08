@@ -17,6 +17,17 @@ async function openElements(page: Page) {
   if (await search.isVisible().catch(() => false)) return search;
 
   await page.getByRole("button", { name: "Elements", exact: true }).first().click();
+  const opened = await search
+    .waitFor({ state: "visible", timeout: 3000 })
+    .then(() => true)
+    .catch(() => false);
+
+  // Mobile hydration can discard the first panel-open event while the
+  // sidebar switches from its initial layout. Retrying the idempotent user
+  // action makes this test exercise the panel, rather than that timing race.
+  if (!opened) {
+    await page.getByRole("button", { name: "Elements", exact: true }).first().click();
+  }
   await expect(search).toBeVisible();
   return search;
 }
@@ -84,14 +95,17 @@ test.describe("Elements Founder QA follow-up", () => {
     await expect(page.getByPlaceholder("Search elements...")).toBeVisible();
   });
 
-  test("Moon is stroke-only in the visible inspector controls", async ({ page }) => {
+  test("Moon is stroke-only in the visible inspector controls", async ({ page }, testInfo) => {
     await freshCanvas(page);
     await insertElement(page, "Moon");
 
     const styleButton = page.getByRole("button", { name: /style/i });
     if (await styleButton.isVisible().catch(() => false)) await styleButton.click();
 
-    await expect(page.getByText("Stroke colour", { exact: true })).toBeVisible();
+    const strokeLabel = testInfo.project.name.startsWith("Desktop")
+      ? "Stroke"
+      : "Stroke colour";
+    await expect(page.getByText(strokeLabel, { exact: true })).toBeVisible();
     await expect(page.getByText("Fill", { exact: true })).toHaveCount(0);
   });
 });

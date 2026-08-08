@@ -86,16 +86,18 @@ The export engine provides high-resolution, multi-format client-side asset gener
 
 ```mermaid
 flowchart LR
-    DesignState[Editor Design State] --> RenderEngine["renderDesignToCanvas.ts"]
-    RenderEngine --> DisplayScale["Apply getCanvasDisplayScale Resolution"]
-    DisplayScale --> FormatRouter{Export Format}
-    
-    FormatRouter -->|PNG / JPG| ImageBlob["HTML5 Canvas Blob Download"]
-    FormatRouter -->|PDF| PdfGenerator["createPdf.ts (jspdf canvas rendering)"]
-    FormatRouter -->|Safari iPhone| MobileFallback["isMobileSafari.ts canvas fallback"]
+    DesignState[Editor Design State] --> ExportCanvas["ExportCanvas.tsx DOM contract"]
+    ExportCanvas --> DesktopCapture["html-to-image PNG / JPG capture"]
+    DesignState --> MobileFallback["renderDesignToCanvas.ts"]
+    MobileFallback --> CanvasBlob["Safari canvas PNG / JPG blob"]
+    DesktopCapture --> FormatRouter{Format router}
+    CanvasBlob --> FormatRouter
+    FormatRouter -->|PNG / JPG| Download["Browser download"]
+    FormatRouter -->|PDF| PdfGenerator["createPdf.ts embeds JPG"]
 ```
 
-- **[`renderDesignToCanvas.ts`](../lib/export/renderDesignToCanvas.ts)**: Pure offscreen HTML5 `<canvas>` rendering pipeline that draws items, text, images, and shapes with sub-pixel resolution accuracy.
+- **[`renderDesignToCanvas.ts`](../lib/export/renderDesignToCanvas.ts)**: Pure offscreen HTML5 `<canvas>` rendering pipeline used by the Safari fallback. It draws items, text, images, and shapes with sub-pixel resolution accuracy, uses the same text-width/line-height contract as the editor and DOM export surface, waits for the selected font face, and preserves `object-contain` image geometry.
+- **[`textLayout.ts`](../components/editor/textLayout.ts)**: The small shared text-rendering contract: maximum logical text width, line height, font weight, and shadow. The live canvas, hidden DOM export surface, and Safari canvas fallback consume it so a design does not acquire a format-specific wrap point.
 - **[`exportDesign.ts`](../lib/export/exportDesign.ts)**: Controller managing background transparency toggles, image format encoding (PNG, JPG), and browser file download triggers.
 - **[`createPdf.ts`](../lib/export/createPdf.ts)**: Converts canvas output into single or multi-page PDF documents.
 - **[`isMobileSafari.ts`](../lib/export/isMobileSafari.ts)**: Detects iOS Safari runtime environments to route downloads through compatible canvas data URL fallbacks.

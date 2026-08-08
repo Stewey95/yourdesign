@@ -4,6 +4,10 @@ import type {
   PngExportConfig,
 } from "../../types/export";
 import type { DesignItem } from "../../components/editor/editor.types";
+import type { TextDesignItem } from "../../components/editor/editor.types";
+import { getFontOption } from "../../components/editor/fonts/font.catalog";
+import { ensureGoogleFontLoaded } from "../../components/editor/fonts/googleFontLoader";
+import { TEXT_FONT_WEIGHT } from "../../components/editor/textLayout";
 import { getScaledExportDimensions } from "./exportDimensions";
 import { isMobileSafari } from "./isMobileSafari";
 import {
@@ -17,6 +21,32 @@ const waitForNextPaint = () =>
       requestAnimationFrame(() => resolve());
     });
   });
+
+const quoteFontFamily = (fontFamily: string) =>
+  `"${fontFamily.replaceAll("\"", "\\\"")}"`;
+
+const waitForDesignFonts = async (items: DesignItem[]) => {
+  if (!document.fonts) return;
+
+  const textItems = items.filter(
+    (item): item is TextDesignItem => item.type === "text"
+  );
+
+  await Promise.all(
+    textItems.map((item) =>
+      ensureGoogleFontLoaded(getFontOption(item.fontFamily))
+    )
+  );
+  await document.fonts.ready;
+  await Promise.all(
+    textItems.map((item) =>
+      document.fonts.load(
+        `${TEXT_FONT_WEIGHT} ${item.fontSize}px ${quoteFontFamily(item.fontFamily)}`,
+        item.value || " "
+      )
+    )
+  );
+};
 
 const waitForImage = async (image: HTMLImageElement) => {
   if (!image.complete) {
@@ -48,12 +78,12 @@ const waitForImage = async (image: HTMLImageElement) => {
   }
 };
 
-const waitForDesignAssets = async (node: HTMLElement) => {
+const waitForDesignAssets = async (
+  node: HTMLElement,
+  items: DesignItem[]
+) => {
   await waitForNextPaint();
-
-  if (document.fonts) {
-    await document.fonts.ready;
-  }
+  await waitForDesignFonts(items);
 
   const images = Array.from(node.querySelectorAll("img"));
 
@@ -134,7 +164,7 @@ export async function captureDesignAsPng(
   const restoreBlobImages = await embedBlobImages(node);
 
   try {
-    await waitForDesignAssets(node);
+    await waitForDesignAssets(node, items);
 
     const dimensions = getScaledExportDimensions(
       config.canvas,
@@ -174,7 +204,7 @@ export async function captureDesignAsJpg(
   const restoreBlobImages = await embedBlobImages(node);
 
   try {
-    await waitForDesignAssets(node);
+    await waitForDesignAssets(node, items);
 
     const dimensions = getScaledExportDimensions(
       config.canvas,

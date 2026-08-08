@@ -348,6 +348,19 @@ const hitTestElement: VisibleContentHitTester<ElementDesignItem> = (
   const logicalTolerance =
     screenPxPerViewBoxUnit > 0 ? screenTolerance / screenPxPerViewBoxUnit : 0;
 
+  if (
+    asset.interactionRegions?.some(
+      (region) =>
+        region.kind === "rect" &&
+        point.x >= region.x &&
+        point.x <= region.x + region.width &&
+        point.y >= region.y &&
+        point.y <= region.y + region.height
+    )
+  ) {
+    return true;
+  }
+
   return Array.from(
     svg.querySelectorAll<SVGGeometryElement>(
       "path, rect, circle, ellipse, line, polyline, polygon"

@@ -56,6 +56,7 @@ Legend:
 - ✅ **High-Resolution Export Pipeline**: Client-side PNG, JPG, and PDF output using html2canvas/canvas rendering (`lib/export/renderDesignToCanvas.ts`).
 - ✅ **Background Transparency**: Toggle transparent background for PNG assets.
 - ✅ **Mobile Safari Export Fallbacks**: Dedicated HTML5 canvas fallback pipeline (`isMobileSafari.ts`) supporting seamless mobile exports on iPhone.
+- ✅ **Editor & Export Reliability Pass**: Shared text layout and explicit font readiness now keep the editor, PNG/JPG/PDF DOM export route, and Safari canvas fallback on one wrap/typography contract. The fallback also matches editor image containment; transparent PNG, JPG, and print-ready PDF have downloaded-output regression coverage. Desktop Safari text dragging/resizing has a capture-safe window-listener fallback, and centre snapping is audited across every shipped canvas preset.
 - ✅ **Automatic Draft Persistence**: Local storage state persistence (`lib/drafts/editorDraft.ts`) with automatic draft recovery and reset capabilities.
 
 ---

@@ -5,6 +5,10 @@ import CornerResizeHandles from "./CornerResizeHandles";
 import type { ResizeCorner, TextDesignItem } from "./editor.types";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
+import {
+  TEXT_LINE_HEIGHT,
+  TEXT_SHADOW,
+} from "./textLayout";
 
 export type TextResizeCorner = ResizeCorner;
 
@@ -154,7 +158,7 @@ export default function CanvasTextItem({
   const measurementValue = item.value.endsWith("\n")
     ? `${item.value}\u200b`
     : item.value || "Type here";
-  const constrainedWidth = `min(76vw, 460px, ${maximumWidth}px)`;
+  const constrainedWidth = `${maximumWidth}px`;
 
   return (
     <div
@@ -167,8 +171,8 @@ export default function CanvasTextItem({
           style={{
             fontSize: item.fontSize,
             fontFamily: item.fontFamily,
-            textShadow: "0 1px 4px rgba(0,0,0,0.35)",
-            lineHeight: 1.15,
+            textShadow: TEXT_SHADOW,
+            lineHeight: TEXT_LINE_HEIGHT,
             maxWidth: maximumWidth,
           }}
         >
@@ -236,9 +240,8 @@ onValueChange(item.id, value);
               fontSize: item.fontSize,
               color: item.color,
               fontFamily: item.fontFamily,
-              textShadow:
-                "0 1px 4px rgba(0,0,0,0.35)",
-              lineHeight: 1.15,
+              textShadow: TEXT_SHADOW,
+              lineHeight: TEXT_LINE_HEIGHT,
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",
@@ -248,25 +251,32 @@ maxWidth: maximumWidth,
           />
         ) : (
           <div
+            data-canvas-text-display={item.id}
             onPointerDown={(event) => {
               event.stopPropagation();
-              event.currentTarget.setPointerCapture(event.pointerId);
-
               onPendingDragStart(
                 item.id,
                 event.clientX,
                 event.clientY,
                 event.pointerId
               );
+
+              // Safari can reject pointer capture on this text wrapper even
+              // though the same pointer remains valid. Starting the gesture
+              // first keeps desktop text dragging functional in that case.
+              try {
+                event.currentTarget.setPointerCapture(event.pointerId);
+              } catch {
+                // The canvas still receives the bubbling pointer sequence.
+              }
             }}
             className="cursor-move select-none whitespace-pre-wrap [overflow-wrap:anywhere] text-center font-bold touch-none md:absolute md:inset-0 md:!w-full md:!max-w-full"
             style={{
               fontSize: item.fontSize,
               color: item.color,
               fontFamily: item.fontFamily,
-              textShadow:
-                "0 1px 4px rgba(0,0,0,0.35)",
-              lineHeight: 1.15,
+              textShadow: TEXT_SHADOW,
+              lineHeight: TEXT_LINE_HEIGHT,
               width: constrainedWidth,
 maxWidth: maximumWidth,
               touchAction: "none",

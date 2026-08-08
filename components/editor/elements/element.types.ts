@@ -14,6 +14,14 @@ export type ElementGeometryBounds = {
   height: number;
 };
 
+export type ElementInteractionRegion = {
+  kind: "rect";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type ElementAsset = {
   id: string;
   name: string;
@@ -54,6 +62,8 @@ export type ElementAsset = {
    * every element. Omit for elements with no such fragile internal detail.
    */
   maxStrokeWidth?: number;
+  /** Authored enclosed-space hit regions; never a generic bounding box. */
+  interactionRegions?: readonly ElementInteractionRegion[];
 };
 
 export type ElementSearchOptions = {

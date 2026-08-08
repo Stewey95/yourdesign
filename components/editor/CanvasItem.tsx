@@ -6,6 +6,7 @@ import CanvasElementItem from "./CanvasElementItem";
 import CanvasShapeItem from "./CanvasShapeItem";
 import CanvasTextItem from "./CanvasTextItem";
 import type { TextResizeCorner } from "./CanvasTextItem";
+import { getTextMaximumWidth } from "./textLayout";
 import type {
   ImageDesignItem,
   ElementDesignItem,
@@ -74,7 +75,7 @@ export default function CanvasItem(props: CanvasItemProps) {
   const selected = "selected" in props && props.selected;
   const textMaximumWidth =
     item.type === "text" && "canvasWidth" in props
-      ? props.canvasWidth
+      ? getTextMaximumWidth(props.canvasWidth)
       : undefined;
 
   return (

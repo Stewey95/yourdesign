@@ -50,6 +50,7 @@ export const SOCIAL_ELEMENTS: readonly ElementAsset[] = [
     svg: svg('<path d="M36 12V88M64 12V88M12 36H88M12 64H88" fill="none" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>'),
     defaultSize: { width: 96, height: 96 },
     geometryBounds: { x: 12, y: 12, width: 76, height: 76 },
+    interactionRegions: [{ kind: "rect", x: 39, y: 39, width: 22, height: 22 }],
     insertion: { kind: "graphic" },
     favourite: false,
     recent: false,

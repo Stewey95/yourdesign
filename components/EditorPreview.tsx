@@ -2504,6 +2504,7 @@ if (direction === "back") {
     const pointerId = event.pointerId;
     let resizeFrame: number | null = null;
     let latestMoveEvent: PointerEvent | null = null;
+    let stopped = false;
 
     const flushResize = () => {
       if (resizeFrame !== null) {
@@ -2533,7 +2534,10 @@ if (direction === "back") {
     };
 
     const stopResize = (endEvent?: PointerEvent) => {
+      if (stopped) return;
       if (endEvent && endEvent.pointerId !== pointerId) return;
+
+      stopped = true;
 
       if (endEvent?.type === "pointerup") {
         latestMoveEvent = endEvent;
@@ -2546,21 +2550,36 @@ if (direction === "back") {
       handle.removeEventListener("pointerup", stopResize);
       handle.removeEventListener("pointercancel", stopResize);
       handle.removeEventListener("lostpointercapture", stopResize);
+      window.removeEventListener("pointermove", scheduleResize);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
       window.removeEventListener("blur", stopResizeOnBlur);
 
-      if (handle.hasPointerCapture(pointerId)) {
-        handle.releasePointerCapture(pointerId);
+      try {
+        if (handle.hasPointerCapture(pointerId)) {
+          handle.releasePointerCapture(pointerId);
+        }
+      } catch {
+        // Safari may already have released capture before this callback.
       }
 
       activeResizeCleanupRef.current = null;
     };
     const stopResizeOnBlur = () => stopResize();
 
-    handle.setPointerCapture(pointerId);
+    try {
+      handle.setPointerCapture(pointerId);
+    } catch {
+      // Window listeners below provide the Safari fallback when capture is
+      // unavailable on a desktop resize handle.
+    }
     handle.addEventListener("pointermove", scheduleResize);
     handle.addEventListener("pointerup", stopResize);
     handle.addEventListener("pointercancel", stopResize);
     handle.addEventListener("lostpointercapture", stopResize);
+    window.addEventListener("pointermove", scheduleResize);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
     window.addEventListener("blur", stopResizeOnBlur);
 
     activeResizeCleanupRef.current = stopResize;

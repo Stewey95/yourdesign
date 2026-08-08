@@ -6,6 +6,12 @@ import ShapeSvg from "./ShapeSvg";
 import ElementSvg from "./ElementSvg";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
+import {
+  getTextMaximumWidth,
+  TEXT_FONT_WEIGHT,
+  TEXT_LINE_HEIGHT,
+  TEXT_SHADOW,
+} from "./textLayout";
 
 type ExportCanvasProps = {
   items: DesignItem[];
@@ -93,20 +99,21 @@ const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
               />
             ) : (
               <div
+                data-export-text={item.id}
                 style={{
                   display: "inline-block",
-                  width: "fit-content",
-                  maxWidth: 460,
+                  width: getTextMaximumWidth(width),
+                  maxWidth: getTextMaximumWidth(width),
                   minHeight: "1.2em",
                   whiteSpace: "pre-wrap",
                   overflowWrap: "break-word",
                   textAlign: "center",
                   fontSize: item.fontSize,
                   fontFamily: item.fontFamily,
-                  fontWeight: 700,
+                  fontWeight: TEXT_FONT_WEIGHT,
                   color: item.color,
-                  lineHeight: 1.15,
-                  textShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                  lineHeight: TEXT_LINE_HEIGHT,
+                  textShadow: TEXT_SHADOW,
                 }}
               >
                 {item.value}
