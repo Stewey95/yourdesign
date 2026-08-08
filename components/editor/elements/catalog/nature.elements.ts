@@ -134,19 +134,14 @@ export const NATURE_ELEMENTS: readonly ElementAsset[] = [
     name: "Moon",
     category: "Nature",
     tags: ["night", "crescent", "lunar", "sleep", "astronomy", "dark"],
-    // Single-path crescent (two arcs sharing both endpoints) rather than
-    // the previous two-full-circles-plus-evenodd construction: that version
-    // had no real stroke (stroking it would have outlined both full circles
-    // and destroyed the crescent silhouette), so it could never join the
-    // normal fill-and-stroke system and instead rendered with its baseline
-    // fill frozen forever at the raw #2563eb placeholder colour - visible,
-    // but always blue, never the intended default black. This path has one
-    // genuine boundary, so it now behaves exactly like every other graphic.
-    svg: svg('<path d="M87.5 53.29A37.5 37.5 0 1 1 46.71 12.5A29.17 29.17 0 0 0 87.5 53.29Z" fill="#2563eb" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
+    // The crescent is deliberately line art. Keeping the compound path open
+    // to fill and painted only by its boundary makes Stroke the one honest
+    // colour control; it also keeps the inner negative space transparent.
+    svg: svg('<path d="M87.5 53.29A37.5 37.5 0 1 1 46.71 12.5A29.17 29.17 0 0 0 87.5 53.29Z" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round"/>'),
     defaultSize: { width: 82, height: 82 },
     geometryBounds: { x: 12.659, y: 12.5, width: 74.841, height: 74.841 },
     insertion: { kind: "graphic" },
-    colourMode: "fill-and-stroke",
+    colourMode: "stroke",
     favourite: false,
     recent: false,
   },

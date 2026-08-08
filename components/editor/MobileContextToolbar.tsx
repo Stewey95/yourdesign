@@ -698,12 +698,18 @@ function MobileShapeStylePanel({
     MAX_SHAPE_STROKE_WIDTH,
     asset?.maxStrokeWidth ?? MAX_SHAPE_STROKE_WIDTH
   );
-  const strokeOnly =
+  const supportsFill =
     item.type === "shape"
-      ? isStrokeOnlyShape(item.shapeKind)
-      : colourMode !== "fill-and-stroke";
-  const supportsStroke = item.type === "shape" || colourMode !== "none";
-  const strokeLabel = strokeOnly ? "Line" : "Border";
+      ? !isStrokeOnlyShape(item.shapeKind)
+      : colourMode === "fill" || colourMode === "fill-and-stroke";
+  const supportsStroke =
+    item.type === "shape" || colourMode === "stroke" || colourMode === "fill-and-stroke";
+  const strokeOnly = supportsStroke && !supportsFill;
+  const strokeLabel = strokeOnly
+    ? item.type === "element"
+      ? "Stroke"
+      : "Line"
+    : "Border";
   const hasVisibleStroke = Boolean(item.stroke && item.strokeWidth > 0);
 
   return (
@@ -715,7 +721,7 @@ function MobileShapeStylePanel({
       }
     >
       <div className="space-y-3">
-        {!strokeOnly && (
+        {supportsFill && (
           <MobileShapeColourControl
             label="Fill"
             value={item.fill}

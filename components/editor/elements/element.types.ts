@@ -24,7 +24,12 @@ export type ElementAsset = {
   insertion:
     | { kind: "shape"; shapeKind: ShapeKind }
     | { kind: "graphic" };
-  colourMode?: "fill-and-stroke" | "stroke" | "none";
+  /**
+   * The colour controls that can change actual painted SVG attributes. This
+   * is catalogue data, not a UI guess: inspector and mobile controls both
+   * derive from it so they never offer a no-op colour picker.
+   */
+  colourMode?: "fill" | "fill-and-stroke" | "stroke" | "none";
   favourite: boolean;
   recent: boolean;
   metadata?: Readonly<Record<string, ElementAssetMetadataValue>>;

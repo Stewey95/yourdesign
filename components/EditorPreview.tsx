@@ -53,6 +53,8 @@ import {
   getElementAsset,
   getElementColourMode,
   getElementDefaultStrokeWidth,
+  elementSupportsFill,
+  elementSupportsStroke,
   getElementVisibleBounds,
 } from "./editor/elements/elements.catalog";
 import { getDefaultShapeStyle, DEFAULT_SHAPE_COLOUR } from "./editor/shape.constants";
@@ -1789,8 +1791,8 @@ if (direction === "back") {
     if (!asset?.geometryBounds) return item.size;
 
     const mode = getElementColourMode(asset);
-    const oldHasStroke = mode !== "none" && item.stroke !== null;
-    const newHasStroke = mode !== "none" && nextStroke !== null;
+    const oldHasStroke = elementSupportsStroke(mode) && item.stroke !== null;
+    const newHasStroke = elementSupportsStroke(mode) && nextStroke !== null;
 
     const oldBounds = getElementVisibleBounds(
       asset.geometryBounds,
@@ -2156,13 +2158,14 @@ if (direction === "back") {
       elementId: element.id,
       displayName: element.name,
       category: element.category,
-      fill:
-        colourMode === "fill-and-stroke"
-          ? shapeStyle?.fill ?? null
-          : null,
-      stroke: shapeStyle?.stroke ?? DEFAULT_SHAPE_COLOUR,
+      fill: elementSupportsFill(colourMode) ? shapeStyle?.fill ?? null : null,
+      stroke: elementSupportsStroke(colourMode)
+        ? shapeStyle?.stroke ?? DEFAULT_SHAPE_COLOUR
+        : null,
       strokeWidth:
-        shapeStyle?.strokeWidth ?? getElementDefaultStrokeWidth(element),
+        elementSupportsStroke(colourMode)
+          ? shapeStyle?.strokeWidth ?? getElementDefaultStrokeWidth(element)
+          : 0,
       opacity: 100,
     };
 

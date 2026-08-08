@@ -281,8 +281,8 @@ export default function EditorInspector({
       {item?.type === "element" && !item.locked && (() => {
         const asset = getElementAsset(item.elementId);
         const colourMode = asset ? getElementColourMode(asset) : "none";
-        const supportsFill = colourMode === "fill-and-stroke";
-        const supportsStroke = colourMode !== "none";
+        const supportsFill = colourMode === "fill" || colourMode === "fill-and-stroke";
+        const supportsStroke = colourMode === "stroke" || colourMode === "fill-and-stroke";
         const effectiveMaxStrokeWidth = Math.min(
           MAX_SHAPE_STROKE_WIDTH,
           asset?.maxStrokeWidth ?? MAX_SHAPE_STROKE_WIDTH

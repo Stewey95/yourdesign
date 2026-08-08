@@ -104,11 +104,6 @@ export default function EditorSidebar({
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (window.matchMedia("(min-width: 768px)").matches) {
-          scrollContainerRef.current?.scrollTo({ top: 0 });
-          return;
-        }
-
         const panelElement =
           panel === "projects"
             ? projectsPanelRef.current
@@ -123,6 +118,21 @@ export default function EditorSidebar({
             : elementsPanelRef.current;
 
         if (!panelElement) return;
+
+        // Desktop keeps sidebar scrolling self-contained, so opening a
+        // lower accordion section never scrolls the editor canvas/page.
+        if (window.matchMedia("(min-width: 768px)").matches) {
+          const scrollContainer = scrollContainerRef.current;
+          if (!scrollContainer) return;
+
+          scrollContainer.scrollTo({
+            top: Math.max(0, panelElement.offsetTop - 8),
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "auto"
+              : "smooth",
+          });
+          return;
+        }
 
         const behavior = window.matchMedia(
           "(prefers-reduced-motion: reduce)"
@@ -145,138 +155,121 @@ export default function EditorSidebar({
       data-editor-keep-zoom-hud-open
       className="editor-floating-panel min-w-0 max-w-full rounded-xl p-3 text-sm text-slate-300 md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden"
     >
-      <div className="sticky top-[calc(7rem+env(safe-area-inset-top))] z-30 -mx-1 mb-4 grid grid-cols-6 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-1.5 shadow-lg backdrop-blur-xl md:static md:mx-0 md:block md:shrink-0 md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
-        {[
-          { id: "projects", icon: Folder, label: "Projects" },
-          { id: "templates", icon: LayoutTemplate, label: "Templates" },
-          { id: "media", icon: Image, label: "Media" },
-          { id: "text", icon: Type, label: "Text" },
-          { id: "elements", icon: Shapes, label: "Elements" },
-          { id: "arrange", icon: PanelsTopLeft, label: "Arrange" },
-        ].map((tool) => {
-          const isActive = activeToolbarPanel === tool.id;
-          const ToolIcon = tool.icon;
-
-          return (
-            <button
-              key={tool.id}
-              type="button"
-              onClick={() =>
-                openToolbarPanel(
-                  tool.id as Exclude<ToolbarPanel, null>,
-                  isActive
-                )
-              }
-              className={`flex min-w-0 w-full cursor-pointer flex-col items-center gap-1 rounded-xl border px-1 py-2 text-center text-xs font-semibold transition md:flex-row md:gap-3 md:px-3 md:py-2.5 md:text-left md:text-sm ${
-                isActive
-                  ? "border-cyan-400/45 bg-[var(--editor-selected)] text-white shadow-[0_8px_22px_rgb(2_6_23/0.2)]"
-                  : "border-white/10 bg-slate-800/70 text-slate-300 hover:border-white/20 hover:bg-slate-700/80"
-              }`}
-            >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 text-base md:h-8 md:w-8 md:text-base">
-                <ToolIcon size={16} strokeWidth={1.9} aria-hidden="true" />
-              </span>
-
-              <span className="min-w-0 truncate text-[11px] md:flex-1 md:text-sm">
-                {tool.label}
-              </span>
-
-              <ChevronRight
-                size={15}
-                aria-hidden="true"
-                className={`hidden transition-transform md:inline ${
-                  isActive ? "rotate-90" : ""
-                }`}
-              />
-            </button>
-          );
-        })}
-      </div>
-
       <div
         ref={scrollContainerRef}
         className="editor-scrollbar min-w-0 max-w-full md:min-h-0 md:flex-1 md:overflow-y-auto md:pb-3 md:pr-1"
       >
-        {activeToolbarPanel === "projects" && (
-          <div ref={projectsPanelRef}>
-            <ProjectsPanel
-              activeProjectId={activeProjectId}
-              projectsRevision={projectsRevision}
-              onSelectProject={onSelectProject}
-              onNewProject={onNewProject}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-6 gap-1 rounded-xl border border-white/10 bg-slate-900/95 p-1.5 shadow-lg backdrop-blur-xl md:block md:space-y-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none">
+          {[
+            { id: "projects", icon: Folder, label: "Projects" },
+            { id: "templates", icon: LayoutTemplate, label: "Templates" },
+            { id: "media", icon: Image, label: "Media" },
+            { id: "text", icon: Type, label: "Text" },
+            { id: "elements", icon: Shapes, label: "Elements" },
+            { id: "arrange", icon: PanelsTopLeft, label: "Arrange" },
+          ].map((tool) => {
+            const panelId = tool.id as Exclude<ToolbarPanel, null>;
+            const isActive = activeToolbarPanel === panelId;
+            const ToolIcon = tool.icon;
+            const panelRef =
+              panelId === "projects"
+                ? projectsPanelRef
+                : panelId === "templates"
+                  ? templatesPanelRef
+                  : panelId === "media"
+                    ? mediaPanelRef
+                    : panelId === "text"
+                      ? textPanelRef
+                      : panelId === "elements"
+                        ? elementsPanelRef
+                        : arrangePanelRef;
 
-        {activeToolbarPanel === "templates" && (
-          <div ref={templatesPanelRef}>
-            <TemplatesPanel onSelectTemplate={onSelectTemplate} />
-          </div>
-        )}
+            return (
+              <div key={panelId} className="contents md:block">
+                <button
+                  type="button"
+                  onClick={() => openToolbarPanel(panelId, isActive)}
+                  className={`flex min-w-0 w-full cursor-pointer flex-col items-center gap-1 rounded-xl border px-1 py-2 text-center text-xs font-semibold transition md:flex-row md:gap-3 md:px-3 md:py-2.5 md:text-left md:text-sm ${
+                    isActive
+                      ? "border-cyan-400/45 bg-[var(--editor-selected)] text-white shadow-[0_8px_22px_rgb(2_6_23/0.2)]"
+                      : "border-white/10 bg-slate-800/70 text-slate-300 hover:border-white/20 hover:bg-slate-700/80"
+                  }`}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 text-base md:h-8 md:w-8 md:text-base">
+                    <ToolIcon size={16} strokeWidth={1.9} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 truncate text-[11px] md:flex-1 md:text-sm">
+                    {tool.label}
+                  </span>
+                  <ChevronRight
+                    size={15}
+                    aria-hidden="true"
+                    className={`hidden transition-transform md:inline ${
+                      isActive ? "rotate-90" : ""
+                    }`}
+                  />
+                </button>
 
-        {activeToolbarPanel === "media" && (
-          <div
-            ref={mediaPanelRef}
-            className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
-          >
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
-              Media
-            </p>
-            <label className="flex h-10 w-full cursor-pointer select-none items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white transition hover:bg-blue-500">
-              Upload Image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onImageUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
-        )}
-
-        {activeToolbarPanel === "text" && (
-          <div
-            ref={textPanelRef}
-            className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
-          >
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
-              Text
-            </p>
-            <button
-              type="button"
-              onClick={onAddText}
-              className="w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white transition hover:bg-slate-600"
-            >
-              Add Text
-            </button>
-          </div>
-        )}
-
-        {activeToolbarPanel === "elements" && (
-          <div
-            ref={elementsPanelRef}
-            className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
-          >
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
-              Elements
-            </p>
-            <ElementsPanel onInsertElement={onAddElement} />
-          </div>
-        )}
-
-        {activeToolbarPanel === "arrange" && (
-          <div
-            ref={arrangePanelRef}
-            className="mt-3 scroll-mt-[calc(12rem+env(safe-area-inset-top))] rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-0 md:scroll-mt-0"
-          >
-            <CanvasSizePanel
-              key={`${canvasSize.width}x${canvasSize.height}`}
-              canvasSize={canvasSize}
-              selectedPresetId={selectedCanvasPresetId}
-              onApply={onCanvasSizeChange}
-            />
-          </div>
-        )}
+                {isActive && (
+                  <div
+                    ref={panelRef}
+                    data-sidebar-panel={panelId}
+                    className="col-span-full mt-2 min-w-0 rounded-xl border border-white/10 bg-slate-800/60 p-3 md:mt-2"
+                  >
+                    {panelId === "projects" && (
+                      <ProjectsPanel
+                        activeProjectId={activeProjectId}
+                        projectsRevision={projectsRevision}
+                        onSelectProject={onSelectProject}
+                        onNewProject={onNewProject}
+                      />
+                    )}
+                    {panelId === "templates" && (
+                      <TemplatesPanel onSelectTemplate={onSelectTemplate} />
+                    )}
+                    {panelId === "media" && (
+                      <>
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
+                          Media
+                        </p>
+                        <label className="flex h-10 w-full cursor-pointer select-none items-center justify-center rounded-lg bg-blue-600 px-4 font-semibold text-white transition hover:bg-blue-500">
+                          Upload Image
+                          <input type="file" accept="image/*" onChange={onImageUpload} className="hidden" />
+                        </label>
+                      </>
+                    )}
+                    {panelId === "text" && (
+                      <>
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
+                          Text
+                        </p>
+                        <button type="button" onClick={onAddText} className="w-full cursor-pointer rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white transition hover:bg-slate-600">
+                          Add Text
+                        </button>
+                      </>
+                    )}
+                    {panelId === "elements" && (
+                      <>
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-300">
+                          Elements
+                        </p>
+                        <ElementsPanel onInsertElement={onAddElement} />
+                      </>
+                    )}
+                    {panelId === "arrange" && (
+                      <CanvasSizePanel
+                        key={`${canvasSize.width}x${canvasSize.height}`}
+                        canvasSize={canvasSize}
+                        selectedPresetId={selectedCanvasPresetId}
+                        onApply={onCanvasSizeChange}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-4 flex shrink-0 items-center gap-2">

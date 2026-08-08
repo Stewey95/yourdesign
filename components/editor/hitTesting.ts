@@ -10,8 +10,10 @@ import { getElementAsset } from "./elements/elements.catalog";
 
 export const RASTER_ALPHA_HIT_THRESHOLD = 16;
 export const SHAPE_HIT_TOLERANCE = {
-  desktop: 2,
-  touch: 6,
+  // A screen-pixel halo around geometry makes open artwork selectable with
+  // a normal click while retaining a genuinely empty centre/corner.
+  desktop: 4,
+  touch: 8,
 } as const;
 const MAX_RASTER_HIT_TEST_DIMENSION = 1024;
 

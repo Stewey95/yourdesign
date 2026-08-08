@@ -76,7 +76,7 @@ Legend:
 - 📋 **Editor Quality & Refinement**: Ongoing usability polish, touch responsiveness, layer scroll discoverability, and edge-case bug fixes *[Confirmed in AGENTS.md & POLISH_BACKLOG.md]*.
 - 📋 **Universal Search**: Unified search capabilities across editor fonts, element catalog, and presets *[Confirmed in app/page.tsx `comingNext` array]*.
 - ✅ **Saved Projects & Multi-Draft Studio Manager**: Persistent multi-project saving, loading, creating, duplicating, renaming, and deleting powered by IndexedDB (`lib/projects/projectsManager.ts`), complete with vector canvas thumbnails (`ProjectThumbnail.tsx`), inline header title editing, and responsive projects sidebar panel (`ProjectsPanel.tsx`).
-- 📋 **Expanded Elements Library**: Additional categories of vector shapes, icons, and illustrations *[Confirmed in app/page.tsx & AGENTS.md]*.
+- ✅ **Expanded Elements Library & Founder QA Follow-up**: 145 catalogue assets with weighted search, accessible favourites/recents, accordion sidebar ownership, results-first search, dedicated collection browsing, geometry-aware re-selection tolerance, and colour controls that match each asset's editable paint *[Source: `components/editor/ElementsPanel.tsx`, `EditorSidebar.tsx`, `elements/`]*.
 - 🔹 **User Accounts & Authentication**: Cloud user accounts for multi-device sync *[Recommendation: natural extension of Saved Projects]*.
 
 ---
@@ -91,4 +91,4 @@ Legend:
 - 💡 **Marketplace Integrations & Selling Tools**: Direct storefront integrations and digital product distribution *[Confirmed in AGENTS.md]*.
 - 🔹 **Multi-Page Canvas Engine**: Multi-page document editing within a single design session *[Recommendation]*.
 - 🔹 **Multi-Item Grouping & Alignment**: Grouping elements and distribution tools *[Recommendation]*.
-- 🔹 **Multi-Part Editable Elements**: Independently recolourable regions within a single vector element (e.g. per-bar colours in a bar chart), extending the same illustration architecture to multi-region assets *[Recommendation - data model documented in `docs/POLISH_BACKLOG.md` §4]*.
+- 🔹 **Multi-Part Editable Elements**: Independently recolourable regions within a single vector element (e.g. per-bar colours in a bar chart), extending the same illustration architecture to multi-region assets. This is deliberately queued after the Editor/Export Reliability sprint because it changes the persisted item/rendering model *[Recommendation - data model documented in `docs/POLISH_BACKLOG.md` §4]*.

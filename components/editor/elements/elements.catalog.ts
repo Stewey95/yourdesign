@@ -53,6 +53,12 @@ export const getElementColourMode = (element: ElementAsset) =>
     ? "fill-and-stroke"
     : "stroke");
 
+export const elementSupportsFill = (mode: ReturnType<typeof getElementColourMode>) =>
+  mode === "fill" || mode === "fill-and-stroke";
+
+export const elementSupportsStroke = (mode: ReturnType<typeof getElementColourMode>) =>
+  mode === "stroke" || mode === "fill-and-stroke";
+
 export const getElementDefaultStrokeWidth = (element: ElementAsset) => {
   const match = element.svg.match(/stroke-width="([0-9.]+)"/);
   const width = match ? Number(match[1]) : 5;
@@ -103,7 +109,7 @@ export const getElementSvgMarkup = (
   let markup = element.svg;
 
   if (mode !== "none") {
-    if (style?.stroke !== undefined) {
+    if (elementSupportsStroke(mode) && style?.stroke !== undefined) {
       const stroke = safeColour(style.stroke);
 
       markup = markup.replaceAll(
@@ -112,14 +118,14 @@ export const getElementSvgMarkup = (
       );
     }
 
-    if (style?.strokeWidth !== undefined) {
+    if (elementSupportsStroke(mode) && style?.strokeWidth !== undefined) {
       markup = markup.replaceAll(
         /stroke-width="[0-9.]+"/g,
         `stroke-width="${style.strokeWidth}"`
       );
     }
 
-    if (mode === "fill-and-stroke" && style?.fill !== undefined) {
+    if (elementSupportsFill(mode) && style?.fill !== undefined) {
       const fill = safeColour(style.fill);
 
       markup = markup.replaceAll(

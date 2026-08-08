@@ -1,12 +1,7 @@
 "use client";
 
 import { ChevronLeft, Clock3, Heart, Search, Shapes, Star, X } from "lucide-react";
-import {
-  useCallback,
-  useDeferredValue,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ELEMENT_CATALOG,
   ELEMENT_CATEGORIES,
@@ -93,15 +88,13 @@ export default function ElementsPanel({
     [onInsertElement, recentIds]
   );
 
-  const deferredQuery = useDeferredValue(query);
-
   const searchResult = useMemo(
     () =>
       searchElementCatalog({
-        query: deferredQuery,
+        query,
         category,
       }),
-    [category, deferredQuery]
+    [category, query]
   );
 
   const categoryCounts = useMemo(
@@ -151,6 +144,64 @@ export default function ElementsPanel({
     setCategory(undefined);
   };
 
+  const isSearching = query.trim().length > 0;
+
+  // A collection is its own browsing destination, rather than a later
+  // subsection in the normal catalogue. This makes See all visibly respond
+  // at the exact place the user clicked and prevents a hidden below-fold jump.
+  if (collectionView) {
+    const title = collectionView === "recent" ? "Recent" : "Favourites";
+    const collectionElements =
+      collectionView === "recent" ? recentElements : favouriteElements;
+
+    return (
+      <section
+        aria-labelledby="element-results-heading"
+        className="min-w-0 max-w-full space-y-4"
+      >
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-slate-900/50 p-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCollectionView(null)}
+              aria-label="Back to all elements"
+              className="shrink-0 rounded-md p-1 text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+            </button>
+            <div className="min-w-0">
+              <h3
+                id="element-results-heading"
+                className="truncate text-sm font-bold text-white"
+              >
+                {title}
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                {collectionElements.length} {collectionElements.length === 1 ? "element" : "elements"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {collectionElements.length === 0 ? (
+          <CollectionEmptyState collectionView={collectionView} />
+        ) : (
+          <div className="grid grid-cols-3 gap-2 md:grid-cols-2">
+            {collectionElements.map((element) => (
+              <ElementCard
+                key={element.id}
+                element={element}
+                onInsert={handleElementClick}
+                onToggleFavourite={toggleFavourite}
+                isFavourite={favouriteIds.includes(element.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+
   return (
     <div className="min-w-0 max-w-full space-y-4">
       {/* Search Bar */}
@@ -181,176 +232,53 @@ export default function ElementsPanel({
         )}
       </label>
 
-      {/* Recents & Favourites Row */}
-      <div className="space-y-2">
-        <LibrarySectionHeader
-          icon={Clock3}
-          title="Recent"
-          count={recentElements.length}
-          elements={recentElements}
-          onInsertElement={handleElementClick}
-          onSeeAll={() => openCollection("recent")}
-        />
-        <LibrarySectionHeader
-          icon={Heart}
-          title="Favourites"
-          count={favouriteElements.length}
-          elements={favouriteElements}
-          onInsertElement={handleElementClick}
-          onSeeAll={() => openCollection("favourites")}
-        />
-      </div>
-
-      {/* Category Pills Bar */}
-      <section aria-labelledby="element-categories-heading">
-        <div className="mb-2 flex items-center justify-between">
-          <h3
-            id="element-categories-heading"
-            className="text-[10px] font-bold uppercase tracking-widest text-slate-400"
-          >
-            Categories
-          </h3>
-          {category && (
-            <button
-              type="button"
-              onClick={() => selectCategory(undefined)}
-              className="text-[10px] text-blue-400 hover:underline"
-            >
-              Clear filter
-            </button>
-          )}
-        </div>
-        <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] md:flex-wrap md:overflow-x-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
-          <button
-            type="button"
-            aria-pressed={category === undefined}
-            onClick={() => selectCategory(undefined)}
-            className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
-              category === undefined
-                ? "border-blue-400/50 bg-blue-500/20 text-cyan-200"
-                : "border-white/10 bg-slate-700/70 text-slate-300 hover:border-white/20 hover:bg-slate-700"
-            }`}
-          >
-            All ({ELEMENT_CATALOG.length})
-          </button>
-          {categoryCounts.map(({ category: catName, count }) => {
-            const selected = category === catName;
-            return (
-              <button
-                key={catName}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => selectCategory(selected ? undefined : catName)}
-                className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
-                  selected
-                    ? "border-blue-400/50 bg-blue-500/20 text-cyan-200"
-                    : "border-white/10 bg-slate-700/70 text-slate-300 hover:border-white/20 hover:bg-slate-700"
-                }`}
-              >
-                {catName} ({count})
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Main Elements Section */}
-      <section aria-labelledby="element-results-heading">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h3
-            id="element-results-heading"
-            className="flex min-w-0 items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-slate-400"
-          >
-            {collectionView && (
-              <button
-                type="button"
-                onClick={() => setCollectionView(null)}
-                aria-label="Back to all elements"
-                className="-ml-1 shrink-0 rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white"
-              >
-                <ChevronLeft size={14} aria-hidden="true" />
-              </button>
-            )}
-            <span className="truncate">
-              {collectionView === "recent"
-                ? "Recent"
-                : collectionView === "favourites"
-                  ? "Favourites"
-                  : query
-                    ? "Search Results"
-                    : category
-                      ? category
-                      : "All Elements"}
-            </span>
-          </h3>
-          <span className="shrink-0 text-[10px] tabular-nums text-slate-500">
-            {collectionView === "recent"
-              ? recentElements.length
-              : collectionView === "favourites"
-                ? favouriteElements.length
-                : searchResult.total}{" "}
-            {(collectionView === "recent"
-              ? recentElements.length
-              : collectionView === "favourites"
-                ? favouriteElements.length
-                : searchResult.total) === 1
-              ? "element"
-              : "elements"}
-          </span>
-        </div>
-
-        {collectionView ? (
-          (() => {
-            const collectionElements =
-              collectionView === "recent" ? recentElements : favouriteElements;
-
-            return collectionElements.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/10 bg-slate-900/40 px-3 py-6 text-center">
-                <Shapes
-                  size={20}
-                  aria-hidden="true"
-                  className="mx-auto mb-2 text-slate-500"
-                />
-                <p className="text-xs font-semibold text-slate-300">
-                  {collectionView === "recent"
-                    ? "No recent elements yet"
-                    : "No favourites yet"}
-                </p>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  {collectionView === "recent"
-                    ? "Elements you insert will show up here."
-                    : "Tap the star on any element to save it here."}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2 md:grid-cols-2">
-                {collectionElements.map((element) => (
-                  <ElementCard
-                    key={element.id}
-                    element={element}
-                    onInsert={handleElementClick}
-                    onToggleFavourite={toggleFavourite}
-                    isFavourite={favouriteIds.includes(element.id)}
-                  />
-                ))}
-              </div>
-            );
-          })()
-        ) : searchResult.items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 bg-slate-900/40 px-3 py-6 text-center">
-            <Shapes
-              size={20}
-              aria-hidden="true"
-              className="mx-auto mb-2 text-slate-500"
-            />
-            <p className="text-xs font-semibold text-slate-300">
-              No elements found
-            </p>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Try another search term or clear active filters.
-            </p>
+      {isSearching ? (
+        <section aria-labelledby="element-results-heading" data-element-search-results>
+          <ElementResults
+            heading="Search Results"
+            total={searchResult.total}
+            elements={searchResult.items}
+            onInsert={handleElementClick}
+            onToggleFavourite={toggleFavourite}
+            favouriteIds={favouriteIds}
+          />
+        </section>
+      ) : (
+        <>
+          {/* Normal browse mode stays rich; search mode intentionally hides
+              these sections so results are the first thing below the input. */}
+          <div className="space-y-2">
+            <LibrarySectionHeader icon={Clock3} title="Recent" count={recentElements.length} elements={recentElements} onInsertElement={handleElementClick} onSeeAll={() => openCollection("recent")} />
+            <LibrarySectionHeader icon={Heart} title="Favourites" count={favouriteElements.length} elements={favouriteElements} onInsertElement={handleElementClick} onSeeAll={() => openCollection("favourites")} />
           </div>
-        ) : !query && !category ? (
+
+          <section aria-labelledby="element-categories-heading">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 id="element-categories-heading" className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Categories</h3>
+              {category && <button type="button" onClick={() => selectCategory(undefined)} className="text-[10px] text-blue-400 hover:underline">Clear filter</button>}
+            </div>
+            <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] md:flex-wrap md:overflow-x-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
+              <button type="button" aria-pressed={category === undefined} onClick={() => selectCategory(undefined)} className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${category === undefined ? "border-blue-400/50 bg-blue-500/20 text-cyan-200" : "border-white/10 bg-slate-700/70 text-slate-300 hover:border-white/20 hover:bg-slate-700"}`}>All ({ELEMENT_CATALOG.length})</button>
+              {categoryCounts.map(({ category: catName, count }) => {
+                const selected = category === catName;
+                return <button key={catName} type="button" aria-pressed={selected} onClick={() => selectCategory(selected ? undefined : catName)} className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${selected ? "border-blue-400/50 bg-blue-500/20 text-cyan-200" : "border-white/10 bg-slate-700/70 text-slate-300 hover:border-white/20 hover:bg-slate-700"}`}>{catName} ({count})</button>;
+              })}
+            </div>
+          </section>
+
+          <section aria-labelledby="element-results-heading">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h3 id="element-results-heading" className="min-w-0 truncate text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                {category ?? "All Elements"}
+              </h3>
+              <span className="shrink-0 text-[10px] tabular-nums text-slate-500">
+                {searchResult.total} {searchResult.total === 1 ? "element" : "elements"}
+              </span>
+            </div>
+
+            {searchResult.items.length === 0 ? (
+              <EmptyResults />
+            ) : !category ? (
           /* Grouped Categorized View when no search or filter active */
           <div className="space-y-4 md:max-h-none md:overflow-visible md:pr-0">
             {ELEMENT_CATEGORIES.map((catName) => {
@@ -386,7 +314,7 @@ export default function ElementsPanel({
               );
             })}
           </div>
-        ) : (
+            ) : (
           /* Flat Search / Filter Grid View */
           <div className="grid grid-cols-3 gap-2 md:max-h-none md:grid-cols-2 md:overflow-visible md:pr-0">
             {searchResult.items.map((element) => (
@@ -399,9 +327,73 @@ export default function ElementsPanel({
               />
             ))}
           </div>
-        )}
-      </section>
+            )}
+          </section>
+        </>
+      )}
     </div>
+  );
+}
+
+function EmptyResults() {
+  return (
+    <div className="rounded-xl border border-dashed border-white/10 bg-slate-900/40 px-3 py-6 text-center">
+      <Shapes size={20} aria-hidden="true" className="mx-auto mb-2 text-slate-500" />
+      <p className="text-xs font-semibold text-slate-300">No elements found</p>
+      <p className="mt-1 text-[11px] text-slate-500">
+        Try another search term or clear active filters.
+      </p>
+    </div>
+  );
+}
+
+function CollectionEmptyState({ collectionView }: { collectionView: Exclude<CollectionView, null> }) {
+  return (
+    <div className="rounded-xl border border-dashed border-white/10 bg-slate-900/40 px-3 py-6 text-center">
+      <Shapes size={20} aria-hidden="true" className="mx-auto mb-2 text-slate-500" />
+      <p className="text-xs font-semibold text-slate-300">
+        {collectionView === "recent" ? "No recent elements yet" : "No favourites yet"}
+      </p>
+      <p className="mt-1 text-[11px] text-slate-500">
+        {collectionView === "recent" ? "Elements you insert will show up here." : "Tap the star on any element to save it here."}
+      </p>
+    </div>
+  );
+}
+
+function ElementResults({
+  heading,
+  total,
+  elements,
+  onInsert,
+  onToggleFavourite,
+  favouriteIds,
+}: {
+  heading: string;
+  total: number;
+  elements: readonly ElementAsset[];
+  onInsert: (element: ElementAsset) => void;
+  onToggleFavourite: (elementId: string, event: React.MouseEvent) => void;
+  favouriteIds: string[];
+}) {
+  return (
+    <>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 id="element-results-heading" className="min-w-0 truncate text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          {heading}
+        </h3>
+        <span className="shrink-0 text-[10px] tabular-nums text-slate-500">
+          {total} {total === 1 ? "element" : "elements"}
+        </span>
+      </div>
+      {elements.length === 0 ? <EmptyResults /> : (
+        <div className="grid grid-cols-3 gap-2 md:grid-cols-2">
+          {elements.map((element) => (
+            <ElementCard key={element.id} element={element} onInsert={onInsert} onToggleFavourite={onToggleFavourite} isFavourite={favouriteIds.includes(element.id)} />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
