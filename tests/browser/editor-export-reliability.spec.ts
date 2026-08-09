@@ -98,7 +98,9 @@ test.describe("Editor and export reliability", () => {
     await page.mouse.click(canvasBox.x + 8, canvasBox.y + 8);
     await page.mouse.click(itemBox.x + itemBox.width / 2, itemBox.y + itemBox.height / 2);
 
-    await expect(item).toHaveClass(/ring-2/);
+    const itemId = await item.getAttribute("data-canvas-item-id");
+    if (!itemId) throw new Error("Canvas item id was not rendered.");
+    await expect(page.locator(`[data-selection-overlay="${itemId}"]`)).toBeVisible();
   });
 
   test("desktop Safari text can drag and resize through its corner handle", async ({ page }, testInfo) => {
@@ -145,10 +147,7 @@ test.describe("Editor and export reliability", () => {
 
     const afterResize = await item.boundingBox();
     if (!afterResize) throw new Error("Resized text item was not rendered.");
-    // Safari's CSS-zoom coordinate reporting can make a bottom-right drag
-    // choose a narrower rather than wider box; the regression contract is
-    // that the handle owns the pointer sequence and changes the text box.
-    expect(Math.abs(afterResize.width - beforeResize.width)).toBeGreaterThan(15);
+    expect(afterResize.height).toBeGreaterThan(beforeResize.height + 5);
   });
 
   test("editor and export DOM use the same free-form text dimensions", async ({ page }, testInfo) => {

@@ -206,10 +206,7 @@ test.describe("Founder QA repair pass - reselection of thin/open artwork", () =>
     const canvasItemId = await item.getAttribute("data-canvas-item-id");
 
     const isSelected = () =>
-      page.evaluate((id) => {
-        const el = document.querySelector(`[data-canvas-item-id="${id}"]`);
-        return el ? el.className.includes("ring-2") : false;
-      }, canvasItemId);
+      page.locator(`[data-selection-overlay="${canvasItemId}"]`).isVisible();
 
     // page.mouse.click() always synthesizes pointerType "mouse" (confirmed:
     // page.touchscreen.tap() doesn't reach the app's selection handling at

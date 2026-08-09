@@ -71,21 +71,12 @@ type CanvasItemProps =
 
 export default function CanvasItem(props: CanvasItemProps) {
   const { item } = props;
-  const selected = "selected" in props && props.selected;
   const textBoxWidth = item.type === "text" ? getTextBoxWidth(item) : undefined;
 
   return (
     <div
       data-canvas-item-id={item.id}
-      className={`absolute ${
-        selected
-          ? item.type === "text"
-            ? item.locked
-              ? "ring-2 ring-blue-500"
-              : "md:ring-2 md:ring-blue-500"
-            : "ring-2 ring-blue-500"
-          : ""
-      }`}
+      className="absolute"
       style={{
         left: item.position.x,
         top: item.position.y,
@@ -99,10 +90,6 @@ export default function CanvasItem(props: CanvasItemProps) {
           item.type === "shape" || item.type === "element"
             ? item.size.height
             : undefined,
-        // A selected item needs its own stacking context above ordinary
-        // content. Otherwise a later overlapping item can paint over and
-        // intercept this item's resize handles.
-        zIndex: selected ? 20 : 0,
         transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg)`,
         WebkitBackfaceVisibility: "hidden",
         backfaceVisibility: "hidden",
@@ -114,7 +101,7 @@ export default function CanvasItem(props: CanvasItemProps) {
       {item.type === "image" && "onPointerDown" in props ? (
         <CanvasImageItem
           item={item}
-          selected={props.selected && !item.locked}
+          selected={false}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
@@ -123,7 +110,7 @@ export default function CanvasItem(props: CanvasItemProps) {
       ) : item.type === "shape" && "onPointerDown" in props ? (
         <CanvasShapeItem
           item={item}
-          selected={props.selected && !item.locked}
+          selected={false}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
@@ -132,7 +119,7 @@ export default function CanvasItem(props: CanvasItemProps) {
       ) : item.type === "element" && "onPointerDown" in props ? (
         <CanvasElementItem
           item={item}
-          selected={props.selected && !item.locked}
+          selected={false}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           onPointerDown={props.onPointerDown}
@@ -141,7 +128,7 @@ export default function CanvasItem(props: CanvasItemProps) {
       ) : item.type === "text" && "editing" in props ? (
         <CanvasTextItem
           item={item}
-          selected={props.selected && !item.locked}
+          selected={false}
           editing={props.editing && !item.locked}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
@@ -185,7 +172,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         />
       )}
 
-      {selected && item.locked && (
+      {props.selected && item.locked && (
         <span
           aria-label="Locked item"
           title="Locked"

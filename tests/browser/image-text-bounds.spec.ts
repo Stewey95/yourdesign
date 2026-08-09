@@ -14,7 +14,9 @@ test.describe("image and text selection bounds (audit - should already be tight)
     // interaction, not a lost pre-hydration event.
     await page.waitForTimeout(500);
     await page.getByRole("button", { name: "Media", exact: true }).first().click();
-    await page.setInputFiles('input[type="file"]', {
+    const mediaPanel = page.locator('[data-sidebar-panel="media"]');
+    await expect(mediaPanel).toBeVisible();
+    await mediaPanel.locator('input[type="file"]').setInputFiles({
       name: "pixel.png",
       mimeType: "image/png",
       buffer: Buffer.from(PNG_1x1, "base64"),

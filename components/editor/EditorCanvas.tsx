@@ -18,6 +18,7 @@ import DesktopPanCursor, {
   type DesktopPanCursorMode,
 } from "./DesktopPanCursor";
 import MobileCanvasZoomHud from "./MobileCanvasZoomHud";
+import SelectionOverlay from "./SelectionOverlay";
 import type { TextResizeCorner } from "./CanvasTextItem";
 import type {
   DesignItem,
@@ -1505,6 +1506,14 @@ export default function EditorCanvas({
                 />
               )
             )}
+            <SelectionOverlay
+              canvasRef={canvasRef}
+              item={items.find((item) => item.id === selectedItemId) ?? null}
+              displayScale={displayScale}
+              desktopLayout={isDesktopLayout}
+              onImageResizeStart={onImageResizeStart}
+              onTextResizeStart={onTextResizeStart}
+            />
             </div>
           </div>
       </div>

@@ -2676,7 +2676,10 @@ if (direction === "back") {
     event.preventDefault();
 
     const startX = event.clientX;
+    const startY = event.clientY;
+    const startFontSize = item.fontSize;
     const horizontalDirection = corner.endsWith("right") ? 1 : -1;
+    const verticalDirection = corner.startsWith("bottom") ? 1 : -1;
     const canvasBounds = canvasRef.current
       ? getCanvasInteractionBounds(canvasRef.current)
       : null;
@@ -2687,25 +2690,29 @@ if (direction === "back") {
       Number.isFinite(measuredDisplayScale) && measuredDisplayScale > 0
         ? measuredDisplayScale
         : 1;
-    const textWrapper = canvasRef.current?.querySelector<HTMLElement>(
-      `[data-canvas-item-id="${item.id}"]`
-    );
-    const startTextBoxWidth = getTextBoxWidth(item) ?? Math.max(
-      TEXT_BOX_MIN_WIDTH,
-      (textWrapper?.getBoundingClientRect().width ?? item.fontSize) /
-        displayScale
-    );
 
     const resize = (moveEvent: PointerEvent) => {
       const screenHorizontalChange =
         (moveEvent.clientX - startX) / displayScale;
+      const screenVerticalChange =
+        (moveEvent.clientY - startY) / displayScale;
       const rotation = (item.rotation * Math.PI) / 180;
       const horizontalChange =
-        screenHorizontalChange * Math.cos(rotation) *
+        (screenHorizontalChange * Math.cos(rotation) +
+          screenVerticalChange * Math.sin(rotation)) *
         horizontalDirection;
-      const nextTextBoxWidth = Math.max(
-        TEXT_BOX_MIN_WIDTH,
-        startTextBoxWidth + horizontalChange
+      const verticalChange =
+        (-screenHorizontalChange * Math.sin(rotation) +
+          screenVerticalChange * Math.cos(rotation)) *
+        verticalDirection;
+      const proportionalChange =
+        (horizontalChange + verticalChange) / 2;
+      const requestedScale = Math.max(
+        Number.EPSILON,
+        1 + proportionalChange / startFontSize
+      );
+      const nextFontSize = clampFontSize(
+        startFontSize * requestedScale
       );
 
       updateItems((currentItems) =>
@@ -2713,7 +2720,7 @@ if (direction === "back") {
           currentItem.id === item.id && currentItem.type === "text"
             ? {
                 ...currentItem,
-                textBoxWidth: nextTextBoxWidth,
+                fontSize: nextFontSize,
               }
             : currentItem
         )

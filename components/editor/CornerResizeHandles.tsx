@@ -52,7 +52,7 @@ export default function CornerResizeHandles({
       key={corner}
       role="button"
       aria-label={`Resize from ${corner.replace("-", " ")}`}
-      className={`absolute z-30 hidden items-center justify-center md:flex ${cursor}`}
+      className={`pointer-events-auto absolute z-30 hidden items-center justify-center md:flex ${cursor}`}
       style={{
         left,
         top,

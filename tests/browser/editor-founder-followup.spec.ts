@@ -102,10 +102,10 @@ test.describe("Founder QA follow-up - text layout", () => {
     );
   });
 
-  test("a resized text box becomes intentionally bounded and wraps", async ({ page }, testInfo) => {
+  test("corner resizing scales free-form text without changing its wrapping mode", async ({ page }, testInfo) => {
     test.skip(!DESKTOP_PROJECTS.has(testInfo.project.name), "Desktop resize handles only");
     await freshCanvas(page);
-    await addText(page, "Bounded text wraps after resize");
+    await addText(page, "Scale this text");
     const canvas = page.locator(".editor-canvas-surface");
     const canvasBox = await canvas.boundingBox();
     if (!canvasBox) throw new Error("Canvas was not rendered.");
@@ -114,21 +114,47 @@ test.describe("Founder QA follow-up - text layout", () => {
 
     const item = page.locator("[data-canvas-item-id]").last();
     const before = await item.boundingBox();
+    const beforeMetrics = await item.evaluate((element) => {
+      const text = element.querySelector<HTMLElement>("[data-canvas-text-display]");
+      return {
+        fontSize: text ? Number.parseFloat(text.style.fontSize) : 0,
+        widthMode: element.style.width,
+      };
+    });
     const handle = page.getByRole("button", { name: "Resize from bottom right" });
     const handleBox = await handle.boundingBox();
     if (!before || !handleBox) throw new Error("Text resize handle was not rendered.");
     await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
     await page.mouse.down();
-    await page.mouse.move(handleBox.x - 240, handleBox.y + handleBox.height / 2, { steps: 5 });
+    await page.mouse.move(handleBox.x + 60, handleBox.y + handleBox.height / 2 + 60, { steps: 5 });
     await page.mouse.up();
 
     const after = await item.boundingBox();
-    if (!after) throw new Error("Bounded text item was not rendered.");
-    expect(after.width).toBeLessThan(before.width * 0.75);
-    expect(after.height).toBeGreaterThan(before.height * 1.5);
+    if (!after) throw new Error("Scaled text item was not rendered.");
+    expect(after.height).toBeGreaterThan(before.height + 8);
+    const afterMetrics = await item.evaluate((element) => {
+      const text = element.querySelector<HTMLElement>("[data-canvas-text-display]");
+      return {
+        fontSize: text ? Number.parseFloat(text.style.fontSize) : 0,
+        widthMode: element.style.width,
+      };
+    });
+    expect(afterMetrics.fontSize).toBeGreaterThan(beforeMetrics.fontSize);
+    expect(afterMetrics.widthMode).toBe(beforeMetrics.widthMode);
+
+    await page.getByRole("button", { name: "Undo" }).first().click();
+    await expect.poll(async () => item.evaluate((element) => {
+      const text = element.querySelector<HTMLElement>("[data-canvas-text-display]");
+      return text ? Number.parseFloat(text.style.fontSize) : 0;
+    })).toBe(beforeMetrics.fontSize);
+    await page.getByRole("button", { name: "Redo" }).first().click();
+    await expect.poll(async () => item.evaluate((element) => {
+      const text = element.querySelector<HTMLElement>("[data-canvas-text-display]");
+      return text ? Number.parseFloat(text.style.fontSize) : 0;
+    })).toBe(afterMetrics.fontSize);
 
     const id = await item.getAttribute("data-canvas-item-id");
-    if (!id) throw new Error("Bounded text item id was not rendered.");
+    if (!id) throw new Error("Scaled text item id was not rendered.");
     const widths = await page.evaluate((itemId) => {
       const live = document.querySelector<HTMLElement>(`[data-canvas-text-display="${itemId}"]`);
       const exported = document.querySelector<HTMLElement>(`[data-export-text="${itemId}"]`);
@@ -224,10 +250,8 @@ test.describe("Founder QA follow-up - selection controls over overlaps", () => {
       mimeType: "image/svg+xml",
       buffer: Buffer.from(RED_SQUARE_SVG),
     });
-    const image = page.locator("[data-canvas-item-id]").last();
-    await insertElement(page, "Circle");
-
-    await image.click({ force: true });
+    await insertElement(page, "Rectangle");
+    await page.getByRole("button", { name: "Select layer Image", exact: true }).click();
     const imageHandle = page.getByRole("button", { name: "Resize from bottom right" });
     await expect(imageHandle).toBeVisible();
     const imageHandleBox = await imageHandle.boundingBox();
@@ -238,14 +262,41 @@ test.describe("Founder QA follow-up - selection controls over overlaps", () => {
     );
     expect(imageHandleOwnsPoint).toBe("Resize from bottom right");
 
+    const layerOrder = () => page.locator('[aria-label^="Select layer "]').evaluateAll(
+      (layers) => layers.map((layer) => layer.getAttribute("aria-label"))
+    );
+    expect(await layerOrder()).toEqual([
+      "Select layer Rectangle",
+      "Select layer Image",
+    ]);
+    await page.getByRole("button", { name: "Bring Forward" }).click();
+    await expect.poll(layerOrder).toEqual([
+      "Select layer Image",
+      "Select layer Rectangle",
+    ]);
+    await page.getByRole("button", { name: "Send Backward" }).click();
+    await expect.poll(layerOrder).toEqual([
+      "Select layer Rectangle",
+      "Select layer Image",
+    ]);
+    await page.getByRole("button", { name: "Bring to Front" }).click();
+    await expect.poll(layerOrder).toEqual([
+      "Select layer Image",
+      "Select layer Rectangle",
+    ]);
+    await page.getByRole("button", { name: "Send to Back" }).click();
+    await expect.poll(layerOrder).toEqual([
+      "Select layer Rectangle",
+      "Select layer Image",
+    ]);
+
     await addText(page, "Text above an overlapping element");
     const canvas = page.locator(".editor-canvas-surface");
     const canvasBox = await canvas.boundingBox();
     if (!canvasBox) throw new Error("Canvas was not rendered.");
     await page.locator("[data-canvas-text-editor]").blur();
-    const text = page.locator("[data-canvas-item-id]").last();
     await insertElement(page, "Circle");
-    await text.click({ force: true });
+    await page.getByRole("button", { name: "Select layer Text above an overlapping" }).click();
     const textHandle = page.getByRole("button", { name: "Resize from bottom right" });
     await expect(textHandle).toBeVisible();
     const textHandleBox = await textHandle.boundingBox();
