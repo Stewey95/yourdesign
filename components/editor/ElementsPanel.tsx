@@ -443,7 +443,11 @@ function ElementCard({
           overlapping the thumbnail on hover-only, so it's visible on touch
           devices (no hover state) and has a real tap target of its own. */}
       <div className="flex min-w-0 items-center gap-1">
-        <span className="min-w-0 flex-1 truncate text-[10px] font-semibold leading-tight text-slate-200 md:text-[11px]">
+        <span
+          className="min-w-0 flex-1 line-clamp-2 min-h-[2.4em] text-[10px] font-semibold leading-tight text-slate-200 md:text-[11px]"
+          title={element.name}
+          aria-label={element.name}
+        >
           {element.name}
         </span>
         <button

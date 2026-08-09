@@ -41,6 +41,11 @@ export type TextDesignItem = {
   color: string;
   fontFamily: string;
   rotation: number;
+  /**
+   * An explicitly-sized text box. Its absence is intentional: free-form
+   * text grows to its content and only line breaks when the author adds one.
+   */
+  textBoxWidth?: number;
 };
 
 export type ShapeDesignItem = {

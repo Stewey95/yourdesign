@@ -11,7 +11,7 @@ import {
 import { getFontOption } from "../../components/editor/fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "../../components/editor/fonts/googleFontLoader";
 import {
-  getTextMaximumWidth,
+  getTextBoxWidth,
   TEXT_FONT_WEIGHT,
   TEXT_LINE_HEIGHT,
 } from "../../components/editor/textLayout";
@@ -105,8 +105,7 @@ const wrapParagraph = (
 
 const drawTextItem = (
   context: CanvasRenderingContext2D,
-  item: TextDesignItem,
-  canvasWidth: number
+  item: TextDesignItem
 ) => {
   if (!item.value) return;
 
@@ -124,15 +123,10 @@ const drawTextItem = (
   context.shadowBlur = 4;
   context.shadowOffsetY = 1;
 
-  const lines = item.value
-    .split("\n")
-    .flatMap((paragraph) =>
-      wrapParagraph(
-        context,
-        paragraph,
-        getTextMaximumWidth(canvasWidth)
-      )
-    );
+  const textBoxWidth = getTextBoxWidth(item);
+  const lines = item.value.split("\n").flatMap((paragraph) =>
+    textBoxWidth ? wrapParagraph(context, paragraph, textBoxWidth) : [paragraph]
+  );
   const blockHeight = lines.length * lineHeight;
 
   lines.forEach((line, index) => {
@@ -331,7 +325,7 @@ async function renderDesignToImage(
 
     for (const item of items) {
       if (item.type === "text") {
-        drawTextItem(context, item, config.canvas.width);
+        drawTextItem(context, item);
         continue;
       }
 

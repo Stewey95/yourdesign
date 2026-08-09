@@ -1471,6 +1471,7 @@ export default function EditorCanvas({
             <AlignmentGuides
               vertical={verticalGuide}
               horizontal={horizontalGuide}
+              displayScale={displayScale}
             />
 
             {items.map((item) =>
@@ -1493,7 +1494,6 @@ export default function EditorCanvas({
                   editing={editingItemId === item.id}
                   mobileLayout={!isDesktopLayout}
                   displayScale={displayScale}
-                  canvasWidth={canvasSize.width}
                   onRequestAutoFit={onRequestAutoFit}
                   onValueChange={onTextValueChange}
                   onRemoveEmptyText={onRemoveEmptyText}

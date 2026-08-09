@@ -6,6 +6,7 @@ import type { ResizeCorner, TextDesignItem } from "./editor.types";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
 import {
+  getTextBoxWidth,
   TEXT_LINE_HEIGHT,
   TEXT_SHADOW,
 } from "./textLayout";
@@ -18,7 +19,7 @@ type CanvasTextItemProps = {
   editing: boolean;
   mobileLayout: boolean;
   displayScale: number;
-  maximumWidth: number;
+  textBoxWidth?: number;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -46,7 +47,7 @@ export default function CanvasTextItem({
   editing,
   mobileLayout,
   displayScale,
-  maximumWidth,
+  textBoxWidth,
   onRequestAutoFit,
   onValueChange,
   onRemoveEmptyText,
@@ -158,22 +159,24 @@ export default function CanvasTextItem({
   const measurementValue = item.value.endsWith("\n")
     ? `${item.value}\u200b`
     : item.value || "Type here";
-  const constrainedWidth = `${maximumWidth}px`;
+  const boundedWidth = getTextBoxWidth({ textBoxWidth });
+  const textBoxStyle = boundedWidth ? { width: boundedWidth } : undefined;
 
   return (
     <div
-      className="relative md:inline-grid md:max-w-full"
-      style={{ maxWidth: maximumWidth }}
+      className="relative inline-grid"
+      style={textBoxStyle}
     >
         <span
           aria-hidden="true"
-          className="invisible hidden min-h-[1.2em] w-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-center font-bold md:block"
+          className={`invisible block min-h-[1.2em] whitespace-pre-wrap text-center font-bold ${
+            boundedWidth ? "w-full [overflow-wrap:anywhere]" : "w-fit"
+          }`}
           style={{
             fontSize: item.fontSize,
             fontFamily: item.fontFamily,
             textShadow: TEXT_SHADOW,
             lineHeight: TEXT_LINE_HEIGHT,
-            maxWidth: maximumWidth,
           }}
         >
           {measurementValue}
@@ -235,7 +238,9 @@ onValueChange(item.id, value);
 }}
             placeholder="Type here"
          rows={1}
-            className="block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap [overflow-wrap:anywhere] bg-transparent text-center font-bold outline-none touch-none md:absolute md:inset-0 md:h-full md:!w-full md:!max-w-full"
+            className={`absolute inset-0 block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none ${
+              boundedWidth ? "[overflow-wrap:anywhere]" : ""
+            }`}
             style={{
               fontSize: item.fontSize,
               color: item.color,
@@ -245,8 +250,7 @@ onValueChange(item.id, value);
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",
-             width: constrainedWidth,
-maxWidth: maximumWidth,
+              width: "100%",
             }}
           />
         ) : (
@@ -270,15 +274,16 @@ maxWidth: maximumWidth,
                 // The canvas still receives the bubbling pointer sequence.
               }
             }}
-            className="cursor-move select-none whitespace-pre-wrap [overflow-wrap:anywhere] text-center font-bold touch-none md:absolute md:inset-0 md:!w-full md:!max-w-full"
+            className={`absolute inset-0 cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none ${
+              boundedWidth ? "[overflow-wrap:anywhere]" : ""
+            }`}
             style={{
               fontSize: item.fontSize,
               color: item.color,
               fontFamily: item.fontFamily,
               textShadow: TEXT_SHADOW,
               lineHeight: TEXT_LINE_HEIGHT,
-              width: constrainedWidth,
-maxWidth: maximumWidth,
+              width: "100%",
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",

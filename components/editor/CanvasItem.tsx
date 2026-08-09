@@ -6,7 +6,7 @@ import CanvasElementItem from "./CanvasElementItem";
 import CanvasShapeItem from "./CanvasShapeItem";
 import CanvasTextItem from "./CanvasTextItem";
 import type { TextResizeCorner } from "./CanvasTextItem";
-import { getTextMaximumWidth } from "./textLayout";
+import { getTextBoxWidth } from "./textLayout";
 import type {
   ImageDesignItem,
   ElementDesignItem,
@@ -43,7 +43,6 @@ type TextCanvasItemProps = {
   editing: boolean;
   mobileLayout: boolean;
   displayScale: number;
-  canvasWidth: number;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -73,10 +72,7 @@ type CanvasItemProps =
 export default function CanvasItem(props: CanvasItemProps) {
   const { item } = props;
   const selected = "selected" in props && props.selected;
-  const textMaximumWidth =
-    item.type === "text" && "canvasWidth" in props
-      ? getTextMaximumWidth(props.canvasWidth)
-      : undefined;
+  const textBoxWidth = item.type === "text" ? getTextBoxWidth(item) : undefined;
 
   return (
     <div
@@ -95,7 +91,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         top: item.position.y,
         width:
           item.type === "text"
-            ? "max-content"
+            ? textBoxWidth ?? "max-content"
             : item.type === "shape" || item.type === "element"
               ? item.size.width
               : undefined,
@@ -103,7 +99,10 @@ export default function CanvasItem(props: CanvasItemProps) {
           item.type === "shape" || item.type === "element"
             ? item.size.height
             : undefined,
-        maxWidth: textMaximumWidth,
+        // A selected item needs its own stacking context above ordinary
+        // content. Otherwise a later overlapping item can paint over and
+        // intercept this item's resize handles.
+        zIndex: selected ? 20 : 0,
         transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg)`,
         WebkitBackfaceVisibility: "hidden",
         backfaceVisibility: "hidden",
@@ -146,7 +145,7 @@ export default function CanvasItem(props: CanvasItemProps) {
           editing={props.editing && !item.locked}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
-          maximumWidth={textMaximumWidth ?? props.canvasWidth}
+          textBoxWidth={textBoxWidth}
           onRequestAutoFit={props.onRequestAutoFit}
           onValueChange={props.onValueChange}
           onRemoveEmptyText={props.onRemoveEmptyText}

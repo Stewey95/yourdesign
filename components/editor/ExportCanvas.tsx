@@ -7,7 +7,7 @@ import ElementSvg from "./ElementSvg";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
 import {
-  getTextMaximumWidth,
+  getTextBoxWidth,
   TEXT_FONT_WEIGHT,
   TEXT_LINE_HEIGHT,
   TEXT_SHADOW,
@@ -51,7 +51,7 @@ const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
               top: item.position.y,
               width:
                 item.type === "text"
-                  ? "max-content"
+                  ? getTextBoxWidth(item) ?? "max-content"
                   : item.type === "shape" || item.type === "element"
                     ? item.size.width
                     : undefined,
@@ -102,11 +102,12 @@ const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
                 data-export-text={item.id}
                 style={{
                   display: "inline-block",
-                  width: getTextMaximumWidth(width),
-                  maxWidth: getTextMaximumWidth(width),
+                  width: getTextBoxWidth(item) ?? "max-content",
                   minHeight: "1.2em",
                   whiteSpace: "pre-wrap",
-                  overflowWrap: "break-word",
+                  overflowWrap: getTextBoxWidth(item)
+                    ? "break-word"
+                    : "normal",
                   textAlign: "center",
                   fontSize: item.fontSize,
                   fontFamily: item.fontFamily,

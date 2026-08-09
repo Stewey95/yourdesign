@@ -1,5 +1,9 @@
 # Gripix Changelog
 
+## 2026-08-09
+
+- `founder-qa-editor-followup`: **Focused Editor QA follow-up**: Replaced the retired implicit 460px text wrap with a persisted two-mode text contract. New text has no `textBoxWidth`, grows horizontally, and only breaks on an authored Enter; template text and a desktop corner-resize gain an explicit `textBoxWidth` and wrap within it. The live canvas, DOM export surface, Safari canvas fallback, project restoration, templates, history, and mobile rendering all consume that same mode. Selected canvas items now receive an elevated local stacking layer, keeping their selection ring and resize controls above later overlapping content without raising unrelated editor chrome. Alignment guides now compensate their logical stroke thickness for CSS zoom/transform scale, so large print and social presets retain a visible one-screen-pixel centre line in fit and zoomed views. Element cards use a compact two-line label clamp with native title and accessible full name rather than an over-aggressive one-line truncation. Added regression coverage for free-form and bounded/template text, export parity and reload persistence, all shipped preset guide visibility/coordinates, overlapping image/text handles, and accessible long element labels.
+
 All notable changes to the Gripix project are documented in this file based strictly on repository commit history.
 
 ## 2026-08-08

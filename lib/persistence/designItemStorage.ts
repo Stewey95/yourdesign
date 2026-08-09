@@ -135,6 +135,14 @@ const restoreStoredItem = async (
         typeof value.fontFamily === "string"
           ? value.fontFamily
           : "Arial",
+      // Legacy projects predate text-box modes. Keep them free-form instead
+      // of silently restoring the retired fixed-width wrap behaviour.
+      textBoxWidth:
+        typeof value.textBoxWidth === "number" &&
+        Number.isFinite(value.textBoxWidth) &&
+        value.textBoxWidth >= 24
+          ? value.textBoxWidth
+          : undefined,
     };
   }
 

@@ -27,6 +27,7 @@ This backlog contains structured UX and technical polish items derived from code
 - 🟡 **Font Catalog Virtualization**: Implement windowing / virtualization in `FontPicker.tsx` to maintain 60fps scrolling performance when scaling the Google Fonts catalog to hundreds of font families.
 - 🟢 **Recent & Favorite Fonts**: Store the user's recently selected font families at the top of `FontPicker.tsx` for quick access.
 - 🟢 **Text Selection Bounding Rect Polish**: Further refine text container auto-height recalculation during fast backspacing in mobile web viewports.
+- 🟢 **Text Box Mode Control**: Consider a lightweight inspector indicator/reset action for an explicit bounded `textBoxWidth`, so creators can intentionally return a resized text box to free-form width without changing the current compact toolbar.
 
 ---
 

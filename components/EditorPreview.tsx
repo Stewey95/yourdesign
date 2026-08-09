@@ -63,6 +63,7 @@ import {
   MAX_SHAPE_STROKE_WIDTH,
   MIN_SHAPE_STROKE_WIDTH,
 } from "./editor/shape.constants";
+import { getTextBoxWidth, TEXT_BOX_MIN_WIDTH } from "./editor/textLayout";
 import { isPointerInsideVisibleContent } from "./editor/hitTesting";
 import {
   exportDesign,
@@ -1567,6 +1568,17 @@ const getSnappedPosition = (
 
       const freshItems: DesignItem[] = template.items.map((item, index) => ({
         ...item,
+        // Templates are authored compositions, so their text gets an
+        // explicit width based on its authored left inset. New free-form
+        // text deliberately has no textBoxWidth.
+        ...(item.type === "text" && !getTextBoxWidth(item)
+          ? {
+              textBoxWidth: Math.max(
+                TEXT_BOX_MIN_WIDTH,
+                template.width - item.position.x * 2
+              ),
+            }
+          : {}),
         id: `item-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
         position: getTemplateItemPosition(item),
       }));
@@ -2664,10 +2676,7 @@ if (direction === "back") {
     event.preventDefault();
 
     const startX = event.clientX;
-    const startY = event.clientY;
-    const startFontSize = item.fontSize;
     const horizontalDirection = corner.endsWith("right") ? 1 : -1;
-    const verticalDirection = corner.startsWith("bottom") ? 1 : -1;
     const canvasBounds = canvasRef.current
       ? getCanvasInteractionBounds(canvasRef.current)
       : null;
@@ -2678,29 +2687,25 @@ if (direction === "back") {
       Number.isFinite(measuredDisplayScale) && measuredDisplayScale > 0
         ? measuredDisplayScale
         : 1;
+    const textWrapper = canvasRef.current?.querySelector<HTMLElement>(
+      `[data-canvas-item-id="${item.id}"]`
+    );
+    const startTextBoxWidth = getTextBoxWidth(item) ?? Math.max(
+      TEXT_BOX_MIN_WIDTH,
+      (textWrapper?.getBoundingClientRect().width ?? item.fontSize) /
+        displayScale
+    );
 
     const resize = (moveEvent: PointerEvent) => {
       const screenHorizontalChange =
         (moveEvent.clientX - startX) / displayScale;
-      const screenVerticalChange =
-        (moveEvent.clientY - startY) / displayScale;
       const rotation = (item.rotation * Math.PI) / 180;
       const horizontalChange =
-        (screenHorizontalChange * Math.cos(rotation) +
-          screenVerticalChange * Math.sin(rotation)) *
+        screenHorizontalChange * Math.cos(rotation) *
         horizontalDirection;
-      const verticalChange =
-        (-screenHorizontalChange * Math.sin(rotation) +
-          screenVerticalChange * Math.cos(rotation)) *
-        verticalDirection;
-      const proportionalChange =
-        (horizontalChange + verticalChange) / 2;
-      const requestedScale = Math.max(
-        Number.EPSILON,
-        1 + proportionalChange / startFontSize
-      );
-      const nextFontSize = clampFontSize(
-        startFontSize * requestedScale
+      const nextTextBoxWidth = Math.max(
+        TEXT_BOX_MIN_WIDTH,
+        startTextBoxWidth + horizontalChange
       );
 
       updateItems((currentItems) =>
@@ -2708,7 +2713,7 @@ if (direction === "back") {
           currentItem.id === item.id && currentItem.type === "text"
             ? {
                 ...currentItem,
-                fontSize: nextFontSize,
+                textBoxWidth: nextTextBoxWidth,
               }
             : currentItem
         )

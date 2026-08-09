@@ -61,7 +61,7 @@ graph TD
 - Renders the interactive workspace boundary, canvas background color, active items, alignment snapping guides ([`AlignmentGuides.tsx`](../components/editor/AlignmentGuides.tsx)), desktop pan cursor overlays ([`DesktopPanCursor.tsx`](../components/editor/DesktopPanCursor.tsx)), and mobile zoom HUD ([`MobileCanvasZoomHud.tsx`](../components/editor/MobileCanvasZoomHud.tsx)).
 
 ### Canvas Item Renderers
-- [`CanvasTextItem.tsx`](../components/editor/CanvasTextItem.tsx): Renders editable text, handles inline focus/caret placement, auto-calculates text height, and provides desktop corner resizing handles.
+- [`CanvasTextItem.tsx`](../components/editor/CanvasTextItem.tsx): Renders editable text, handles inline focus/caret placement, auto-calculates text height, and provides desktop corner resizing handles. `TextDesignItem.textBoxWidth` is optional by design: absent means free-form content grows horizontally and honours only authored newlines; present means an intentionally bounded wrapping box from a template or resize gesture.
 - [`CanvasImageItem.tsx`](../components/editor/CanvasImageItem.tsx): Renders uploaded raster images with boundary constraints and adjustment filters (brightness, contrast, saturation).
 - [`CanvasShapeItem.tsx`](../components/editor/CanvasShapeItem.tsx): Renders vector SVG elements ([`ShapeSvg.tsx`](../components/editor/ShapeSvg.tsx)) based on element geometry definitions ([`shape.geometry.ts`](../components/editor/shape.geometry.ts)).
 
@@ -97,7 +97,7 @@ flowchart LR
 ```
 
 - **[`renderDesignToCanvas.ts`](../lib/export/renderDesignToCanvas.ts)**: Pure offscreen HTML5 `<canvas>` rendering pipeline used by the Safari fallback. It draws items, text, images, and shapes with sub-pixel resolution accuracy, uses the same text-width/line-height contract as the editor and DOM export surface, waits for the selected font face, and preserves `object-contain` image geometry.
-- **[`textLayout.ts`](../components/editor/textLayout.ts)**: The small shared text-rendering contract: maximum logical text width, line height, font weight, and shadow. The live canvas, hidden DOM export surface, and Safari canvas fallback consume it so a design does not acquire a format-specific wrap point.
+- **[`textLayout.ts`](../components/editor/textLayout.ts)**: The small shared text-rendering contract: text-box mode/validation, line height, font weight, and shadow. The live canvas, hidden DOM export surface, and Safari canvas fallback consume it so a design does not acquire a format-specific wrap point.
 - **[`exportDesign.ts`](../lib/export/exportDesign.ts)**: Controller managing background transparency toggles, image format encoding (PNG, JPG), and browser file download triggers.
 - **[`createPdf.ts`](../lib/export/createPdf.ts)**: Converts canvas output into single or multi-page PDF documents.
 - **[`isMobileSafari.ts`](../lib/export/isMobileSafari.ts)**: Detects iOS Safari runtime environments to route downloads through compatible canvas data URL fallbacks.

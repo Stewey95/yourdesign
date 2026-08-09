@@ -9,6 +9,10 @@ test.describe("image and text selection bounds (audit - should already be tight)
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/create");
+    // Mobile WebKit can expose the file input before React has attached its
+    // change handler. Wait through hydration so a test upload is a user
+    // interaction, not a lost pre-hydration event.
+    await page.waitForTimeout(500);
     await page.getByRole("button", { name: "Media", exact: true }).first().click();
     await page.setInputFiles('input[type="file"]', {
       name: "pixel.png",
@@ -40,6 +44,7 @@ test.describe("image and text selection bounds (audit - should already be tight)
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/create");
+    await page.waitForTimeout(500);
     await page.getByRole("button", { name: "Text", exact: true }).first().click();
     await page.getByRole("button", { name: "Add Text", exact: true }).click();
     await page.locator("[data-canvas-text-editor]").fill("Hello");
@@ -59,16 +64,16 @@ test.describe("image and text selection bounds (audit - should already be tight)
     expect(box.height).toBeLessThan(80);
   });
 
-  test("multi-line (wrapped) text: wrapper height grows to fit all lines tightly", async ({
+  test("multi-line authored text: wrapper height grows to fit all lines tightly", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/create");
+    await page.waitForTimeout(500);
     await page.getByRole("button", { name: "Text", exact: true }).first().click();
     await page.getByRole("button", { name: "Add Text", exact: true }).click();
 
-    const longText =
-      "This is a much longer piece of text that should wrap across several lines inside the canvas text box";
+    const longText = "Each authored line\nremains a line\nuntil a text box is resized";
     const textarea = page.locator("[data-canvas-text-editor]");
     await textarea.fill(longText);
 
@@ -78,14 +83,13 @@ test.describe("image and text selection bounds (audit - should already be tight)
     const box = await item.boundingBox();
     if (!box) throw new Error("text item not found");
 
-    // Multi-line wrapped text must be taller than a single line (proves
-    // wrapping/height recalculation still works).
+    // Authored multi-line text must be taller than a single line.
     const singleLineHeightEstimate = 40; // generous upper bound for one line
     expect(box.height).toBeGreaterThan(singleLineHeightEstimate);
 
     // The wrapper (which drives the selection box) should hug the
     // auto-sized textarea - not include large unexplained empty space
-    // below the wrapped lines. A generous tolerance here: textarea vs. its
+    // below the authored lines. A generous tolerance here: textarea vs. its
     // sizing-reference <span> can differ by a few pixels of font-metric
     // rounding that varies per engine (pre-existing, unrelated to this
     // fix's scope - text rendering isn't touched by it), but nothing near
