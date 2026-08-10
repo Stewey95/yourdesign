@@ -216,10 +216,10 @@ export default function EditorCanvas({
     viewportRef.current = viewport;
   }, [viewport]);
 
-  const updateDisplayScale = useCallback(() => {
+  const measureWorkspace = useCallback(() => {
     const workspace = workspaceRef.current;
 
-    if (!workspace) return;
+    if (!workspace) return null;
 
     const workspaceStyle = window.getComputedStyle(workspace);
     const horizontalPadding =
@@ -237,19 +237,29 @@ export default function EditorCanvas({
       workspace.clientHeight - verticalPadding
     );
 
-    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
-
     if (
       usableWidth <= 0 ||
       usableHeight <= 0
     ) {
-      return;
+      return null;
     }
 
-    lastValidMeasurementRef.current = {
+    const measurement = {
       width: usableWidth,
       height: usableHeight,
     };
+    lastValidMeasurementRef.current = measurement;
+
+    return measurement;
+  }, []);
+
+  const updateDisplayScale = useCallback(() => {
+    const measurement = measureWorkspace();
+
+    if (!measurement) return;
+
+    const { width: usableWidth, height: usableHeight } = measurement;
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
     setMeasuredWorkspaceWidth((currentWidth) =>
       currentWidth === null || Math.abs(currentWidth - usableWidth) > 0.5
         ? usableWidth
@@ -270,7 +280,7 @@ export default function EditorCanvas({
         ? nextScale
         : currentScale
     );
-  }, [canvasSize.height, canvasSize.width, viewMode]);
+  }, [canvasSize.height, canvasSize.width, measureWorkspace, viewMode]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;
@@ -956,7 +966,11 @@ export default function EditorCanvas({
 
   const runViewMode = useCallback(
     (mode: CanvasViewMode) => {
-      const measurement = lastValidMeasurementRef.current;
+      // Fit is an explicit geometry request. Read the workspace now instead
+      // of depending on the last ResizeObserver frame, which can be stale
+      // while mobile browser chrome or an orientation change is settling.
+      const measurement =
+        measureWorkspace() ?? lastValidMeasurementRef.current;
 
       if (!measurement) return;
 
@@ -988,6 +1002,7 @@ export default function EditorCanvas({
       baseScale,
       canvasSize.height,
       canvasSize.width,
+      measureWorkspace,
       onViewModeChange,
       onViewportChange,
     ]
@@ -1380,10 +1395,7 @@ export default function EditorCanvas({
           onViewportChange({ zoom: 1, panX: 0, panY: 0 });
         }}
         onFit={() => {
-          cancelZoomAnimation();
-          discreteZoomTargetRef.current = null;
-          onViewModeChange("fit");
-          onViewportChange({ zoom: 1, panX: 0, panY: 0 });
+          runViewMode("fit");
         }}
       />
 
@@ -1480,6 +1492,7 @@ export default function EditorCanvas({
                 <CanvasItem
                   key={item.id}
                   item={item}
+                  canvasSize={canvasSize}
                   selected={selectedItemId === item.id}
                   mobileLayout={!isDesktopLayout}
                   displayScale={displayScale}
@@ -1491,6 +1504,7 @@ export default function EditorCanvas({
                 <CanvasItem
                   key={item.id}
                   item={item}
+                  canvasSize={canvasSize}
                   selected={selectedItemId === item.id}
                   editing={editingItemId === item.id}
                   mobileLayout={!isDesktopLayout}

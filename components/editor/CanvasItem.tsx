@@ -6,7 +6,10 @@ import CanvasElementItem from "./CanvasElementItem";
 import CanvasShapeItem from "./CanvasShapeItem";
 import CanvasTextItem from "./CanvasTextItem";
 import type { TextResizeCorner } from "./CanvasTextItem";
-import { getTextBoxWidth } from "./textLayout";
+import {
+  getFreeformTextMaxWidth,
+  getTextBoxWidth,
+} from "./textLayout";
 import type {
   ImageDesignItem,
   ElementDesignItem,
@@ -14,6 +17,7 @@ import type {
   ResizableDesignItem,
   ShapeDesignItem,
   TextDesignItem,
+  Size,
 } from "./editor.types";
 
 type ImageCanvasItemProps = {
@@ -21,6 +25,7 @@ type ImageCanvasItemProps = {
   selected: boolean;
   mobileLayout?: boolean;
   displayScale: number;
+  canvasSize: Size;
   onPointerDown: (
     id: string,
     clientX: number,
@@ -43,6 +48,7 @@ type TextCanvasItemProps = {
   editing: boolean;
   mobileLayout: boolean;
   displayScale: number;
+  canvasSize: Size;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -73,6 +79,10 @@ export default function CanvasItem(props: CanvasItemProps) {
   const { item } = props;
   const selected = "selected" in props && props.selected;
   const textBoxWidth = item.type === "text" ? getTextBoxWidth(item) : undefined;
+  const freeformTextMaxWidth =
+    item.type === "text"
+      ? getFreeformTextMaxWidth(item, props.canvasSize)
+      : undefined;
 
   return (
     <div
@@ -87,6 +97,10 @@ export default function CanvasItem(props: CanvasItemProps) {
             : item.type === "shape" || item.type === "element"
               ? item.size.width
               : undefined,
+        maxWidth:
+          item.type === "text" && textBoxWidth === undefined
+            ? freeformTextMaxWidth
+            : undefined,
         height:
           item.type === "shape" || item.type === "element"
             ? item.size.height
@@ -135,6 +149,7 @@ export default function CanvasItem(props: CanvasItemProps) {
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}
           textBoxWidth={textBoxWidth}
+          freeformTextMaxWidth={freeformTextMaxWidth}
           onRequestAutoFit={props.onRequestAutoFit}
           onValueChange={props.onValueChange}
           onRemoveEmptyText={props.onRemoveEmptyText}

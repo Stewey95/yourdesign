@@ -21,6 +21,7 @@ type CanvasTextItemProps = {
   mobileLayout: boolean;
   displayScale: number;
   textBoxWidth?: number;
+  freeformTextMaxWidth?: number;
   onRequestAutoFit: (
     id: string,
     textarea: HTMLTextAreaElement
@@ -50,6 +51,7 @@ export default function CanvasTextItem({
   mobileLayout,
   displayScale,
   textBoxWidth,
+  freeformTextMaxWidth,
   onRequestAutoFit,
   onValueChange,
   onRemoveEmptyText,
@@ -79,7 +81,14 @@ export default function CanvasTextItem({
     // has to wait for a sibling observer to catch up during a pointer drag.
     overlay.style.width = `${textRoot.offsetWidth}px`;
     overlay.style.height = `${textRoot.offsetHeight}px`;
-  }, [item.fontSize, item.id, item.value, selectionActive, textBoxWidth]);
+  }, [
+    freeformTextMaxWidth,
+    item.fontSize,
+    item.id,
+    item.value,
+    selectionActive,
+    textBoxWidth,
+  ]);
 
   const initialiseEditingTextarea = useCallback(
     (textarea: HTMLTextAreaElement | null) => {
@@ -179,7 +188,11 @@ export default function CanvasTextItem({
     ? `${item.value}\u200b`
     : item.value || "Type here";
   const boundedWidth = getTextBoxWidth({ textBoxWidth });
-  const textBoxStyle = boundedWidth ? { width: boundedWidth } : undefined;
+  const textBoxStyle = boundedWidth
+    ? { width: boundedWidth }
+    : { maxWidth: freeformTextMaxWidth };
+  const wrapsAtBoundary =
+    boundedWidth !== undefined || freeformTextMaxWidth !== undefined;
 
   return (
     <div
@@ -190,7 +203,9 @@ export default function CanvasTextItem({
         <span
           aria-hidden="true"
           className={`col-start-1 row-start-1 invisible block min-h-[1.2em] whitespace-pre-wrap text-center font-bold ${
-            boundedWidth ? "w-full [overflow-wrap:anywhere]" : "w-fit"
+            boundedWidth
+              ? "w-full [overflow-wrap:anywhere]"
+              : "w-fit max-w-full [overflow-wrap:anywhere]"
           }`}
           style={{
             fontSize: item.fontSize,
@@ -259,7 +274,7 @@ onValueChange(item.id, value);
             placeholder="Type here"
          rows={1}
             className={`absolute inset-0 block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none ${
-              boundedWidth ? "[overflow-wrap:anywhere]" : ""
+              wrapsAtBoundary ? "[overflow-wrap:anywhere]" : ""
             }`}
             style={{
               fontSize: item.fontSize,
@@ -271,6 +286,10 @@ onValueChange(item.id, value);
               WebkitUserSelect: "none",
               userSelect: "none",
               width: "100%",
+              boxSizing: "border-box",
+              border: 0,
+              margin: 0,
+              padding: 0,
             }}
           />
         ) : (
@@ -295,7 +314,9 @@ onValueChange(item.id, value);
               }
             }}
             className={`col-start-1 row-start-1 cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none ${
-              boundedWidth ? "[overflow-wrap:anywhere]" : ""
+              boundedWidth
+                ? "w-full [overflow-wrap:anywhere]"
+                : "w-fit max-w-full [overflow-wrap:anywhere]"
             }`}
             style={{
               fontSize: item.fontSize,
@@ -303,7 +324,6 @@ onValueChange(item.id, value);
               fontFamily: item.fontFamily,
               textShadow: TEXT_SHADOW,
               lineHeight: TEXT_LINE_HEIGHT,
-              width: "100%",
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",

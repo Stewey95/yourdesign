@@ -228,19 +228,29 @@ test.describe("Editor and export reliability", () => {
     test.skip(!DESKTOP_PROJECTS.has(testInfo.project.name), "Desktop renderer fidelity coverage");
 
     await freshCanvas(page);
+    await page.getByRole("button", { name: "Templates", exact: true }).first().click();
+    await page.getByRole("button", { name: "Use Template", exact: true }).nth(1).click();
+    const templateItemCount = await page.locator("[data-canvas-item-id]").count();
     await page.getByRole("button", { name: "Media", exact: true }).first().click();
     await page.setInputFiles('input[type="file"]', {
       name: "red-square.svg",
       mimeType: "image/svg+xml",
       buffer: Buffer.from(RED_SQUARE_SVG),
     });
-    await expect(page.locator("[data-canvas-item-id]")).toHaveCount(1);
+    await expect(page.locator("[data-canvas-item-id]")).toHaveCount(templateItemCount + 1);
+    await insertElement(page, "Circle");
     await page.getByRole("button", { name: "Text", exact: true }).first().click();
     await page.getByRole("button", { name: "Add Text", exact: true }).click();
-    await page.locator("[data-canvas-text-editor]").fill("Export fidelity");
+    await page.locator("[data-canvas-text-editor]").fill(
+      "Long free-form export text wraps at the physical canvas boundary\nAuthored newline remains exact"
+    );
     const canvas = page.locator(".editor-canvas-surface");
     const canvasBox = await canvas.boundingBox();
     if (!canvasBox) throw new Error("Canvas was not rendered.");
+    const logicalCanvas = await canvas.evaluate((element) => ({
+      width: (element as HTMLElement).offsetWidth,
+      height: (element as HTMLElement).offsetHeight,
+    }));
     await page.mouse.click(canvasBox.x + 8, canvasBox.y + 8);
     await openExport(page);
 
@@ -252,8 +262,8 @@ test.describe("Editor and export reliability", () => {
     const transparentPath = await transparentPng.path();
     if (!transparentPath) throw new Error("Transparent PNG was not saved.");
     const transparentStats = await decodedImageStats(page, transparentPath);
-    expect(transparentStats.width).toBe(360);
-    expect(transparentStats.height).toBe(256);
+    expect(transparentStats.width).toBe(logicalCanvas.width);
+    expect(transparentStats.height).toBe(logicalCanvas.height);
     expect(transparentStats.transparent).toBeGreaterThan(1000);
     expect(transparentStats.nonWhite).toBeGreaterThan(100);
 
@@ -264,8 +274,8 @@ test.describe("Editor and export reliability", () => {
     const jpgPath = await jpg.path();
     if (!jpgPath) throw new Error("JPG was not saved.");
     const jpgStats = await decodedImageStats(page, jpgPath);
-    expect(jpgStats.width).toBe(360);
-    expect(jpgStats.height).toBe(256);
+    expect(jpgStats.width).toBe(logicalCanvas.width);
+    expect(jpgStats.height).toBe(logicalCanvas.height);
     expect(jpgStats.transparent).toBe(0);
     expect(jpgStats.nonWhite).toBeGreaterThan(100);
 
@@ -280,5 +290,35 @@ test.describe("Editor and export reliability", () => {
     expect(pdfContents.startsWith("%PDF-")).toBe(true);
     expect(pdfContents).toContain("/DCTDecode");
     expect(pdfContents).toContain("/MediaBox");
+  });
+
+  test("iPhone Safari canvas fallback exports boundary-wrapped text and elements", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "iPhone Safari", "Mobile Safari fallback coverage");
+
+    await freshCanvas(page);
+    await insertElement(page, "Circle");
+    await page.getByRole("button", { name: "Text", exact: true }).first().click();
+    await page.getByRole("button", { name: "Add Text", exact: true }).click();
+    await page.locator("[data-canvas-text-editor]").fill(
+      "Mobile Safari fallback wraps this long free-form sentence at the real canvas edge\nAuthored line"
+    );
+    await page.locator("[data-canvas-text-editor]").blur();
+    const logicalCanvas = await page
+      .locator(".editor-canvas-surface")
+      .evaluate((element) => ({
+        width: (element as HTMLElement).offsetWidth,
+        height: (element as HTMLElement).offsetHeight,
+      }));
+    await openExport(page);
+
+    const downloadEvent = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download PNG", exact: true }).click();
+    const download = await downloadEvent;
+    const path = await download.path();
+    if (!path) throw new Error("Mobile Safari PNG was not saved.");
+    const stats = await decodedImageStats(page, path);
+    expect(stats.width).toBe(logicalCanvas.width);
+    expect(stats.height).toBe(logicalCanvas.height);
+    expect(stats.nonWhite).toBeGreaterThan(100);
   });
 });

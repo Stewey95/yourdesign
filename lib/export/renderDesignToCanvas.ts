@@ -11,7 +11,7 @@ import {
 import { getFontOption } from "../../components/editor/fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "../../components/editor/fonts/googleFontLoader";
 import {
-  getTextBoxWidth,
+  getTextWrapWidth,
   TEXT_FONT_WEIGHT,
   TEXT_LINE_HEIGHT,
 } from "../../components/editor/textLayout";
@@ -105,7 +105,8 @@ const wrapParagraph = (
 
 const drawTextItem = (
   context: CanvasRenderingContext2D,
-  item: TextDesignItem
+  item: TextDesignItem,
+  canvas: { width: number; height: number }
 ) => {
   if (!item.value) return;
 
@@ -123,7 +124,7 @@ const drawTextItem = (
   context.shadowBlur = 4;
   context.shadowOffsetY = 1;
 
-  const textBoxWidth = getTextBoxWidth(item);
+  const textBoxWidth = getTextWrapWidth(item, canvas);
   const lines = item.value.split("\n").flatMap((paragraph) =>
     textBoxWidth ? wrapParagraph(context, paragraph, textBoxWidth) : [paragraph]
   );
@@ -325,7 +326,7 @@ async function renderDesignToImage(
 
     for (const item of items) {
       if (item.type === "text") {
-        drawTextItem(context, item);
+        drawTextItem(context, item, config.canvas);
         continue;
       }
 
