@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import EditorCanvas from "./editor/EditorCanvas";
 import type { TextResizeCorner } from "./editor/CanvasTextItem";
 import type { CanvasViewMode } from "./editor/CanvasViewModeControl";
@@ -2715,16 +2716,21 @@ if (direction === "back") {
         startFontSize * requestedScale
       );
 
-      updateItems((currentItems) =>
-        currentItems.map((currentItem) =>
-          currentItem.id === item.id && currentItem.type === "text"
-            ? {
-                ...currentItem,
-                fontSize: nextFontSize,
-              }
-            : currentItem
-        )
-      );
+      // This callback already runs at most once per animation frame. Commit
+      // the text size in that frame so Safari lays out the intrinsic text box
+      // and its selection overlay together instead of painting a stale box.
+      flushSync(() => {
+        updateItems((currentItems) =>
+          currentItems.map((currentItem) =>
+            currentItem.id === item.id && currentItem.type === "text"
+              ? {
+                  ...currentItem,
+                  fontSize: nextFontSize,
+                }
+              : currentItem
+          )
+        );
+      });
     };
 
     startDesktopResize(event, resize);

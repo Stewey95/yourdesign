@@ -71,6 +71,7 @@ type CanvasItemProps =
 
 export default function CanvasItem(props: CanvasItemProps) {
   const { item } = props;
+  const selected = "selected" in props && props.selected;
   const textBoxWidth = item.type === "text" ? getTextBoxWidth(item) : undefined;
 
   return (
@@ -129,6 +130,7 @@ export default function CanvasItem(props: CanvasItemProps) {
         <CanvasTextItem
           item={item}
           selected={false}
+          selectionActive={selected}
           editing={props.editing && !item.locked}
           mobileLayout={props.mobileLayout}
           displayScale={props.displayScale}

@@ -30,6 +30,9 @@ async function freshCanvas(page: Page) {
 
 async function openPanel(page: Page, name: string) {
   await page.getByRole("button", { name, exact: true }).first().click();
+  await expect(
+    page.locator(`[data-sidebar-panel="${name.toLowerCase()}"]`)
+  ).toBeVisible();
 }
 
 async function addText(page: Page, value: string) {

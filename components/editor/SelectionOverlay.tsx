@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState, type RefObject } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import CornerResizeHandles from "./CornerResizeHandles";
 import type {
   DesignItem,
@@ -36,44 +36,53 @@ export default function SelectionOverlay({
   onTextResizeStart,
 }: SelectionOverlayProps) {
   const [textSize, setTextSize] = useState<Size | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
-    if (!item || item.type !== "text") {
-      return;
-    }
+    if (!item || item.type !== "text") return;
 
     const textItem = canvasRef.current?.querySelector<HTMLElement>(
       `[data-canvas-item-id="${item.id}"]`
     );
-
     if (!textItem) return;
 
+    let active = true;
     const measure = () => {
       const width = textItem.offsetWidth;
       const height = textItem.offsetHeight;
+      if (!active || width <= 0 || height <= 0) return;
 
-      if (width > 0 && height > 0) {
-        setTextSize({ width, height });
+      // React state is intentionally not the paint-critical part of the
+      // update. Safari can defer the state render while it is processing a
+      // pointermove, so keep the existing overlay element in lockstep with
+      // the measured text box before the browser paints that frame.
+      const overlay = overlayRef.current;
+      if (overlay) {
+        overlay.style.width = `${width}px`;
+        overlay.style.height = `${height}px`;
       }
+
+      queueMicrotask(() => {
+        if (active) setTextSize({ width, height });
+      });
+
     };
 
-    const frame = requestAnimationFrame(measure);
+    // The text's intrinsic box changes with every font-size update. Force
+    // that measurement in the layout phase rather than waiting a frame.
+    measure();
     const observer = new ResizeObserver(measure);
     observer.observe(textItem);
 
     return () => {
-      cancelAnimationFrame(frame);
+      active = false;
       observer.disconnect();
     };
   }, [canvasRef, item]);
 
   if (!item || item.hidden) return null;
 
-  const size =
-    item.type === "text"
-      ? textSize
-      : item.size;
-
+  const size = item.type === "text" ? textSize : item.size;
   if (!size) return null;
 
   const startResize = (
@@ -90,6 +99,7 @@ export default function SelectionOverlay({
 
   return (
     <div
+      ref={overlayRef}
       data-selection-overlay={item.id}
       className="pointer-events-none absolute z-[70]"
       style={{

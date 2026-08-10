@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import CornerResizeHandles from "./CornerResizeHandles";
 import type { ResizeCorner, TextDesignItem } from "./editor.types";
 import { getFontOption } from "./fonts/font.catalog";
@@ -16,6 +16,7 @@ export type TextResizeCorner = ResizeCorner;
 type CanvasTextItemProps = {
   item: TextDesignItem;
   selected: boolean;
+  selectionActive: boolean;
   editing: boolean;
   mobileLayout: boolean;
   displayScale: number;
@@ -44,6 +45,7 @@ type CanvasTextItemProps = {
 export default function CanvasTextItem({
   item,
   selected,
+  selectionActive,
   editing,
   mobileLayout,
   displayScale,
@@ -57,10 +59,27 @@ export default function CanvasTextItem({
   onResizeStart,
 }: CanvasTextItemProps) {
   const focusScrollCleanupRef = useRef<(() => void) | null>(null);
+  const textRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     ensureGoogleFontLoaded(getFontOption(item.fontFamily));
   }, [item.fontFamily]);
+
+  useLayoutEffect(() => {
+    if (!selectionActive) return;
+
+    const textRoot = textRootRef.current;
+    const overlay = document.querySelector<HTMLElement>(
+      `[data-selection-overlay="${item.id}"]`
+    );
+    if (!textRoot || !overlay) return;
+
+    // This renderer receives the same font-size commit that changes the
+    // intrinsic text box. Write the selection geometry here so Safari never
+    // has to wait for a sibling observer to catch up during a pointer drag.
+    overlay.style.width = `${textRoot.offsetWidth}px`;
+    overlay.style.height = `${textRoot.offsetHeight}px`;
+  }, [item.fontSize, item.id, item.value, selectionActive, textBoxWidth]);
 
   const initialiseEditingTextarea = useCallback(
     (textarea: HTMLTextAreaElement | null) => {
@@ -164,12 +183,13 @@ export default function CanvasTextItem({
 
   return (
     <div
+      ref={textRootRef}
       className="relative inline-grid"
       style={textBoxStyle}
     >
         <span
           aria-hidden="true"
-          className={`invisible block min-h-[1.2em] whitespace-pre-wrap text-center font-bold ${
+          className={`col-start-1 row-start-1 invisible block min-h-[1.2em] whitespace-pre-wrap text-center font-bold ${
             boundedWidth ? "w-full [overflow-wrap:anywhere]" : "w-fit"
           }`}
           style={{
@@ -274,7 +294,7 @@ onValueChange(item.id, value);
                 // The canvas still receives the bubbling pointer sequence.
               }
             }}
-            className={`absolute inset-0 cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none ${
+            className={`col-start-1 row-start-1 cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none ${
               boundedWidth ? "[overflow-wrap:anywhere]" : ""
             }`}
             style={{
