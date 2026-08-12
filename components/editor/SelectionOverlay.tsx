@@ -62,10 +62,11 @@ export default function SelectionOverlay({
         overlay.style.height = `${height}px`;
       }
 
-      queueMicrotask(() => {
-        if (active) setTextSize({ width, height });
-      });
-
+      setTextSize((currentSize) =>
+        currentSize?.width === width && currentSize.height === height
+          ? currentSize
+          : { width, height }
+      );
     };
 
     // The text's intrinsic box changes with every font-size update. Force

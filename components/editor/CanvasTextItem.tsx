@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type CSSProperties,
+} from "react";
 import CornerResizeHandles from "./CornerResizeHandles";
 import type { ResizeCorner, TextDesignItem } from "./editor.types";
 import { getFontOption } from "./fonts/font.catalog";
@@ -71,6 +77,9 @@ export default function CanvasTextItem({
     if (!selectionActive) return;
 
     const textRoot = textRootRef.current;
+    const textDisplay = textRoot?.querySelector<HTMLElement>(
+      `[data-canvas-text-display="${item.id}"]`
+    );
     const overlay = document.querySelector<HTMLElement>(
       `[data-selection-overlay="${item.id}"]`
     );
@@ -79,8 +88,14 @@ export default function CanvasTextItem({
     // This renderer receives the same font-size commit that changes the
     // intrinsic text box. Write the selection geometry here so Safari never
     // has to wait for a sibling observer to catch up during a pointer drag.
-    overlay.style.width = `${textRoot.offsetWidth}px`;
-    overlay.style.height = `${textRoot.offsetHeight}px`;
+    const width = textRoot.offsetWidth;
+    const height = Math.max(
+      textRoot.offsetHeight,
+      textDisplay?.scrollHeight ?? 0
+    );
+
+    overlay.style.width = `${width}px`;
+    overlay.style.height = `${height}px`;
   }, [
     freeformTextMaxWidth,
     item.fontSize,
@@ -188,18 +203,26 @@ export default function CanvasTextItem({
     ? `${item.value}\u200b`
     : item.value || "Type here";
   const boundedWidth = getTextBoxWidth({ textBoxWidth });
-  const textBoxStyle = boundedWidth
-    ? { width: boundedWidth }
-    : { maxWidth: freeformTextMaxWidth };
+  const textBoxStyle = {
+    width: boundedWidth
+      ? `var(--text-resize-preview-width, ${boundedWidth}px)`
+      : "var(--text-resize-preview-width, auto)",
+    maxWidth:
+      boundedWidth === undefined && freeformTextMaxWidth !== undefined
+        ? `var(--text-resize-preview-max-width, ${freeformTextMaxWidth}px)`
+        : undefined,
+  } satisfies CSSProperties;
   const wrapsAtBoundary =
     boundedWidth !== undefined || freeformTextMaxWidth !== undefined;
 
   return (
     <div
       ref={textRootRef}
+      data-canvas-text-root={item.id}
       className="relative inline-grid"
       style={textBoxStyle}
     >
+      {editing && (
         <span
           aria-hidden="true"
           className={`col-start-1 row-start-1 invisible block min-h-[1.2em] whitespace-pre-wrap text-center font-bold ${
@@ -216,6 +239,7 @@ export default function CanvasTextItem({
         >
           {measurementValue}
         </span>
+      )}
 
         {editing ? (
           <textarea

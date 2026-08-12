@@ -101,6 +101,8 @@ async function sampleResizeFrame(page: Page, itemId: string) {
       glyphCount: glyphRects.length,
       displayWidth: displayRect.width,
       displayHeight: displayRect.height,
+      displayScrollHeight: display.scrollHeight,
+      displayClientHeight: display.clientHeight,
       itemWidth: itemRect.width,
       itemHeight: itemRect.height,
       overlayWidth: overlayRect.width,
@@ -132,18 +134,19 @@ function assertRenderedFrame(
 ) {
   expect(frame.text).not.toBe("");
   expect(frame.glyphCount).toBeGreaterThan(0);
-  expect(frame.lineCount).toBe(startingFrame.lineCount);
+  expect(frame.lineCount, JSON.stringify({ frame, startingFrame })).toBe(
+    startingFrame.lineCount
+  );
   expect(frame.fontSize).toBeCloseTo(startingFrame.fontSize, 3);
   expect(frame.previewActive).toBe(true);
   expect(frame.displayWidth).toBeGreaterThan(0);
   expect(frame.displayHeight).toBeGreaterThan(0);
   expect(frame.glyphsFit, JSON.stringify(frame)).toBe(true);
   expect(frame.wrapperDoesNotClip, JSON.stringify(frame)).toBe(true);
-  // The invisible intrinsic measurement can be slightly taller than its
-  // visible grid cell when a browser resolves an overflow-wrap opportunity.
-  // What must stay locked during the gesture is the complete wrapper and its
-  // selection overlay, while both visible and measured geometry scale by the
-  // exact same ratio from their respective starting boxes.
+  // Sub-pixel grid/line-height rounding can leave the wrapper and visible
+  // display slightly different. The complete wrapper and selection overlay
+  // must nevertheless stay locked, with all rendered geometry scaling by the
+  // same ratio from its respective starting box.
   const overlayRoundingTolerance = 1.5 * frame.previewScale;
   expect(
     Math.abs(frame.overlayWidth - frame.itemWidth),
@@ -187,6 +190,66 @@ function assertRenderedFrame(
   }
 }
 
+function assertCommittedFrame(
+  frame: ResizeFrame,
+  startingFrame: ResizeFrame,
+  direction: "grow" | "shrink"
+) {
+  expect(frame.previewActive).toBe(false);
+  expect(frame.text).toBe(startingFrame.text);
+  expect(frame.glyphCount).toBe(startingFrame.glyphCount);
+  expect(frame.lineCount).toBeGreaterThan(0);
+  expect(frame.glyphsFit, JSON.stringify(frame)).toBe(true);
+  expect(frame.wrapperDoesNotClip, JSON.stringify(frame)).toBe(true);
+  expect(frame.displayScrollHeight).toBeLessThanOrEqual(
+    frame.displayClientHeight + 1
+  );
+  expect(
+    Math.abs(frame.overlayWidth - frame.itemWidth),
+    JSON.stringify(frame)
+  ).toBeLessThan(2);
+  expect(
+    Math.abs(frame.overlayHeight - frame.itemHeight),
+    JSON.stringify(frame)
+  ).toBeLessThan(2);
+  expect(frame.handleDeltaX, JSON.stringify(frame)).toBeLessThan(2);
+  expect(frame.handleDeltaY, JSON.stringify(frame)).toBeLessThan(2);
+
+  if (direction === "grow") {
+    expect(frame.fontSize).toBeGreaterThan(startingFrame.fontSize);
+  } else {
+    expect(frame.fontSize).toBeLessThan(startingFrame.fontSize);
+  }
+}
+
+function expectGeometryUnchanged(
+  committed: ResizeFrame,
+  reselected: ResizeFrame
+) {
+  expect(reselected.text).toBe(committed.text);
+  expect(reselected.lineCount).toBe(committed.lineCount);
+  expect(reselected.fontSize).toBeCloseTo(committed.fontSize, 3);
+  expect(reselected.glyphsFit, JSON.stringify(reselected)).toBe(true);
+  expect(
+    Math.abs(reselected.displayWidth - committed.displayWidth)
+  ).toBeLessThan(1);
+  expect(
+    Math.abs(reselected.displayHeight - committed.displayHeight)
+  ).toBeLessThan(1);
+  expect(Math.abs(reselected.itemWidth - committed.itemWidth)).toBeLessThan(1);
+  expect(Math.abs(reselected.itemHeight - committed.itemHeight)).toBeLessThan(
+    1
+  );
+}
+
+function getTextLayerLabel(value: string | null) {
+  const words = (value ?? "").trim().split(/\s+/).filter(Boolean);
+  const name = words.length === 0 ? "Text" : words.slice(0, 4).join(" ");
+  const displayName = name.length > 30 ? `${name.slice(0, 29)}…` : name;
+
+  return `Select layer ${displayName}`;
+}
+
 async function resizeAndSample(
   page: Page,
   itemId: string,
@@ -205,32 +268,47 @@ async function resizeAndSample(
   await page.mouse.down();
 
   const frames: ResizeFrame[] = [];
-  for (let step = 1; step <= 6; step += 1) {
-    await page.mouse.move(startX + sign * step * 7, startY + sign * step * 7);
+  for (let step = 1; step <= 12; step += 1) {
+    await page.mouse.move(
+      startX + sign * step * 3.5,
+      startY + sign * step * 3.5
+    );
     await nextPaint(page);
     const frame = await sampleResizeFrame(page, itemId);
     if (frame) frames.push(frame);
   }
 
-  expect(frames).toHaveLength(6);
+  expect(frames).toHaveLength(12);
   for (const frame of frames) {
     assertRenderedFrame(frame, before, direction);
   }
 
   await page.mouse.up();
-  await expect
-    .poll(async () => (await sampleResizeFrame(page, itemId))?.previewActive)
-    .toBe(false);
-  const after = await sampleResizeFrame(page, itemId);
-  if (!after) throw new Error("Committed text resize frame was not rendered.");
-  expect(after.text).toBe(before.text);
-  expect(after.glyphsFit, JSON.stringify(after)).toBe(true);
-  expect(after.wrapperDoesNotClip, JSON.stringify(after)).toBe(true);
-  if (direction === "grow") {
-    expect(after.fontSize).toBeGreaterThan(before.fontSize);
-  } else {
-    expect(after.fontSize).toBeLessThan(before.fontSize);
+  const immediate = await sampleResizeFrame(page, itemId);
+  if (!immediate) {
+    throw new Error("Immediate committed text frame was not rendered.");
   }
+  assertCommittedFrame(immediate, before, direction);
+
+  await nextPaint(page);
+  const committed = await sampleResizeFrame(page, itemId);
+  if (!committed) throw new Error("Stable committed text frame was not rendered.");
+  assertCommittedFrame(committed, before, direction);
+  expectGeometryUnchanged(immediate, committed);
+
+  await page
+    .locator(".editor-canvas-surface")
+    .click({ position: { x: 8, y: 8 } });
+  await expect(page.locator(`[data-selection-overlay="${itemId}"]`)).toHaveCount(
+    0
+  );
+  await page
+    .getByRole("button", { name: getTextLayerLabel(committed.text), exact: true })
+    .click();
+  await nextPaint(page);
+  const reselected = await sampleResizeFrame(page, itemId);
+  if (!reselected) throw new Error("Reselected text frame was not rendered.");
+  expectGeometryUnchanged(committed, reselected);
 }
 
 async function assertLiveResize(page: Page, item: Locator) {

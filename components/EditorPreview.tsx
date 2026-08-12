@@ -2506,13 +2506,15 @@ if (direction === "back") {
   const startDesktopResize = (
     event: React.PointerEvent<HTMLDivElement>,
     onResize: (event: PointerEvent) => void,
-    onComplete?: () => void
+    onComplete?: () => void,
+    onStart?: () => void
   ) => {
     event.preventDefault();
     event.stopPropagation();
     activeResizeCleanupRef.current?.();
     commitHistoryTransaction();
     beginHistoryTransaction();
+    onStart?.();
 
     const handle = event.currentTarget;
     const pointerId = event.pointerId;
@@ -2699,7 +2701,37 @@ if (direction === "back") {
     const selectionOverlay = canvasRef.current?.querySelector<HTMLElement>(
       `[data-selection-overlay="${item.id}"]`
     );
+    const canvasTextRoot = canvasItem?.querySelector<HTMLElement>(
+      `[data-canvas-text-root="${item.id}"]`
+    );
+    const previewLayout = canvasItem
+      ? { overflow: canvasItem.style.overflow }
+      : null;
+    const measuredTextWidth = canvasTextRoot
+      ? Number.parseFloat(getComputedStyle(canvasTextRoot).width)
+      : Number.NaN;
+    const frozenTextWidth = Number.isFinite(measuredTextWidth)
+      ? measuredTextWidth
+      : null;
     let finalFontSize = startFontSize;
+
+    const freezePreviewLayout = () => {
+      if (!canvasItem || frozenTextWidth === null) return;
+
+      // Freeze the exact authored line box for the duration of the gesture.
+      // The non-editing display is the sole intrinsic layout source, and the
+      // explicit outer dimensions prevent WebKit from re-resolving
+      // max-content/boundary sizing while its compositor scale changes.
+      canvasItem.style.setProperty(
+        "--text-resize-preview-width",
+        `${frozenTextWidth}px`
+      );
+      canvasItem.style.setProperty(
+        "--text-resize-preview-max-width",
+        "none"
+      );
+      canvasItem.style.overflow = "visible";
+    };
 
     const applyPreviewScale = (fontSize: number) => {
       const scale = fontSize / startFontSize;
@@ -2712,6 +2744,18 @@ if (direction === "back") {
         );
         element.dataset.textResizePreview = "active";
       }
+
+      if (canvasItem && frozenTextWidth !== null) {
+        canvasItem.style.setProperty(
+          "--text-resize-preview-width",
+          `${frozenTextWidth}px`
+        );
+        canvasItem.style.setProperty(
+          "--text-resize-preview-max-width",
+          "none"
+        );
+        canvasItem.style.overflow = "visible";
+      }
     };
 
     const clearPreviewScale = () => {
@@ -2720,6 +2764,13 @@ if (direction === "back") {
         element.style.removeProperty("--text-resize-preview-scale");
         delete element.dataset.textResizePreview;
       }
+    };
+
+    const restorePreviewLayout = () => {
+      if (!canvasItem || !previewLayout) return;
+      canvasItem.style.removeProperty("--text-resize-preview-width");
+      canvasItem.style.removeProperty("--text-resize-preview-max-width");
+      canvasItem.style.overflow = previewLayout.overflow;
     };
 
     const resize = (moveEvent: PointerEvent) => {
@@ -2755,10 +2806,15 @@ if (direction === "back") {
     };
 
     const commitTextResize = () => {
+      // Remove the promoted preview layer before committing the new font
+      // metrics. Both mutations happen in the same pointerup task, so there
+      // is no intermediate paint, and Safari cannot retain a raster surface
+      // sized for the old intrinsic box after the final layout grows.
+      clearPreviewScale();
+      restorePreviewLayout();
+
       // Reconcile font size and the shared canvas-boundary layout only once,
-      // at the gesture boundary. flushSync ensures the committed layout is
-      // present before the transient transform is removed, avoiding a frame
-      // where the text snaps back to its original size.
+      // at the gesture boundary.
       flushSync(() => {
         updateItems((currentItems) =>
           currentItems.map((currentItem) =>
@@ -2771,10 +2827,47 @@ if (direction === "back") {
           )
         );
       });
-      clearPreviewScale();
+
+      const committedCanvasItem = canvasRef.current?.querySelector<HTMLElement>(
+        `[data-canvas-item-id="${item.id}"]`
+      );
+      const committedTextRoot = committedCanvasItem?.querySelector<HTMLElement>(
+        `[data-canvas-text-root="${item.id}"]`
+      );
+      const committedDisplay = committedCanvasItem?.querySelector<HTMLElement>(
+        `[data-canvas-text-display="${item.id}"]`
+      );
+      const committedOverlay = canvasRef.current?.querySelector<HTMLElement>(
+        `[data-selection-overlay="${item.id}"]`
+      );
+
+      if (committedCanvasItem && committedTextRoot && committedDisplay) {
+        // Establish the complete final intrinsic box synchronously before
+        // this pointerup task yields to paint. Reading both the root and the
+        // visible display also guarantees that every final line participates
+        // in WebKit's layout invalidation.
+        const width = committedTextRoot.offsetWidth;
+        const height = Math.max(
+          committedTextRoot.offsetHeight,
+          committedDisplay.scrollHeight
+        );
+
+        if (committedOverlay) {
+          committedOverlay.style.width = `${width}px`;
+          committedOverlay.style.height = `${height}px`;
+        }
+
+        committedDisplay.getClientRects();
+        committedCanvasItem.getBoundingClientRect();
+      }
     };
 
-    startDesktopResize(event, resize, commitTextResize);
+    startDesktopResize(
+      event,
+      resize,
+      commitTextResize,
+      freezePreviewLayout
+    );
   };
 
   const changeCanvasViewMode = (mode: CanvasViewMode) => {
