@@ -107,12 +107,18 @@ export default function SelectionOverlay({
         top: item.position.y,
         width: size.width,
         height: size.height,
-        transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg)`,
+        transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg) scale(var(--text-resize-preview-scale, 1))`,
+        transformOrigin: "center",
         WebkitBackfaceVisibility: "hidden",
         backfaceVisibility: "hidden",
       }}
     >
-      <div className="absolute inset-0 ring-2 ring-blue-500" />
+      {(desktopLayout || item.type !== "text") && (
+        <div
+          data-selection-ring
+          className="absolute inset-0 ring-2 ring-blue-500"
+        />
+      )}
       {desktopLayout && !item.locked && (
         <CornerResizeHandles
           displayScale={displayScale}

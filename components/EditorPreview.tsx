@@ -2505,7 +2505,8 @@ if (direction === "back") {
 
   const startDesktopResize = (
     event: React.PointerEvent<HTMLDivElement>,
-    onResize: (event: PointerEvent) => void
+    onResize: (event: PointerEvent) => void,
+    onComplete?: () => void
   ) => {
     event.preventDefault();
     event.stopPropagation();
@@ -2557,6 +2558,7 @@ if (direction === "back") {
       }
 
       flushResize();
+      onComplete?.();
       commitHistoryTransaction();
 
       handle.removeEventListener("pointermove", scheduleResize);
@@ -2691,6 +2693,34 @@ if (direction === "back") {
       Number.isFinite(measuredDisplayScale) && measuredDisplayScale > 0
         ? measuredDisplayScale
         : 1;
+    const canvasItem = canvasRef.current?.querySelector<HTMLElement>(
+      `[data-canvas-item-id="${item.id}"]`
+    );
+    const selectionOverlay = canvasRef.current?.querySelector<HTMLElement>(
+      `[data-selection-overlay="${item.id}"]`
+    );
+    let finalFontSize = startFontSize;
+
+    const applyPreviewScale = (fontSize: number) => {
+      const scale = fontSize / startFontSize;
+
+      for (const element of [canvasItem, selectionOverlay]) {
+        if (!element) continue;
+        element.style.setProperty(
+          "--text-resize-preview-scale",
+          String(scale)
+        );
+        element.dataset.textResizePreview = "active";
+      }
+    };
+
+    const clearPreviewScale = () => {
+      for (const element of [canvasItem, selectionOverlay]) {
+        if (!element) continue;
+        element.style.removeProperty("--text-resize-preview-scale");
+        delete element.dataset.textResizePreview;
+      }
+    };
 
     const resize = (moveEvent: PointerEvent) => {
       const screenHorizontalChange =
@@ -2716,24 +2746,35 @@ if (direction === "back") {
         startFontSize * requestedScale
       );
 
-      // This callback already runs at most once per animation frame. Commit
-      // the text size in that frame so Safari lays out the intrinsic text box
-      // and its selection overlay together instead of painting a stale box.
+      // Keep the starting line layout stable during the gesture and scale
+      // the complete rendered object. Re-laying out fontSize on every frame
+      // causes max-content/boundary wrapping to feed back into the next
+      // intrinsic measurement and can clip glyphs in both WebKit and Chrome.
+      finalFontSize = nextFontSize;
+      applyPreviewScale(nextFontSize);
+    };
+
+    const commitTextResize = () => {
+      // Reconcile font size and the shared canvas-boundary layout only once,
+      // at the gesture boundary. flushSync ensures the committed layout is
+      // present before the transient transform is removed, avoiding a frame
+      // where the text snaps back to its original size.
       flushSync(() => {
         updateItems((currentItems) =>
           currentItems.map((currentItem) =>
             currentItem.id === item.id && currentItem.type === "text"
               ? {
                   ...currentItem,
-                  fontSize: nextFontSize,
+                  fontSize: finalFontSize,
                 }
               : currentItem
           )
         );
       });
+      clearPreviewScale();
     };
 
-    startDesktopResize(event, resize);
+    startDesktopResize(event, resize, commitTextResize);
   };
 
   const changeCanvasViewMode = (mode: CanvasViewMode) => {

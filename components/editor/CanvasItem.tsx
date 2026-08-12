@@ -105,7 +105,8 @@ export default function CanvasItem(props: CanvasItemProps) {
           item.type === "shape" || item.type === "element"
             ? item.size.height
             : undefined,
-        transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg)`,
+        transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg) scale(var(--text-resize-preview-scale, 1))`,
+        transformOrigin: "center",
         WebkitBackfaceVisibility: "hidden",
         backfaceVisibility: "hidden",
         touchAction: "none",
