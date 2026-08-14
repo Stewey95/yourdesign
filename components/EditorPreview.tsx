@@ -2684,6 +2684,7 @@ if (direction === "back") {
     const startX = event.clientX;
     const startY = event.clientY;
     const startFontSize = item.fontSize;
+    const startPosition = { ...item.position };
     const horizontalDirection = corner.endsWith("right") ? 1 : -1;
     const verticalDirection = corner.startsWith("bottom") ? 1 : -1;
     const canvasBounds = canvasRef.current
@@ -2714,6 +2715,14 @@ if (direction === "back") {
     const frozenTextWidth = Number.isFinite(measuredTextWidth)
       ? measuredTextWidth
       : null;
+    const startTextWidth = Math.max(
+      1,
+      canvasTextRoot?.offsetWidth ?? canvasItem?.offsetWidth ?? 1
+    );
+    const startTextHeight = Math.max(
+      1,
+      canvasTextRoot?.offsetHeight ?? canvasItem?.offsetHeight ?? 1
+    );
     let finalFontSize = startFontSize;
 
     const freezePreviewLayout = () => {
@@ -2788,11 +2797,21 @@ if (direction === "back") {
         (-screenHorizontalChange * Math.sin(rotation) +
           screenVerticalChange * Math.cos(rotation)) *
         verticalDirection;
-      const proportionalChange =
-        (horizontalChange + verticalChange) / 2;
+      // Project pointer travel onto the selected box's starting corner
+      // vector. Font size is the committed scalar, but it is not the box's
+      // geometric radius: dividing pointer travel by fontSize made a small
+      // drag explosively scale wide/multi-line text, then appear to jump when
+      // the real boundary-wrapped box replaced that preview on pointerup.
+      const sizeVectorLengthSquared =
+        startTextWidth * startTextWidth +
+        startTextHeight * startTextHeight;
       const requestedScale = Math.max(
         Number.EPSILON,
-        1 + proportionalChange / startFontSize
+        1 +
+          (2 *
+            (horizontalChange * startTextWidth +
+              verticalChange * startTextHeight)) /
+            sizeVectorLengthSquared
       );
       const nextFontSize = clampFontSize(
         startFontSize * requestedScale
@@ -2823,6 +2842,10 @@ if (direction === "back") {
               ? {
                   ...currentItem,
                   fontSize: finalFontSize,
+                  // A resize owns size only. Reassert the pointerdown anchor
+                  // so no pending drag/observer work can feed measured bounds
+                  // back into the persisted logical position.
+                  position: startPosition,
                 }
               : currentItem
           )

@@ -27,6 +27,7 @@ This backlog contains structured UX and technical polish items derived from code
 - 🟡 **Font Catalog Virtualization**: Implement windowing / virtualization in `FontPicker.tsx` to maintain 60fps scrolling performance when scaling the Google Fonts catalog to hundreds of font families.
 - 🟢 **Recent & Favorite Fonts**: Store the user's recently selected font families at the top of `FontPicker.tsx` for quick access.
 - 🟢 **Text Selection Bounding Rect Polish**: Further refine text container auto-height recalculation during fast backspacing in mobile web viewports.
+- ✅ **Text Resize Geometry Invariants**: Desktop corner resize now derives scale from the starting rendered box's corner vector, keeps the persisted centre anchor immutable, holds free-form boundary width stable while font size grows, and keeps the text root/selection overlay on the same baseline-free geometry through the final commit.
 - 🟢 **Text Box Mode Control**: Consider a lightweight inspector indicator/reset action for an explicit bounded `textBoxWidth`, so creators can intentionally return a resized text box to free-form width without changing the current compact toolbar.
 - 🔹 **Text Alignment Controls**: Add Left, Centre, and Right controls to the inspector and mobile contextual toolbar using the persisted optional `textAlign` field. The control changes line alignment inside the text area's current runtime/persisted width only; it must never move or centre the object itself. New free-form and legacy text currently resolve to Centre. Do not add justify.
 

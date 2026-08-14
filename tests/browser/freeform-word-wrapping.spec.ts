@@ -62,6 +62,7 @@ async function addText(page: Page, value: string) {
 
 async function sampleWordLayout(item: Locator) {
   return item.evaluate((element) => {
+    const htmlElement = element as HTMLElement;
     const display = element.querySelector<HTMLElement>(
       "[data-canvas-text-display]"
     );
@@ -70,9 +71,18 @@ async function sampleWordLayout(item: Locator) {
     );
     const canvas = element.closest<HTMLElement>(".editor-canvas-surface");
     if (!display || !canvas) return null;
+    const interactionBounds = canvas.parentElement?.hasAttribute(
+      "data-canvas-viewport"
+    )
+      ? canvas.parentElement.getBoundingClientRect()
+      : canvas.getBoundingClientRect();
 
     const displayRect = display.getBoundingClientRect();
     const itemRect = element.getBoundingClientRect();
+    const root = element.querySelector<HTMLElement>(
+      "[data-canvas-text-root]"
+    );
+    const rootRect = root?.getBoundingClientRect();
     const overlayRect = overlay?.getBoundingClientRect();
     const rows = new Map<
       number,
@@ -152,7 +162,34 @@ async function sampleWordLayout(item: Locator) {
       displayCentre: displayRect.left + displayRect.width / 2,
       displayWidth: displayRect.width,
       itemWidth: itemRect.width,
+      itemLogicalWidth: htmlElement.offsetWidth,
+      itemLogicalHeight: htmlElement.offsetHeight,
+      rootLogicalWidth: root?.offsetWidth ?? 0,
+      rootLogicalHeight: root?.offsetHeight ?? 0,
+      logicalX: Number.parseFloat(htmlElement.style.left),
+      logicalY: Number.parseFloat(htmlElement.style.top),
+      availableLogicalWidth: Number.parseFloat(
+        getComputedStyle(element).maxWidth
+      ),
+      itemCentre: {
+        x: itemRect.left + itemRect.width / 2,
+        y: itemRect.top + itemRect.height / 2,
+      },
+      rootCentre: rootRect
+        ? {
+            x: rootRect.left + rootRect.width / 2,
+            y: rootRect.top + rootRect.height / 2,
+          }
+        : null,
+      overlayCentre: overlayRect
+        ? {
+            x: overlayRect.left + overlayRect.width / 2,
+            y: overlayRect.top + overlayRect.height / 2,
+          }
+        : null,
       canvasWidth: canvas.getBoundingClientRect().width,
+      canvasLogicalWidth: canvas.offsetWidth,
+      displayScale: interactionBounds.width / canvas.offsetWidth,
       overlayWidth: overlayRect?.width ?? null,
       overlayHeight: overlayRect?.height ?? null,
       itemHeight: itemRect.height,
@@ -161,6 +198,11 @@ async function sampleWordLayout(item: Locator) {
       glyphsFit,
       wordsRemainWhole,
       previewActive: element.dataset.textResizePreview === "active",
+      previewScale: Number.parseFloat(
+        htmlElement.style.getPropertyValue(
+          "--text-resize-preview-scale"
+        ) || "1"
+      ),
     };
   });
 }
@@ -191,10 +233,18 @@ function expectGreedyWholeWordWrap(
 async function resizeWithLiveChecks(
   page: Page,
   item: Locator,
-  delta: number
+  delta: number,
+  rotation = 0,
+  verifyWholeWords = true,
+  verifyGlyphContainment = true
 ) {
   const before = await sampleWordLayout(item);
   if (!before) throw new Error("Text layout was not rendered.");
+  const startPosition = { x: before.logicalX, y: before.logicalY };
+  const startAvailableWidth = before.availableLogicalWidth;
+  const sizeVectorLengthSquared =
+    before.rootLogicalWidth * before.rootLogicalWidth +
+    before.rootLogicalHeight * before.rootLogicalHeight;
   const handle = page.getByRole("button", { name: "Resize from bottom right" });
   const box = await handle.boundingBox();
   if (!box) throw new Error("Text resize handle was not rendered.");
@@ -202,6 +252,7 @@ async function resizeWithLiveChecks(
   const startY = box.y + box.height / 2;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
+  let previousPreviewWidth = before.itemWidth;
 
   for (let step = 1; step <= 12; step += 1) {
     await page.mouse.move(
@@ -215,8 +266,49 @@ async function resizeWithLiveChecks(
       before.lines.map((line) => line.words)
     );
     expect(frame.previewActive).toBe(true);
-    expect(frame.glyphsFit).toBe(true);
-    expect(frame.wordsRemainWhole).toBe(true);
+    const screenPointerChange =
+      ((delta * step) / 12) / before.displayScale;
+    const radians = (rotation * Math.PI) / 180;
+    const horizontalChange =
+      screenPointerChange * Math.cos(radians) +
+      screenPointerChange * Math.sin(radians);
+    const verticalChange =
+      -screenPointerChange * Math.sin(radians) +
+      screenPointerChange * Math.cos(radians);
+    const expectedScale = Math.max(
+      Number.EPSILON,
+      1 +
+        (2 *
+          (horizontalChange * before.rootLogicalWidth +
+            verticalChange * before.rootLogicalHeight)) /
+          sizeVectorLengthSquared
+    );
+    expect(frame.previewScale).toBeCloseTo(expectedScale, 3);
+    expect(frame.logicalX).toBeCloseTo(startPosition.x, 6);
+    expect(frame.logicalY).toBeCloseTo(startPosition.y, 6);
+    if (Number.isFinite(startAvailableWidth)) {
+      expect(frame.availableLogicalWidth).toBeCloseTo(startAvailableWidth, 4);
+    }
+    if (verifyGlyphContainment) {
+      expect(frame.glyphsFit).toBe(true);
+    }
+    if (verifyWholeWords) {
+      expect(frame.wordsRemainWhole).toBe(true);
+    }
+    if (delta >= 0) {
+      expect(frame.itemWidth).toBeGreaterThanOrEqual(
+        previousPreviewWidth - 0.5
+      );
+    } else {
+      expect(frame.itemWidth).toBeLessThanOrEqual(
+        previousPreviewWidth + 0.5
+      );
+    }
+    previousPreviewWidth = frame.itemWidth;
+    expect(Math.abs((frame.rootCentre?.x ?? 0) - frame.itemCentre.x)).toBeLessThan(0.75);
+    expect(Math.abs((frame.rootCentre?.y ?? 0) - frame.itemCentre.y)).toBeLessThan(0.75);
+    expect(Math.abs((frame.overlayCentre?.x ?? 0) - frame.itemCentre.x)).toBeLessThan(0.75);
+    expect(Math.abs((frame.overlayCentre?.y ?? 0) - frame.itemCentre.y)).toBeLessThan(0.75);
     expect(Math.abs(frame.itemWidth - (frame.overlayWidth ?? 0))).toBeLessThan(3);
     expect(Math.abs(frame.itemHeight - (frame.overlayHeight ?? 0))).toBeLessThan(3);
   }
@@ -227,6 +319,26 @@ async function resizeWithLiveChecks(
   if (!committed) throw new Error("Committed text layout was not rendered.");
   expect(committed.previewActive).toBe(false);
   expect(committed.text).toBe(FOUNDER_SENTENCE);
+  expect(committed.logicalX).toBeCloseTo(startPosition.x, 6);
+  expect(committed.logicalY).toBeCloseTo(startPosition.y, 6);
+  if (Number.isFinite(startAvailableWidth)) {
+    expect(committed.availableLogicalWidth).toBeCloseTo(
+      startAvailableWidth,
+      4
+    );
+  }
+  expect(
+    Math.abs((committed.rootCentre?.x ?? 0) - committed.itemCentre.x)
+  ).toBeLessThan(0.75);
+  expect(
+    Math.abs((committed.rootCentre?.y ?? 0) - committed.itemCentre.y)
+  ).toBeLessThan(0.75);
+  expect(
+    Math.abs((committed.overlayCentre?.x ?? 0) - committed.itemCentre.x)
+  ).toBeLessThan(0.75);
+  expect(
+    Math.abs((committed.overlayCentre?.y ?? 0) - committed.itemCentre.y)
+  ).toBeLessThan(0.75);
   return committed;
 }
 
@@ -326,14 +438,29 @@ test.describe("Founder free-form word wrapping", () => {
     expect(initial.lineCount).toBe(1);
     expect(initial.textAlign).toBe("center");
 
-    const grown = await resizeWithLiveChecks(page, item, 24);
+    const growthWidths = [initial.itemLogicalWidth];
+    let grown = initial;
+
+    for (let gesture = 0; gesture < 6 && grown.lineCount === 1; gesture += 1) {
+      grown = await resizeWithLiveChecks(page, item, 48);
+      growthWidths.push(grown.itemLogicalWidth);
+    }
+
+    for (let index = 1; index < growthWidths.length; index += 1) {
+      expect(growthWidths[index]).toBeGreaterThanOrEqual(
+        growthWidths[index - 1] - 1
+      );
+    }
     expect(grown.lineCount).toBeGreaterThan(initial.lineCount);
     expect(grown.lineCount).toBeLessThanOrEqual(3);
     expect(grown.displayWidth).toBeGreaterThan(grown.canvasWidth * 0.85);
     expectGreedyWholeWordWrap(grown);
     expectCentredLines(grown);
 
-    const shrunk = await resizeWithLiveChecks(page, item, -18);
+    let shrunk = grown;
+    for (let gesture = 0; gesture < 6 && shrunk.lineCount >= grown.lineCount; gesture += 1) {
+      shrunk = await resizeWithLiveChecks(page, item, -48);
+    }
     expect(shrunk.lineCount).toBeLessThan(grown.lineCount);
     expectGreedyWholeWordWrap(shrunk);
     expectCentredLines(shrunk);
@@ -356,6 +483,28 @@ test.describe("Founder free-form word wrapping", () => {
     expect(returned.lineCount).toBeLessThanOrEqual(nearRightEdge.lineCount);
     expectGreedyWholeWordWrap(returned);
     expectCentredLines(returned);
+
+    await dragText(page, item, -movement);
+    const nearLeftEdge = await sampleWordLayout(item);
+    if (!nearLeftEdge) throw new Error("Left-edge text layout was not rendered.");
+    expect(nearLeftEdge.displayWidth).toBeLessThan(returned.displayWidth);
+    expect(nearLeftEdge.availableLogicalWidth).toBeLessThan(
+      returned.availableLogicalWidth
+    );
+    await resizeWithLiveChecks(page, item, 24);
+
+    await dragText(page, item, movement);
+    const recentred = await sampleWordLayout(item);
+    if (!recentred) throw new Error("Re-centred text layout was not rendered.");
+    expect(recentred.availableLogicalWidth).toBeGreaterThan(
+      nearLeftEdge.availableLogicalWidth
+    );
+
+    await page.getByRole("button", { name: "Rotate right" }).click();
+    await page.getByRole("button", { name: "Rotate right" }).click();
+    const rotated = await sampleWordLayout(item);
+    if (!rotated) throw new Error("Rotated text layout was not rendered.");
+    await resizeWithLiveChecks(page, item, 24, 30, false, false);
   });
 
   test("alignment values persist independently from object position and match the export DOM", async ({

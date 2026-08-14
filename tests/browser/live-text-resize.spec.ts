@@ -54,15 +54,27 @@ async function sampleResizeFrame(page: Page, itemId: string) {
     const overlay = document.querySelector<HTMLElement>(
       `[data-selection-overlay="${id}"]`
     );
+    const root = item?.querySelector<HTMLElement>(
+      `[data-canvas-text-root="${id}"]`
+    );
+    const canvas = item?.closest<HTMLElement>(".editor-canvas-surface");
     const handle = document.querySelector<HTMLElement>(
       '[aria-label="Resize from bottom right"]'
     );
-    if (!item || !display || !overlay || !handle) return null;
+    if (!item || !display || !overlay || !handle || !root || !canvas) {
+      return null;
+    }
 
     const itemRect = item.getBoundingClientRect();
     const displayRect = display.getBoundingClientRect();
     const overlayRect = overlay.getBoundingClientRect();
+    const rootRect = root.getBoundingClientRect();
     const handleRect = handle.getBoundingClientRect();
+    const interactionBounds = canvas.parentElement?.hasAttribute(
+      "data-canvas-viewport"
+    )
+      ? canvas.parentElement.getBoundingClientRect()
+      : canvas.getBoundingClientRect();
     const glyphRects: DOMRect[] = [];
     const lineTops = new Set<number>();
 
@@ -105,6 +117,18 @@ async function sampleResizeFrame(page: Page, itemId: string) {
       displayClientHeight: display.clientHeight,
       itemWidth: itemRect.width,
       itemHeight: itemRect.height,
+      rootLogicalWidth: root.offsetWidth,
+      rootLogicalHeight: root.offsetHeight,
+      logicalX: Number.parseFloat(item.style.left),
+      logicalY: Number.parseFloat(item.style.top),
+      availableLogicalWidth: Number.parseFloat(itemStyle.maxWidth),
+      displayScale: interactionBounds.width / canvas.offsetWidth,
+      itemCentreX: itemRect.left + itemRect.width / 2,
+      itemCentreY: itemRect.top + itemRect.height / 2,
+      rootCentreX: rootRect.left + rootRect.width / 2,
+      rootCentreY: rootRect.top + rootRect.height / 2,
+      overlayCentreX: overlayRect.left + overlayRect.width / 2,
+      overlayCentreY: overlayRect.top + overlayRect.height / 2,
       overlayWidth: overlayRect.width,
       overlayHeight: overlayRect.height,
       previewActive: item.dataset.textResizePreview === "active",
@@ -139,6 +163,18 @@ function assertRenderedFrame(
   );
   expect(frame.fontSize).toBeCloseTo(startingFrame.fontSize, 3);
   expect(frame.previewActive).toBe(true);
+  expect(frame.logicalX).toBeCloseTo(startingFrame.logicalX, 6);
+  expect(frame.logicalY).toBeCloseTo(startingFrame.logicalY, 6);
+  if (Number.isFinite(startingFrame.availableLogicalWidth)) {
+    expect(frame.availableLogicalWidth).toBeCloseTo(
+      startingFrame.availableLogicalWidth,
+      4
+    );
+  }
+  expect(Math.abs(frame.rootCentreX - frame.itemCentreX)).toBeLessThan(0.75);
+  expect(Math.abs(frame.rootCentreY - frame.itemCentreY)).toBeLessThan(0.75);
+  expect(Math.abs(frame.overlayCentreX - frame.itemCentreX)).toBeLessThan(0.75);
+  expect(Math.abs(frame.overlayCentreY - frame.itemCentreY)).toBeLessThan(0.75);
   expect(frame.displayWidth).toBeGreaterThan(0);
   expect(frame.displayHeight).toBeGreaterThan(0);
   expect(frame.glyphsFit, JSON.stringify(frame)).toBe(true);
@@ -196,6 +232,18 @@ function assertCommittedFrame(
   direction: "grow" | "shrink"
 ) {
   expect(frame.previewActive).toBe(false);
+  expect(frame.logicalX).toBeCloseTo(startingFrame.logicalX, 6);
+  expect(frame.logicalY).toBeCloseTo(startingFrame.logicalY, 6);
+  if (Number.isFinite(startingFrame.availableLogicalWidth)) {
+    expect(frame.availableLogicalWidth).toBeCloseTo(
+      startingFrame.availableLogicalWidth,
+      4
+    );
+  }
+  expect(Math.abs(frame.rootCentreX - frame.itemCentreX)).toBeLessThan(0.75);
+  expect(Math.abs(frame.rootCentreY - frame.itemCentreY)).toBeLessThan(0.75);
+  expect(Math.abs(frame.overlayCentreX - frame.itemCentreX)).toBeLessThan(0.75);
+  expect(Math.abs(frame.overlayCentreY - frame.itemCentreY)).toBeLessThan(0.75);
   expect(frame.text).toBe(startingFrame.text);
   expect(frame.glyphCount).toBe(startingFrame.glyphCount);
   expect(frame.lineCount).toBeGreaterThan(0);
@@ -279,8 +327,22 @@ async function resizeAndSample(
   }
 
   expect(frames).toHaveLength(12);
-  for (const frame of frames) {
+  const sizeVectorLengthSquared =
+    before.rootLogicalWidth * before.rootLogicalWidth +
+    before.rootLogicalHeight * before.rootLogicalHeight;
+  for (const [index, frame] of frames.entries()) {
     assertRenderedFrame(frame, before, direction);
+    const logicalPointerChange =
+      (sign * (index + 1) * 3.5) / before.displayScale;
+    const expectedScale = Math.max(
+      Number.EPSILON,
+      1 +
+        (2 *
+          (logicalPointerChange * before.rootLogicalWidth +
+            logicalPointerChange * before.rootLogicalHeight)) /
+          sizeVectorLengthSquared
+    );
+    expect(Math.abs(frame.previewScale - expectedScale)).toBeLessThan(0.01);
   }
 
   await page.mouse.up();

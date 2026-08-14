@@ -223,7 +223,7 @@ export default function CanvasTextItem({
     <div
       ref={textRootRef}
       data-canvas-text-root={item.id}
-      className="relative inline-grid"
+      className="relative grid"
       style={textBoxStyle}
     >
       {editing && (
