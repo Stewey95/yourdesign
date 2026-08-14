@@ -6,6 +6,8 @@ export type ResizeCorner =
   | "bottom-left"
   | "bottom-right";
 
+export type TextAlignment = "left" | "center" | "right";
+
 export type ShapeKind =
   | "rectangle"
   | "roundedRectangle"
@@ -42,8 +44,14 @@ export type TextDesignItem = {
   fontFamily: string;
   rotation: number;
   /**
+   * Line alignment inside the text object's current layout width. This is
+   * intentionally independent from the object's canvas position.
+   */
+  textAlign?: TextAlignment;
+  /**
    * An explicitly-sized text box. Its absence is intentional: free-form
-   * text grows to its content and only line breaks when the author adds one.
+   * text grows to its content, then wraps against the real canvas boundary.
+   * Authored newline characters remain authoritative in either mode.
    */
   textBoxWidth?: number;
 };

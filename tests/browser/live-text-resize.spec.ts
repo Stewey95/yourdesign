@@ -63,13 +63,12 @@ async function sampleResizeFrame(page: Page, itemId: string) {
     const displayRect = display.getBoundingClientRect();
     const overlayRect = overlay.getBoundingClientRect();
     const handleRect = handle.getBoundingClientRect();
-    const textNode = Array.from(display.childNodes).find(
-      (node): node is Text => node.nodeType === Node.TEXT_NODE
-    );
     const glyphRects: DOMRect[] = [];
     const lineTops = new Set<number>();
 
-    if (textNode) {
+    const walker = document.createTreeWalker(display, NodeFilter.SHOW_TEXT);
+    let textNode = walker.nextNode() as Text | null;
+    while (textNode) {
       for (let index = 0; index < textNode.length; index += 1) {
         if (/\s/.test(textNode.data[index])) continue;
         const range = document.createRange();
@@ -81,6 +80,7 @@ async function sampleResizeFrame(page: Page, itemId: string) {
           lineTops.add(Math.round(rect.top * 10) / 10);
         }
       }
+      textNode = walker.nextNode() as Text | null;
     }
 
     const tolerance = 2;

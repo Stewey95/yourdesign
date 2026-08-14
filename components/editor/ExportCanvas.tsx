@@ -6,8 +6,10 @@ import ShapeSvg from "./ShapeSvg";
 import ElementSvg from "./ElementSvg";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
+import TextWordContent from "./TextWordContent";
 import {
   getFreeformTextMaxWidth,
+  getTextAlignment,
   getTextBoxWidth,
   TEXT_FONT_WEIGHT,
   TEXT_LINE_HEIGHT,
@@ -114,8 +116,8 @@ const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
                   }),
                   minHeight: "1.2em",
                   whiteSpace: "pre-wrap",
-                  overflowWrap: "anywhere",
-                  textAlign: "center",
+                  overflowWrap: "normal",
+                  textAlign: getTextAlignment(item),
                   fontSize: item.fontSize,
                   fontFamily: item.fontFamily,
                   fontWeight: TEXT_FONT_WEIGHT,
@@ -124,7 +126,7 @@ const ExportCanvas = forwardRef<HTMLDivElement, ExportCanvasProps>(
                   textShadow: TEXT_SHADOW,
                 }}
               >
-                {item.value}
+                <TextWordContent value={item.value} />
               </div>
             )}
           </div>

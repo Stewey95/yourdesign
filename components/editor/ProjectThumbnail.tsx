@@ -5,6 +5,7 @@ import ElementSvg from "./ElementSvg";
 import type { ProjectRecord } from "../../lib/projects/projects.types";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
+import { getTextAlignment } from "./textLayout";
 
 type ProjectThumbnailProps = {
   project: ProjectRecord;
@@ -94,6 +95,7 @@ function ProjectThumbnail({ project }: ProjectThumbnailProps) {
                     color: item.color,
                     fontFamily: item.fontFamily,
                     lineHeight: 1.1,
+                    textAlign: getTextAlignment(item),
                     transform: item.rotation
                       ? `rotate(${item.rotation}deg)`
                       : undefined,

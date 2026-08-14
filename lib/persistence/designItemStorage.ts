@@ -9,6 +9,7 @@ import {
   getDefaultShapeStyle,
   SHAPE_DEFAULT_SIZES,
 } from "../../components/editor/shape.constants";
+import { isTextAlignment } from "../../components/editor/textLayout";
 import type {
   DesignItem,
   ImageDesignItem,
@@ -135,6 +136,11 @@ const restoreStoredItem = async (
         typeof value.fontFamily === "string"
           ? value.fontFamily
           : "Arial",
+      // Older projects rendered centred before alignment was persisted, so
+      // an absent/invalid value safely retains that established default.
+      textAlign: isTextAlignment(value.textAlign)
+        ? value.textAlign
+        : undefined,
       // Legacy projects predate text-box modes. Keep them free-form instead
       // of silently restoring the retired fixed-width wrap behaviour.
       textBoxWidth:

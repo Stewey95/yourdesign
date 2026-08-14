@@ -11,7 +11,9 @@ import CornerResizeHandles from "./CornerResizeHandles";
 import type { ResizeCorner, TextDesignItem } from "./editor.types";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
+import TextWordContent from "./TextWordContent";
 import {
+  getTextAlignment,
   getTextBoxWidth,
   TEXT_LINE_HEIGHT,
   TEXT_SHADOW,
@@ -100,6 +102,7 @@ export default function CanvasTextItem({
     freeformTextMaxWidth,
     item.fontSize,
     item.id,
+    item.textAlign,
     item.value,
     selectionActive,
     textBoxWidth,
@@ -203,6 +206,7 @@ export default function CanvasTextItem({
     ? `${item.value}\u200b`
     : item.value || "Type here";
   const boundedWidth = getTextBoxWidth({ textBoxWidth });
+  const textAlign = getTextAlignment(item);
   const textBoxStyle = {
     width: boundedWidth
       ? `var(--text-resize-preview-width, ${boundedWidth}px)`
@@ -227,17 +231,18 @@ export default function CanvasTextItem({
           aria-hidden="true"
           className={`col-start-1 row-start-1 invisible block min-h-[1.2em] whitespace-pre-wrap text-center font-bold ${
             boundedWidth
-              ? "w-full [overflow-wrap:anywhere]"
-              : "w-fit max-w-full [overflow-wrap:anywhere]"
+              ? "w-full [overflow-wrap:normal]"
+              : "w-fit max-w-full [overflow-wrap:normal]"
           }`}
           style={{
             fontSize: item.fontSize,
             fontFamily: item.fontFamily,
             textShadow: TEXT_SHADOW,
             lineHeight: TEXT_LINE_HEIGHT,
+            textAlign,
           }}
         >
-          {measurementValue}
+          <TextWordContent value={measurementValue} />
         </span>
       )}
 
@@ -298,7 +303,7 @@ onValueChange(item.id, value);
             placeholder="Type here"
          rows={1}
             className={`absolute inset-0 block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none ${
-              wrapsAtBoundary ? "[overflow-wrap:anywhere]" : ""
+              wrapsAtBoundary ? "[overflow-wrap:normal]" : ""
             }`}
             style={{
               fontSize: item.fontSize,
@@ -306,6 +311,7 @@ onValueChange(item.id, value);
               fontFamily: item.fontFamily,
               textShadow: TEXT_SHADOW,
               lineHeight: TEXT_LINE_HEIGHT,
+              textAlign,
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",
@@ -319,6 +325,7 @@ onValueChange(item.id, value);
         ) : (
           <div
             data-canvas-text-display={item.id}
+            data-text-align={textAlign}
             onPointerDown={(event) => {
               event.stopPropagation();
               onPendingDragStart(
@@ -339,8 +346,8 @@ onValueChange(item.id, value);
             }}
             className={`col-start-1 row-start-1 cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none ${
               boundedWidth
-                ? "w-full [overflow-wrap:anywhere]"
-                : "w-fit max-w-full [overflow-wrap:anywhere]"
+                ? "w-full [overflow-wrap:normal]"
+                : "w-fit max-w-full [overflow-wrap:normal]"
             }`}
             style={{
               fontSize: item.fontSize,
@@ -348,12 +355,13 @@ onValueChange(item.id, value);
               fontFamily: item.fontFamily,
               textShadow: TEXT_SHADOW,
               lineHeight: TEXT_LINE_HEIGHT,
+              textAlign,
               touchAction: "none",
               WebkitUserSelect: "none",
               userSelect: "none",
             }}
           >
-            {item.value || "Type here"}
+            <TextWordContent value={item.value || "Type here"} />
           </div>
         )}
 

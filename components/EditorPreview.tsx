@@ -2124,6 +2124,7 @@ if (direction === "back") {
       color: "#0f172a",
       fontFamily: "Arial",
       rotation: 0,
+      textAlign: "center",
     };
 
     commitItems((currentItems) => [

@@ -11,9 +11,12 @@ import {
 import { getFontOption } from "../../components/editor/fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "../../components/editor/fonts/googleFontLoader";
 import {
+  getTextAlignment,
+  getTextBoxWidth,
   getTextWrapWidth,
   TEXT_FONT_WEIGHT,
   TEXT_LINE_HEIGHT,
+  wrapTextAtWordBoundaries,
 } from "../../components/editor/textLayout";
 import type {
   JpgExportConfig,
@@ -59,50 +62,6 @@ const loadImage = (source: string) =>
     image.src = source;
   });
 
-const wrapParagraph = (
-  context: CanvasRenderingContext2D,
-  paragraph: string,
-  maximumWidth: number
-) => {
-  if (paragraph.length === 0) return [""];
-
-  const lines: string[] = [];
-  let line = "";
-  let lastBreakIndex = -1;
-
-  for (const character of paragraph) {
-    const candidate = line + character;
-
-    if (
-      line.length === 0 ||
-      context.measureText(candidate).width <= maximumWidth
-    ) {
-      line = candidate;
-      if (/\s/.test(character)) lastBreakIndex = line.length - 1;
-      continue;
-    }
-
-    if (lastBreakIndex >= 0) {
-      const completedLine = line.slice(0, lastBreakIndex);
-      const remainder = line.slice(lastBreakIndex + 1) + character;
-
-      lines.push(completedLine);
-      line = remainder;
-    } else {
-      lines.push(line);
-      line = character;
-    }
-
-    lastBreakIndex = -1;
-    for (let index = 0; index < line.length; index += 1) {
-      if (/\s/.test(line[index])) lastBreakIndex = index;
-    }
-  }
-
-  lines.push(line);
-  return lines;
-};
-
 const drawTextItem = (
   context: CanvasRenderingContext2D,
   item: TextDesignItem,
@@ -118,21 +77,37 @@ const drawTextItem = (
   context.rotate((item.rotation * Math.PI) / 180);
   context.font = `${TEXT_FONT_WEIGHT} ${item.fontSize}px ${fontFamily}`;
   context.fillStyle = item.color;
-  context.textAlign = "center";
+  const textAlign = getTextAlignment(item);
+  context.textAlign = textAlign;
   context.textBaseline = "middle";
   context.shadowColor = "rgba(0,0,0,0.35)";
   context.shadowBlur = 4;
   context.shadowOffsetY = 1;
 
   const textBoxWidth = getTextWrapWidth(item, canvas);
-  const lines = item.value.split("\n").flatMap((paragraph) =>
-    textBoxWidth ? wrapParagraph(context, paragraph, textBoxWidth) : [paragraph]
+  const measureText = (value: string) =>
+    context.measureText(value).width;
+  const lines = textBoxWidth
+    ? wrapTextAtWordBoundaries(item.value, textBoxWidth, measureText)
+    : item.value.split("\n");
+  const intrinsicWidth = Math.max(
+    0,
+    ...item.value.split("\n").map(measureText)
   );
+  const layoutWidth =
+    getTextBoxWidth(item) ??
+    Math.min(textBoxWidth ?? intrinsicWidth, intrinsicWidth);
+  const textX =
+    textAlign === "left"
+      ? -layoutWidth / 2
+      : textAlign === "right"
+        ? layoutWidth / 2
+        : 0;
   const blockHeight = lines.length * lineHeight;
 
   lines.forEach((line, index) => {
     const y = -blockHeight / 2 + lineHeight * (index + 0.5);
-    context.fillText(line, 0, y);
+    context.fillText(line, textX, y);
   });
   context.restore();
 };
