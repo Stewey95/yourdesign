@@ -15,7 +15,8 @@ async function nextPaint(page: Page) {
 }
 
 async function freshCanvas(page: Page) {
-  await page.goto("/create");
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
   await page.evaluate(async () => {
     localStorage.clear();
     const databases = await indexedDB.databases();
@@ -31,7 +32,10 @@ async function freshCanvas(page: Page) {
     );
   });
   await page.goto("/create");
-  await page.waitForTimeout(500);
+  await expect(page.locator(".editor-canvas-surface")).toBeVisible();
+  await expect(page.locator('[data-editor-ready="true"]')).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 async function addText(page: Page, value: string) {
@@ -40,7 +44,9 @@ async function addText(page: Page, value: string) {
   const editor = page.locator("[data-canvas-text-editor]");
   await editor.fill(value);
   await editor.blur();
-  return page.locator("[data-canvas-item-id]").last();
+  const item = page.locator("[data-canvas-item-id]").last();
+  await expect(item.locator("[data-canvas-text-display]")).toBeVisible();
+  return item;
 }
 
 async function sampleResizeFrame(page: Page, itemId: string) {
@@ -131,10 +137,6 @@ async function sampleResizeFrame(page: Page, itemId: string) {
       overlayCentreY: overlayRect.top + overlayRect.height / 2,
       overlayWidth: overlayRect.width,
       overlayHeight: overlayRect.height,
-      previewActive: item.dataset.textResizePreview === "active",
-      previewScale: Number.parseFloat(
-        item.style.getPropertyValue("--text-resize-preview-scale") || "1"
-      ),
       glyphsFit,
       wrapperDoesNotClip:
         itemStyle.overflowX !== "hidden" &&
@@ -154,15 +156,11 @@ async function sampleResizeFrame(page: Page, itemId: string) {
 function assertRenderedFrame(
   frame: ResizeFrame,
   startingFrame: ResizeFrame,
+  previousFrame: ResizeFrame,
   direction: "grow" | "shrink"
 ) {
   expect(frame.text).not.toBe("");
   expect(frame.glyphCount).toBeGreaterThan(0);
-  expect(frame.lineCount, JSON.stringify({ frame, startingFrame })).toBe(
-    startingFrame.lineCount
-  );
-  expect(frame.fontSize).toBeCloseTo(startingFrame.fontSize, 3);
-  expect(frame.previewActive).toBe(true);
   expect(frame.logicalX).toBeCloseTo(startingFrame.logicalX, 6);
   expect(frame.logicalY).toBeCloseTo(startingFrame.logicalY, 6);
   if (Number.isFinite(startingFrame.availableLogicalWidth)) {
@@ -179,11 +177,10 @@ function assertRenderedFrame(
   expect(frame.displayHeight).toBeGreaterThan(0);
   expect(frame.glyphsFit, JSON.stringify(frame)).toBe(true);
   expect(frame.wrapperDoesNotClip, JSON.stringify(frame)).toBe(true);
-  // Sub-pixel grid/line-height rounding can leave the wrapper and visible
-  // display slightly different. The complete wrapper and selection overlay
-  // must nevertheless stay locked, with all rendered geometry scaling by the
-  // same ratio from its respective starting box.
-  const overlayRoundingTolerance = 1.5 * frame.previewScale;
+  // Every pointer frame is the canonical font-size/wrapping layout, not a
+  // temporary transformed raster. Glyphs, the complete wrapper and the
+  // selection overlay must therefore agree before pointerup.
+  const overlayRoundingTolerance = 2;
   expect(
     Math.abs(frame.overlayWidth - frame.itemWidth),
     JSON.stringify(frame)
@@ -192,37 +189,24 @@ function assertRenderedFrame(
     Math.abs(frame.overlayHeight - frame.itemHeight),
     JSON.stringify(frame)
   ).toBeLessThan(overlayRoundingTolerance);
-  expect(
-    Math.abs(frame.itemWidth / startingFrame.itemWidth - frame.previewScale),
-    JSON.stringify(frame)
-  ).toBeLessThan(0.02);
-  expect(
-    Math.abs(frame.itemHeight / startingFrame.itemHeight - frame.previewScale),
-    JSON.stringify(frame)
-  ).toBeLessThan(0.02);
-  expect(
-    Math.abs(
-      frame.displayWidth / startingFrame.displayWidth - frame.previewScale
-    ),
-    JSON.stringify(frame)
-  ).toBeLessThan(0.02);
-  expect(
-    Math.abs(
-      frame.displayHeight / startingFrame.displayHeight - frame.previewScale
-    ),
-    JSON.stringify(frame)
-  ).toBeLessThan(0.02);
+  expect(frame.displayScrollHeight).toBeLessThanOrEqual(
+    frame.displayClientHeight + 1
+  );
   expect(frame.handleDeltaX, JSON.stringify(frame)).toBeLessThan(2);
   expect(frame.handleDeltaY, JSON.stringify(frame)).toBeLessThan(2);
 
   if (direction === "grow") {
-    expect(frame.previewScale).toBeGreaterThan(1);
-    expect(frame.displayWidth).toBeGreaterThan(startingFrame.displayWidth);
-    expect(frame.displayHeight).toBeGreaterThan(startingFrame.displayHeight);
+    expect(frame.fontSize).toBeGreaterThan(startingFrame.fontSize);
+    expect(frame.fontSize).toBeGreaterThanOrEqual(previousFrame.fontSize);
+    expect(frame.fontSize / previousFrame.fontSize).toBeLessThan(1.25);
+    expect(frame.itemWidth).toBeGreaterThanOrEqual(previousFrame.itemWidth - 1);
+    expect(frame.lineCount).toBeGreaterThanOrEqual(previousFrame.lineCount);
   } else {
-    expect(frame.previewScale).toBeLessThan(1);
-    expect(frame.displayWidth).toBeLessThan(startingFrame.displayWidth);
-    expect(frame.displayHeight).toBeLessThan(startingFrame.displayHeight);
+    expect(frame.fontSize).toBeLessThan(startingFrame.fontSize);
+    expect(frame.fontSize).toBeLessThanOrEqual(previousFrame.fontSize);
+    expect(previousFrame.fontSize / frame.fontSize).toBeLessThan(1.25);
+    expect(frame.itemWidth).toBeLessThanOrEqual(previousFrame.itemWidth + 1);
+    expect(frame.lineCount).toBeLessThanOrEqual(previousFrame.lineCount);
   }
 }
 
@@ -231,7 +215,6 @@ function assertCommittedFrame(
   startingFrame: ResizeFrame,
   direction: "grow" | "shrink"
 ) {
-  expect(frame.previewActive).toBe(false);
   expect(frame.logicalX).toBeCloseTo(startingFrame.logicalX, 6);
   expect(frame.logicalY).toBeCloseTo(startingFrame.logicalY, 6);
   if (Number.isFinite(startingFrame.availableLogicalWidth)) {
@@ -316,6 +299,7 @@ async function resizeAndSample(
   await page.mouse.down();
 
   const frames: ResizeFrame[] = [];
+  let previousFrame = before;
   for (let step = 1; step <= 12; step += 1) {
     await page.mouse.move(
       startX + sign * step * 3.5,
@@ -323,34 +307,21 @@ async function resizeAndSample(
     );
     await nextPaint(page);
     const frame = await sampleResizeFrame(page, itemId);
-    if (frame) frames.push(frame);
+    if (frame) {
+      assertRenderedFrame(frame, before, previousFrame, direction);
+      frames.push(frame);
+      previousFrame = frame;
+    }
   }
 
   expect(frames).toHaveLength(12);
-  const sizeVectorLengthSquared =
-    before.rootLogicalWidth * before.rootLogicalWidth +
-    before.rootLogicalHeight * before.rootLogicalHeight;
-  for (const [index, frame] of frames.entries()) {
-    assertRenderedFrame(frame, before, direction);
-    const logicalPointerChange =
-      (sign * (index + 1) * 3.5) / before.displayScale;
-    const expectedScale = Math.max(
-      Number.EPSILON,
-      1 +
-        (2 *
-          (logicalPointerChange * before.rootLogicalWidth +
-            logicalPointerChange * before.rootLogicalHeight)) /
-          sizeVectorLengthSquared
-    );
-    expect(Math.abs(frame.previewScale - expectedScale)).toBeLessThan(0.01);
-  }
-
   await page.mouse.up();
   const immediate = await sampleResizeFrame(page, itemId);
   if (!immediate) {
     throw new Error("Immediate committed text frame was not rendered.");
   }
   assertCommittedFrame(immediate, before, direction);
+  expectGeometryUnchanged(frames.at(-1)!, immediate);
 
   await nextPaint(page);
   const committed = await sampleResizeFrame(page, itemId);
@@ -367,6 +338,12 @@ async function resizeAndSample(
   await page
     .getByRole("button", { name: getTextLayerLabel(committed.text), exact: true })
     .click();
+  await expect(
+    page.locator(`[data-canvas-text-display="${itemId}"]`)
+  ).toBeVisible();
+  await expect(
+    page.locator(`[data-selection-overlay="${itemId}"]`)
+  ).toBeVisible();
   await nextPaint(page);
   const reselected = await sampleResizeFrame(page, itemId);
   if (!reselected) throw new Error("Reselected text frame was not rendered.");

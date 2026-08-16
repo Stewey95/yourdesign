@@ -37,12 +37,13 @@ export default function SelectionOverlay({
 }: SelectionOverlayProps) {
   const [textSize, setTextSize] = useState<Size | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
+  const textItemId = item?.type === "text" ? item.id : null;
 
   useLayoutEffect(() => {
-    if (!item || item.type !== "text") return;
+    if (!textItemId) return;
 
     const textItem = canvasRef.current?.querySelector<HTMLElement>(
-      `[data-canvas-item-id="${item.id}"]`
+      `[data-canvas-item-id="${textItemId}"]`
     );
     if (!textItem) return;
 
@@ -79,7 +80,7 @@ export default function SelectionOverlay({
       active = false;
       observer.disconnect();
     };
-  }, [canvasRef, item]);
+  }, [canvasRef, textItemId]);
 
   if (!item || item.hidden) return null;
 
@@ -108,10 +109,15 @@ export default function SelectionOverlay({
         top: item.position.y,
         width: size.width,
         height: size.height,
-        transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg) scale(var(--text-resize-preview-scale, 1))`,
+        transform: `${
+          item.type === "text"
+            ? "translate(-50%, -50%)"
+            : "translate3d(-50%, -50%, 0)"
+        } rotate(${item.rotation}deg)`,
         transformOrigin: "center",
-        WebkitBackfaceVisibility: "hidden",
-        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility:
+          item.type === "text" ? undefined : "hidden",
+        backfaceVisibility: item.type === "text" ? undefined : "hidden",
       }}
     >
       {(desktopLayout || item.type !== "text") && (

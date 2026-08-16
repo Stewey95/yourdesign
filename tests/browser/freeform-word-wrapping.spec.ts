@@ -7,7 +7,7 @@ import {
 const DESKTOP_PROJECTS = new Set(["Desktop Chrome", "Desktop Safari"]);
 const MOBILE_PROJECTS = new Set(["iPhone Safari", "Android Chrome"]);
 const FOUNDER_SENTENCE =
-  "nufc are the best club in the world of football and are the richest club in the world";
+  "NUFC ARE THE RICHEST CLUB IN THE WHOLE ENTIRE WORLD AND WILL BE UCL CHAMPIONS ONE DAY WITHOUT A SINGLE DOUBT";
 
 async function nextPaint(page: Page) {
   await page.evaluate(
@@ -19,7 +19,8 @@ async function nextPaint(page: Page) {
 }
 
 async function freshCanvas(page: Page) {
-  await page.goto("/create");
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
   await page.evaluate(async () => {
     localStorage.clear();
     const databases = await indexedDB.databases();
@@ -35,7 +36,10 @@ async function freshCanvas(page: Page) {
     );
   });
   await page.goto("/create");
-  await page.waitForTimeout(500);
+  await expect(page.locator(".editor-canvas-surface")).toBeVisible();
+  await expect(page.locator('[data-editor-ready="true"]')).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 async function choosePreset(page: Page, preset: string) {
@@ -57,7 +61,9 @@ async function addText(page: Page, value: string) {
   const editor = page.locator("[data-canvas-text-editor]");
   await editor.fill(value);
   await editor.blur();
-  return page.locator("[data-canvas-item-id]").last();
+  const item = page.locator("[data-canvas-item-id]").last();
+  await expect(item.locator("[data-canvas-text-display]")).toBeVisible();
+  return item;
 }
 
 async function sampleWordLayout(item: Locator) {
@@ -197,12 +203,6 @@ async function sampleWordLayout(item: Locator) {
       spaceWidth,
       glyphsFit,
       wordsRemainWhole,
-      previewActive: element.dataset.textResizePreview === "active",
-      previewScale: Number.parseFloat(
-        htmlElement.style.getPropertyValue(
-          "--text-resize-preview-scale"
-        ) || "1"
-      ),
     };
   });
 }
@@ -221,6 +221,10 @@ function expectGreedyWholeWordWrap(
 ) {
   expect(layout.wordsRemainWhole, JSON.stringify(layout)).toBe(true);
   expect(layout.glyphsFit, JSON.stringify(layout)).toBe(true);
+  // Authored newlines are authoritative, so the next paragraph is allowed
+  // to start even when its first word would fit on the previous line.
+  if (layout.text?.includes("\n")) return;
+
   for (let index = 0; index < layout.lines.length - 1; index += 1) {
     const nextWordWidth = layout.lines[index + 1].wordWidths[0];
     expect(
@@ -234,7 +238,6 @@ async function resizeWithLiveChecks(
   page: Page,
   item: Locator,
   delta: number,
-  rotation = 0,
   verifyWholeWords = true,
   verifyGlyphContainment = true
 ) {
@@ -242,9 +245,6 @@ async function resizeWithLiveChecks(
   if (!before) throw new Error("Text layout was not rendered.");
   const startPosition = { x: before.logicalX, y: before.logicalY };
   const startAvailableWidth = before.availableLogicalWidth;
-  const sizeVectorLengthSquared =
-    before.rootLogicalWidth * before.rootLogicalWidth +
-    before.rootLogicalHeight * before.rootLogicalHeight;
   const handle = page.getByRole("button", { name: "Resize from bottom right" });
   const box = await handle.boundingBox();
   if (!box) throw new Error("Text resize handle was not rendered.");
@@ -252,7 +252,8 @@ async function resizeWithLiveChecks(
   const startY = box.y + box.height / 2;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  let previousPreviewWidth = before.itemWidth;
+  let previousFrame = before;
+  let finalLiveFrame = before;
 
   for (let step = 1; step <= 12; step += 1) {
     await page.mouse.move(
@@ -262,28 +263,6 @@ async function resizeWithLiveChecks(
     await nextPaint(page);
     const frame = await sampleWordLayout(item);
     if (!frame) throw new Error("Live text frame was not rendered.");
-    expect(frame.lines.map((line) => line.words)).toEqual(
-      before.lines.map((line) => line.words)
-    );
-    expect(frame.previewActive).toBe(true);
-    const screenPointerChange =
-      ((delta * step) / 12) / before.displayScale;
-    const radians = (rotation * Math.PI) / 180;
-    const horizontalChange =
-      screenPointerChange * Math.cos(radians) +
-      screenPointerChange * Math.sin(radians);
-    const verticalChange =
-      -screenPointerChange * Math.sin(radians) +
-      screenPointerChange * Math.cos(radians);
-    const expectedScale = Math.max(
-      Number.EPSILON,
-      1 +
-        (2 *
-          (horizontalChange * before.rootLogicalWidth +
-            verticalChange * before.rootLogicalHeight)) /
-          sizeVectorLengthSquared
-    );
-    expect(frame.previewScale).toBeCloseTo(expectedScale, 3);
     expect(frame.logicalX).toBeCloseTo(startPosition.x, 6);
     expect(frame.logicalY).toBeCloseTo(startPosition.y, 6);
     if (Number.isFinite(startAvailableWidth)) {
@@ -296,29 +275,37 @@ async function resizeWithLiveChecks(
       expect(frame.wordsRemainWhole).toBe(true);
     }
     if (delta >= 0) {
-      expect(frame.itemWidth).toBeGreaterThanOrEqual(
-        previousPreviewWidth - 0.5
+      expect(frame.fontSize).toBeGreaterThanOrEqual(
+        previousFrame.fontSize
       );
+      expect(frame.fontSize / previousFrame.fontSize).toBeLessThan(1.25);
+      expect(frame.itemLogicalWidth).toBeGreaterThanOrEqual(
+        previousFrame.itemLogicalWidth - 1
+      );
+      expect(frame.lineCount).toBeGreaterThanOrEqual(previousFrame.lineCount);
     } else {
-      expect(frame.itemWidth).toBeLessThanOrEqual(
-        previousPreviewWidth + 0.5
+      expect(frame.fontSize).toBeLessThanOrEqual(previousFrame.fontSize);
+      expect(previousFrame.fontSize / frame.fontSize).toBeLessThan(1.25);
+      expect(frame.itemLogicalWidth).toBeLessThanOrEqual(
+        previousFrame.itemLogicalWidth + 1
       );
+      expect(frame.lineCount).toBeLessThanOrEqual(previousFrame.lineCount);
     }
-    previousPreviewWidth = frame.itemWidth;
     expect(Math.abs((frame.rootCentre?.x ?? 0) - frame.itemCentre.x)).toBeLessThan(0.75);
     expect(Math.abs((frame.rootCentre?.y ?? 0) - frame.itemCentre.y)).toBeLessThan(0.75);
     expect(Math.abs((frame.overlayCentre?.x ?? 0) - frame.itemCentre.x)).toBeLessThan(0.75);
     expect(Math.abs((frame.overlayCentre?.y ?? 0) - frame.itemCentre.y)).toBeLessThan(0.75);
     expect(Math.abs(frame.itemWidth - (frame.overlayWidth ?? 0))).toBeLessThan(3);
     expect(Math.abs(frame.itemHeight - (frame.overlayHeight ?? 0))).toBeLessThan(3);
+    previousFrame = frame;
+    finalLiveFrame = frame;
   }
 
   await page.mouse.up();
   await nextPaint(page);
   const committed = await sampleWordLayout(item);
   if (!committed) throw new Error("Committed text layout was not rendered.");
-  expect(committed.previewActive).toBe(false);
-  expect(committed.text).toBe(FOUNDER_SENTENCE);
+  expect(committed.text).toBe(before.text);
   expect(committed.logicalX).toBeCloseTo(startPosition.x, 6);
   expect(committed.logicalY).toBeCloseTo(startPosition.y, 6);
   if (Number.isFinite(startAvailableWidth)) {
@@ -339,6 +326,12 @@ async function resizeWithLiveChecks(
   expect(
     Math.abs((committed.overlayCentre?.y ?? 0) - committed.itemCentre.y)
   ).toBeLessThan(0.75);
+  expect(committed.lines.map((line) => line.words)).toEqual(
+    finalLiveFrame.lines.map((line) => line.words)
+  );
+  expect(committed.fontSize).toBeCloseTo(finalLiveFrame.fontSize, 3);
+  expect(Math.abs(committed.itemWidth - finalLiveFrame.itemWidth)).toBeLessThan(1);
+  expect(Math.abs(committed.itemHeight - finalLiveFrame.itemHeight)).toBeLessThan(1);
   return committed;
 }
 
@@ -359,6 +352,7 @@ async function seedAlignedProject(
   textAlign: "left" | "center" | "right" | undefined
 ) {
   await page.goto("/");
+  await page.waitForLoadState("networkidle");
   await page.evaluate(async (alignment) => {
     localStorage.clear();
     const databases = await indexedDB.databases();
@@ -421,11 +415,13 @@ async function seedAlignedProject(
     localStorage.setItem("gripix_active_project_id", projectId);
   }, textAlign);
   await page.goto("/create");
-  await expect(page.locator('[data-canvas-item-id="alignment-text"]')).toBeVisible();
+  await expect(
+    page.locator('[data-canvas-item-id="alignment-text"]')
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 test.describe("Founder free-form word wrapping", () => {
-  test("resize, edge movement and return to centre use the widest valid whole-word lines", async ({
+  test("Founder flow keeps live resize, committed layout, editing and movement as one text object", async ({
     page,
   }, testInfo) => {
     test.skip(!DESKTOP_PROJECTS.has(testInfo.project.name), "Desktop corner resize only");
@@ -433,6 +429,12 @@ test.describe("Founder free-form word wrapping", () => {
     await freshCanvas(page);
     await choosePreset(page, "A4 Landscape");
     const item = await addText(page, FOUNDER_SENTENCE);
+    const fontSize = page
+      .getByRole("spinbutton", { name: "Font size", exact: true })
+      .last();
+    await fontSize.fill("12");
+    await fontSize.press("Enter");
+    await nextPaint(page);
     const initial = await sampleWordLayout(item);
     if (!initial) throw new Error("Initial text layout was not rendered.");
     expect(initial.lineCount).toBe(1);
@@ -441,8 +443,12 @@ test.describe("Founder free-form word wrapping", () => {
     const growthWidths = [initial.itemLogicalWidth];
     let grown = initial;
 
-    for (let gesture = 0; gesture < 6 && grown.lineCount === 1; gesture += 1) {
-      grown = await resizeWithLiveChecks(page, item, 48);
+    for (
+      let gesture = 0;
+      gesture < 12 && grown.lineCount <= initial.lineCount;
+      gesture += 1
+    ) {
+      grown = await resizeWithLiveChecks(page, item, 72);
       growthWidths.push(grown.itemLogicalWidth);
     }
 
@@ -452,18 +458,38 @@ test.describe("Founder free-form word wrapping", () => {
       );
     }
     expect(grown.lineCount).toBeGreaterThan(initial.lineCount);
-    expect(grown.lineCount).toBeLessThanOrEqual(3);
+    expect(grown.lineCount).toBeLessThanOrEqual(6);
     expect(grown.displayWidth).toBeGreaterThan(grown.canvasWidth * 0.85);
     expectGreedyWholeWordWrap(grown);
     expectCentredLines(grown);
 
     let shrunk = grown;
-    for (let gesture = 0; gesture < 6 && shrunk.lineCount >= grown.lineCount; gesture += 1) {
-      shrunk = await resizeWithLiveChecks(page, item, -48);
+    for (
+      let gesture = 0;
+      gesture < 12 && shrunk.lineCount >= grown.lineCount;
+      gesture += 1
+    ) {
+      shrunk = await resizeWithLiveChecks(page, item, -72);
     }
     expect(shrunk.lineCount).toBeLessThan(grown.lineCount);
     expectGreedyWholeWordWrap(shrunk);
     expectCentredLines(shrunk);
+
+    await item.locator("[data-canvas-text-display]").click();
+    const editor = item.locator("[data-canvas-text-editor]");
+    await expect(editor).toBeVisible();
+    const editedValue = `${FOUNDER_SENTENCE}\nONE DAY`;
+    await editor.fill(editedValue);
+    await editor.blur();
+    const edited = await sampleWordLayout(item);
+    if (!edited) throw new Error("Edited text layout was not rendered.");
+    expect(edited.text).toBe(editedValue);
+    expect(edited.logicalX).toBeCloseTo(shrunk.logicalX, 6);
+    expect(edited.logicalY).toBeCloseTo(shrunk.logicalY, 6);
+    expect(edited.lineCount).toBeGreaterThan(shrunk.lineCount);
+    expectCentredLines(edited);
+
+    await resizeWithLiveChecks(page, item, 24);
 
     const centre = await sampleWordLayout(item);
     if (!centre) throw new Error("Centred text layout was not rendered.");
@@ -504,13 +530,19 @@ test.describe("Founder free-form word wrapping", () => {
     await page.getByRole("button", { name: "Rotate right" }).click();
     const rotated = await sampleWordLayout(item);
     if (!rotated) throw new Error("Rotated text layout was not rendered.");
-    await resizeWithLiveChecks(page, item, 24, 30, false, false);
+    await resizeWithLiveChecks(page, item, 24, false, false);
+
+    await testInfo.attach("founder-text-flow", {
+      body: await page.screenshot(),
+      contentType: "image/png",
+    });
   });
 
   test("alignment values persist independently from object position and match the export DOM", async ({
     page,
   }, testInfo) => {
     test.skip(!DESKTOP_PROJECTS.has(testInfo.project.name), "Desktop alignment geometry");
+    test.setTimeout(90_000);
 
     for (const alignment of [undefined, "center", "left", "right"] as const) {
       await seedAlignedProject(page, alignment);

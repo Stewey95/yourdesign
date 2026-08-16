@@ -10,7 +10,6 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import EditorCanvas from "./editor/EditorCanvas";
-import type { TextResizeCorner } from "./editor/CanvasTextItem";
 import type { CanvasViewMode } from "./editor/CanvasViewModeControl";
 import EditorHeader from "./editor/EditorHeader";
 import EditorInspector from "./editor/EditorInspector";
@@ -2677,7 +2676,7 @@ if (direction === "back") {
   const startTextResize = (
     event: React.PointerEvent<HTMLDivElement>,
     item: Extract<DesignItem, { type: "text" }>,
-    corner: TextResizeCorner
+    corner: ResizeCorner
   ) => {
     event.preventDefault();
 
@@ -2700,21 +2699,9 @@ if (direction === "back") {
     const canvasItem = canvasRef.current?.querySelector<HTMLElement>(
       `[data-canvas-item-id="${item.id}"]`
     );
-    const selectionOverlay = canvasRef.current?.querySelector<HTMLElement>(
-      `[data-selection-overlay="${item.id}"]`
-    );
     const canvasTextRoot = canvasItem?.querySelector<HTMLElement>(
       `[data-canvas-text-root="${item.id}"]`
     );
-    const previewLayout = canvasItem
-      ? { overflow: canvasItem.style.overflow }
-      : null;
-    const measuredTextWidth = canvasTextRoot
-      ? Number.parseFloat(getComputedStyle(canvasTextRoot).width)
-      : Number.NaN;
-    const frozenTextWidth = Number.isFinite(measuredTextWidth)
-      ? measuredTextWidth
-      : null;
     const startTextWidth = Math.max(
       1,
       canvasTextRoot?.offsetWidth ?? canvasItem?.offsetWidth ?? 1
@@ -2724,64 +2711,6 @@ if (direction === "back") {
       canvasTextRoot?.offsetHeight ?? canvasItem?.offsetHeight ?? 1
     );
     let finalFontSize = startFontSize;
-
-    const freezePreviewLayout = () => {
-      if (!canvasItem || frozenTextWidth === null) return;
-
-      // Freeze the exact authored line box for the duration of the gesture.
-      // The non-editing display is the sole intrinsic layout source, and the
-      // explicit outer dimensions prevent WebKit from re-resolving
-      // max-content/boundary sizing while its compositor scale changes.
-      canvasItem.style.setProperty(
-        "--text-resize-preview-width",
-        `${frozenTextWidth}px`
-      );
-      canvasItem.style.setProperty(
-        "--text-resize-preview-max-width",
-        "none"
-      );
-      canvasItem.style.overflow = "visible";
-    };
-
-    const applyPreviewScale = (fontSize: number) => {
-      const scale = fontSize / startFontSize;
-
-      for (const element of [canvasItem, selectionOverlay]) {
-        if (!element) continue;
-        element.style.setProperty(
-          "--text-resize-preview-scale",
-          String(scale)
-        );
-        element.dataset.textResizePreview = "active";
-      }
-
-      if (canvasItem && frozenTextWidth !== null) {
-        canvasItem.style.setProperty(
-          "--text-resize-preview-width",
-          `${frozenTextWidth}px`
-        );
-        canvasItem.style.setProperty(
-          "--text-resize-preview-max-width",
-          "none"
-        );
-        canvasItem.style.overflow = "visible";
-      }
-    };
-
-    const clearPreviewScale = () => {
-      for (const element of [canvasItem, selectionOverlay]) {
-        if (!element) continue;
-        element.style.removeProperty("--text-resize-preview-scale");
-        delete element.dataset.textResizePreview;
-      }
-    };
-
-    const restorePreviewLayout = () => {
-      if (!canvasItem || !previewLayout) return;
-      canvasItem.style.removeProperty("--text-resize-preview-width");
-      canvasItem.style.removeProperty("--text-resize-preview-max-width");
-      canvasItem.style.overflow = previewLayout.overflow;
-    };
 
     const resize = (moveEvent: PointerEvent) => {
       const screenHorizontalChange =
@@ -2817,24 +2746,15 @@ if (direction === "back") {
         startFontSize * requestedScale
       );
 
-      // Keep the starting line layout stable during the gesture and scale
-      // the complete rendered object. Re-laying out fontSize on every frame
-      // causes max-content/boundary wrapping to feed back into the next
-      // intrinsic measurement and can clip glyphs in both WebKit and Chrome.
+      if (Math.abs(nextFontSize - finalFontSize) < 0.001) return;
+
       finalFontSize = nextFontSize;
-      applyPreviewScale(nextFontSize);
-    };
 
-    const commitTextResize = () => {
-      // Remove the promoted preview layer before committing the new font
-      // metrics. Both mutations happen in the same pointerup task, so there
-      // is no intermediate paint, and Safari cannot retain a raster surface
-      // sized for the old intrinsic box after the final layout grows.
-      clearPreviewScale();
-      restorePreviewLayout();
-
-      // Reconcile font size and the shared canvas-boundary layout only once,
-      // at the gesture boundary.
+      // The live canvas is the resize preview. Update the canonical font size
+      // once per animation frame so wrapping, glyph bounds and selection
+      // geometry are always the same representation that pointerup keeps.
+      // There is no frozen-width/compositor-scale layer to discard, so release
+      // cannot swap one text shape for another.
       flushSync(() => {
         updateItems((currentItems) =>
           currentItems.map((currentItem) =>
@@ -2851,47 +2771,9 @@ if (direction === "back") {
           )
         );
       });
-
-      const committedCanvasItem = canvasRef.current?.querySelector<HTMLElement>(
-        `[data-canvas-item-id="${item.id}"]`
-      );
-      const committedTextRoot = committedCanvasItem?.querySelector<HTMLElement>(
-        `[data-canvas-text-root="${item.id}"]`
-      );
-      const committedDisplay = committedCanvasItem?.querySelector<HTMLElement>(
-        `[data-canvas-text-display="${item.id}"]`
-      );
-      const committedOverlay = canvasRef.current?.querySelector<HTMLElement>(
-        `[data-selection-overlay="${item.id}"]`
-      );
-
-      if (committedCanvasItem && committedTextRoot && committedDisplay) {
-        // Establish the complete final intrinsic box synchronously before
-        // this pointerup task yields to paint. Reading both the root and the
-        // visible display also guarantees that every final line participates
-        // in WebKit's layout invalidation.
-        const width = committedTextRoot.offsetWidth;
-        const height = Math.max(
-          committedTextRoot.offsetHeight,
-          committedDisplay.scrollHeight
-        );
-
-        if (committedOverlay) {
-          committedOverlay.style.width = `${width}px`;
-          committedOverlay.style.height = `${height}px`;
-        }
-
-        committedDisplay.getClientRects();
-        committedCanvasItem.getBoundingClientRect();
-      }
     };
 
-    startDesktopResize(
-      event,
-      resize,
-      commitTextResize,
-      freezePreviewLayout
-    );
+    startDesktopResize(event, resize);
   };
 
   const changeCanvasViewMode = (mode: CanvasViewMode) => {
@@ -2968,6 +2850,7 @@ if (direction === "back") {
     <>
       <div
         ref={editorShellRef}
+        data-editor-ready={draftReady ? "true" : "false"}
         className={
           fullScreen
             ? "editor-focus-shell w-full max-w-full overflow-hidden pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(0.5rem,env(safe-area-inset-top))] md:flex md:h-full md:min-h-0 md:flex-col md:px-4 md:pb-3 md:pt-3"

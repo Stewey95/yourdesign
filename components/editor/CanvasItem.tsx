@@ -5,7 +5,6 @@ import CanvasImageItem from "./CanvasImageItem";
 import CanvasElementItem from "./CanvasElementItem";
 import CanvasShapeItem from "./CanvasShapeItem";
 import CanvasTextItem from "./CanvasTextItem";
-import type { TextResizeCorner } from "./CanvasTextItem";
 import {
   getFreeformTextMaxWidth,
   getTextBoxWidth,
@@ -47,7 +46,6 @@ type TextCanvasItemProps = {
   selected: boolean;
   editing: boolean;
   mobileLayout: boolean;
-  displayScale: number;
   canvasSize: Size;
   onRequestAutoFit: (
     id: string,
@@ -64,11 +62,6 @@ type TextCanvasItemProps = {
     pointerId: number
   ) => void;
   onLockedPointerDown: (id: string) => void;
-  onResizeStart: (
-    event: React.PointerEvent<HTMLDivElement>,
-    item: TextDesignItem,
-    corner: TextResizeCorner
-  ) => void;
 };
 
 type CanvasItemProps =
@@ -77,7 +70,6 @@ type CanvasItemProps =
 
 export default function CanvasItem(props: CanvasItemProps) {
   const { item } = props;
-  const selected = "selected" in props && props.selected;
   const textBoxWidth = item.type === "text" ? getTextBoxWidth(item) : undefined;
   const freeformTextMaxWidth =
     item.type === "text"
@@ -105,10 +97,15 @@ export default function CanvasItem(props: CanvasItemProps) {
           item.type === "shape" || item.type === "element"
             ? item.size.height
             : undefined,
-        transform: `translate3d(-50%, -50%, 0) rotate(${item.rotation}deg) scale(var(--text-resize-preview-scale, 1))`,
+        transform: `${
+          item.type === "text"
+            ? "translate(-50%, -50%)"
+            : "translate3d(-50%, -50%, 0)"
+        } rotate(${item.rotation}deg)`,
         transformOrigin: "center",
-        WebkitBackfaceVisibility: "hidden",
-        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility:
+          item.type === "text" ? undefined : "hidden",
+        backfaceVisibility: item.type === "text" ? undefined : "hidden",
         touchAction: "none",
         WebkitUserSelect: "none",
         userSelect: "none",
@@ -144,11 +141,8 @@ export default function CanvasItem(props: CanvasItemProps) {
       ) : item.type === "text" && "editing" in props ? (
         <CanvasTextItem
           item={item}
-          selected={false}
-          selectionActive={selected}
           editing={props.editing && !item.locked}
           mobileLayout={props.mobileLayout}
-          displayScale={props.displayScale}
           textBoxWidth={textBoxWidth}
           freeformTextMaxWidth={freeformTextMaxWidth}
           onRequestAutoFit={props.onRequestAutoFit}
@@ -157,7 +151,6 @@ export default function CanvasItem(props: CanvasItemProps) {
           onFinishEditing={props.onFinishEditing}
           onEditingPointerDown={props.onEditingPointerDown}
           onPendingDragStart={props.onPendingDragStart}
-          onResizeStart={props.onResizeStart}
         />
       ) : null}
 

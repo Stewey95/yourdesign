@@ -3,12 +3,10 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   type CSSProperties,
 } from "react";
-import CornerResizeHandles from "./CornerResizeHandles";
-import type { ResizeCorner, TextDesignItem } from "./editor.types";
+import type { TextDesignItem } from "./editor.types";
 import { getFontOption } from "./fonts/font.catalog";
 import { ensureGoogleFontLoaded } from "./fonts/googleFontLoader";
 import TextWordContent from "./TextWordContent";
@@ -19,15 +17,10 @@ import {
   TEXT_SHADOW,
 } from "./textLayout";
 
-export type TextResizeCorner = ResizeCorner;
-
 type CanvasTextItemProps = {
   item: TextDesignItem;
-  selected: boolean;
-  selectionActive: boolean;
   editing: boolean;
   mobileLayout: boolean;
-  displayScale: number;
   textBoxWidth?: number;
   freeformTextMaxWidth?: number;
   onRequestAutoFit: (
@@ -44,20 +37,12 @@ type CanvasTextItemProps = {
     startY: number,
     pointerId: number
   ) => void;
-  onResizeStart: (
-    event: React.PointerEvent<HTMLDivElement>,
-    item: TextDesignItem,
-    corner: TextResizeCorner
-  ) => void;
 };
 
 export default function CanvasTextItem({
   item,
-  selected,
-  selectionActive,
   editing,
   mobileLayout,
-  displayScale,
   textBoxWidth,
   freeformTextMaxWidth,
   onRequestAutoFit,
@@ -66,47 +51,12 @@ export default function CanvasTextItem({
   onFinishEditing,
   onEditingPointerDown,
   onPendingDragStart,
-  onResizeStart,
 }: CanvasTextItemProps) {
   const focusScrollCleanupRef = useRef<(() => void) | null>(null);
-  const textRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     ensureGoogleFontLoaded(getFontOption(item.fontFamily));
   }, [item.fontFamily]);
-
-  useLayoutEffect(() => {
-    if (!selectionActive) return;
-
-    const textRoot = textRootRef.current;
-    const textDisplay = textRoot?.querySelector<HTMLElement>(
-      `[data-canvas-text-display="${item.id}"]`
-    );
-    const overlay = document.querySelector<HTMLElement>(
-      `[data-selection-overlay="${item.id}"]`
-    );
-    if (!textRoot || !overlay) return;
-
-    // This renderer receives the same font-size commit that changes the
-    // intrinsic text box. Write the selection geometry here so Safari never
-    // has to wait for a sibling observer to catch up during a pointer drag.
-    const width = textRoot.offsetWidth;
-    const height = Math.max(
-      textRoot.offsetHeight,
-      textDisplay?.scrollHeight ?? 0
-    );
-
-    overlay.style.width = `${width}px`;
-    overlay.style.height = `${height}px`;
-  }, [
-    freeformTextMaxWidth,
-    item.fontSize,
-    item.id,
-    item.textAlign,
-    item.value,
-    selectionActive,
-    textBoxWidth,
-  ]);
 
   const initialiseEditingTextarea = useCallback(
     (textarea: HTMLTextAreaElement | null) => {
@@ -208,12 +158,10 @@ export default function CanvasTextItem({
   const boundedWidth = getTextBoxWidth({ textBoxWidth });
   const textAlign = getTextAlignment(item);
   const textBoxStyle = {
-    width: boundedWidth
-      ? `var(--text-resize-preview-width, ${boundedWidth}px)`
-      : "var(--text-resize-preview-width, auto)",
+    width: boundedWidth ? `${boundedWidth}px` : "auto",
     maxWidth:
       boundedWidth === undefined && freeformTextMaxWidth !== undefined
-        ? `var(--text-resize-preview-max-width, ${freeformTextMaxWidth}px)`
+        ? `${freeformTextMaxWidth}px`
         : undefined,
   } satisfies CSSProperties;
   const wrapsAtBoundary =
@@ -221,7 +169,6 @@ export default function CanvasTextItem({
 
   return (
     <div
-      ref={textRootRef}
       data-canvas-text-root={item.id}
       className="relative grid"
       style={textBoxStyle}
@@ -363,15 +310,6 @@ onValueChange(item.id, value);
           >
             <TextWordContent value={item.value || "Type here"} />
           </div>
-        )}
-
-        {selected && !mobileLayout && (
-          <CornerResizeHandles
-            displayScale={displayScale}
-            onResizeStart={(event, corner) =>
-              onResizeStart(event, item, corner)
-            }
-          />
         )}
     </div>
   );

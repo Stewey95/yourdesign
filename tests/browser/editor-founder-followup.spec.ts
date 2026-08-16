@@ -9,7 +9,7 @@ const RED_SQUARE_SVG = `
 const DESKTOP_PROJECTS = new Set(["Desktop Chrome", "Desktop Safari"]);
 
 async function freshCanvas(page: Page) {
-  await page.goto("/create");
+  await page.goto("/create", { waitUntil: "networkidle" });
   await page.evaluate(async () => {
     localStorage.clear();
     const databases = await indexedDB.databases();
@@ -24,8 +24,9 @@ async function freshCanvas(page: Page) {
       )
     );
   });
-  await page.goto("/create");
-  await page.waitForTimeout(500);
+  await page.goto("/create", { waitUntil: "networkidle" });
+  await expect(page.locator(".editor-canvas-surface")).toBeVisible();
+  await expect(page.locator('[data-editor-ready="true"]')).toBeVisible();
 }
 
 async function openPanel(page: Page, name: string) {
@@ -77,6 +78,10 @@ test.describe("Founder QA follow-up - text layout", () => {
     const item = page.locator("[data-canvas-item-id]").last();
     const id = await item.getAttribute("data-canvas-item-id");
     if (!id) throw new Error("Text item id was not rendered.");
+    await expect(
+      item.locator(`[data-canvas-text-display="${id}"]`)
+    ).toBeVisible();
+    await expect(page.locator(`[data-export-text="${id}"]`)).toBeVisible();
     const dimensions = await page.evaluate((itemId) => {
       const live = document.querySelector<HTMLElement>(
         `[data-canvas-text-display="${itemId}"]`
@@ -116,6 +121,7 @@ test.describe("Founder QA follow-up - text layout", () => {
     await editor.blur();
 
     const item = page.locator("[data-canvas-item-id]").last();
+    await expect(item.locator("[data-canvas-text-display]")).toBeVisible();
     const before = await item.boundingBox();
     const beforeMetrics = await item.evaluate((element) => {
       const text = element.querySelector<HTMLElement>("[data-canvas-text-display]");

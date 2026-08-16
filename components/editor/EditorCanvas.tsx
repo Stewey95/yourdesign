@@ -19,7 +19,6 @@ import DesktopPanCursor, {
 } from "./DesktopPanCursor";
 import MobileCanvasZoomHud from "./MobileCanvasZoomHud";
 import SelectionOverlay from "./SelectionOverlay";
-import type { TextResizeCorner } from "./CanvasTextItem";
 import type {
   DesignItem,
   ResizableDesignItem,
@@ -74,7 +73,7 @@ type EditorCanvasProps = {
   onTextResizeStart: (
     event: React.PointerEvent<HTMLDivElement>,
     item: TextDesignItem,
-    corner: TextResizeCorner
+    corner: ResizeCorner
   ) => void;
   onRequestAutoFit: (
     id: string,
@@ -1508,7 +1507,6 @@ export default function EditorCanvas({
                   selected={selectedItemId === item.id}
                   editing={editingItemId === item.id}
                   mobileLayout={!isDesktopLayout}
-                  displayScale={displayScale}
                   onRequestAutoFit={onRequestAutoFit}
                   onValueChange={onTextValueChange}
                   onRemoveEmptyText={onRemoveEmptyText}
@@ -1516,7 +1514,6 @@ export default function EditorCanvas({
                   onEditingPointerDown={onEditingPointerDown}
                   onPendingDragStart={onPendingDragStart}
                   onLockedPointerDown={onLockedItemPointerDown}
-                  onResizeStart={onTextResizeStart}
                 />
               )
             )}
