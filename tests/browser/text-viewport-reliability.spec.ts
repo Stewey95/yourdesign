@@ -287,8 +287,10 @@ test.describe("shared text boundary contract", () => {
     const geometry = await editor.evaluate((element) => {
       const textarea = element as HTMLTextAreaElement;
       const root = textarea.parentElement;
-      const measurement = root?.querySelector<HTMLElement>("span[aria-hidden]");
-      if (!root || !measurement) return null;
+      const canonicalDisplay = root?.querySelector<HTMLElement>(
+        "[data-canvas-text-display]"
+      );
+      if (!root || !canonicalDisplay) return null;
       const editorRect = textarea.getBoundingClientRect();
       const rootRect = root.getBoundingClientRect();
       const style = getComputedStyle(textarea);
@@ -297,20 +299,26 @@ test.describe("shared text boundary contract", () => {
         valueLength: textarea.value.length,
         widthDelta: Math.abs(editorRect.width - rootRect.width),
         heightDelta: Math.abs(editorRect.height - rootRect.height),
+        logicalHeightDelta: Math.abs(
+          textarea.clientHeight - root.offsetHeight
+        ),
         scrollLeft: textarea.scrollLeft,
         paddingLeft: style.paddingLeft,
         paddingRight: style.paddingRight,
-        measurementWidth: measurement.getBoundingClientRect().width,
+        canonicalDisplayWidth:
+          canonicalDisplay.getBoundingClientRect().width,
       };
     });
     expect(geometry).not.toBeNull();
     expect(geometry!.selectionStart).toBe(geometry!.valueLength);
     expect(geometry!.widthDelta).toBeLessThan(1);
-    expect(geometry!.heightDelta).toBeLessThan(2);
+    // CSS zoom can round the same logical height to slightly different
+    // transformed pixels. The untransformed editor/root boxes must agree.
+    expect(geometry!.logicalHeightDelta).toBeLessThanOrEqual(1);
     expect(geometry!.scrollLeft).toBe(0);
     expect(geometry!.paddingLeft).toBe("0px");
     expect(geometry!.paddingRight).toBe("0px");
-    expect(geometry!.measurementWidth).toBeGreaterThan(0);
+    expect(geometry!.canonicalDisplayWidth).toBeGreaterThan(0);
   });
 
   test("growing and shrinking a long sentence preserves the free-form boundary instead of creating a narrow box", async ({ page }, testInfo) => {

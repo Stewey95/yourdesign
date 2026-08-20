@@ -87,8 +87,6 @@ export default function CanvasTextItem({
           restoreFrame = requestAnimationFrame(restorePagePosition);
         };
 
-        textarea.style.height = "auto";
-        textarea.style.height = `${textarea.scrollHeight}px`;
         textarea.scrollTop = 0;
         textarea.focus({ preventScroll: true });
 
@@ -143,8 +141,6 @@ export default function CanvasTextItem({
         const textLength = textarea.value.length;
 
         textarea.setSelectionRange(textLength, textLength);
-        textarea.style.height = "auto";
-        textarea.style.height = `${textarea.scrollHeight}px`;
         textarea.scrollTop = 0;
         textarea.focus();
       });
@@ -152,9 +148,6 @@ export default function CanvasTextItem({
     [mobileLayout]
   );
 
-  const measurementValue = item.value.endsWith("\n")
-    ? `${item.value}\u200b`
-    : item.value || "Type here";
   const boundedWidth = getTextBoxWidth({ textBoxWidth });
   const textAlign = getTextAlignment(item);
   const textBoxStyle = {
@@ -173,144 +166,115 @@ export default function CanvasTextItem({
       className="relative grid"
       style={textBoxStyle}
     >
+      <div
+        data-canvas-text-display={item.id}
+        data-text-align={textAlign}
+        aria-hidden={editing || undefined}
+        onPointerDown={
+          editing
+            ? undefined
+            : (event) => {
+                event.stopPropagation();
+                onPendingDragStart(
+                  item.id,
+                  event.clientX,
+                  event.clientY,
+                  event.pointerId
+                );
+
+                // Safari can reject pointer capture on this text wrapper even
+                // though the same pointer remains valid. Starting the gesture
+                // first keeps desktop text dragging functional in that case.
+                try {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                } catch {
+                  // The canvas still receives the bubbling pointer sequence.
+                }
+              }
+        }
+        className={`col-start-1 row-start-1 select-none whitespace-pre-wrap text-center font-bold touch-none ${
+          editing ? "pointer-events-none cursor-text" : "cursor-move"
+        } ${
+          boundedWidth
+            ? "w-full [overflow-wrap:normal]"
+            : "w-fit max-w-full [overflow-wrap:normal]"
+        }`}
+        style={{
+          fontSize: item.fontSize,
+          color: item.color,
+          fontFamily: item.fontFamily,
+          textShadow: TEXT_SHADOW,
+          lineHeight: TEXT_LINE_HEIGHT,
+          textAlign,
+          touchAction: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+        }}
+      >
+        <TextWordContent value={item.value || "Type here"} />
+      </div>
+
       {editing && (
-        <span
-          aria-hidden="true"
-          className={`col-start-1 row-start-1 invisible block min-h-[1.2em] whitespace-pre-wrap text-center font-bold ${
-            boundedWidth
-              ? "w-full [overflow-wrap:normal]"
-              : "w-fit max-w-full [overflow-wrap:normal]"
+        <textarea
+          data-canvas-text-editor={item.id}
+          autoFocus={!mobileLayout}
+          ref={initialiseEditingTextarea}
+          value={item.value}
+          onChange={(event) => {
+            const textarea = event.currentTarget;
+
+            textarea.scrollTop = 0;
+            onRequestAutoFit(item.id, textarea);
+            onValueChange(item.id, event.target.value);
+          }}
+          onBlur={() => {
+            setTimeout(() => {
+              const activeElement = document.activeElement;
+
+              if (
+                activeElement instanceof HTMLElement &&
+                activeElement.closest(`[data-text-toolbar="${item.id}"]`)
+              ) {
+                return;
+              }
+
+              if (item.value.trim() === "") {
+                onRemoveEmptyText(item.id);
+              }
+
+              onFinishEditing();
+            }, 0);
+          }}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            onEditingPointerDown(item.id);
+          }}
+          placeholder="Type here"
+          rows={1}
+          className={`absolute inset-0 block resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-center font-bold text-transparent outline-none placeholder:text-transparent touch-none ${
+            wrapsAtBoundary ? "[overflow-wrap:normal]" : ""
           }`}
           style={{
             fontSize: item.fontSize,
+            color: "transparent",
+            caretColor: item.color,
+            WebkitTextFillColor: "transparent",
             fontFamily: item.fontFamily,
-            textShadow: TEXT_SHADOW,
+            textShadow: "none",
             lineHeight: TEXT_LINE_HEIGHT,
             textAlign,
+            touchAction: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+            width: "100%",
+            height: "100%",
+            boxSizing: "border-box",
+            border: 0,
+            margin: 0,
+            padding: 0,
           }}
-        >
-          <TextWordContent value={measurementValue} />
-        </span>
+        />
       )}
-
-        {editing ? (
-          <textarea
-            data-canvas-text-editor={item.id}
-            autoFocus={!mobileLayout}
-            ref={initialiseEditingTextarea}
-            value={item.value}
-           onChange={(event) => {
-  const value =
-    event.target.value;
-
-  const textarea = event.currentTarget;
-
-  textarea.style.height = "auto";
-  textarea.style.height = `${textarea.scrollHeight}px`;
-  textarea.scrollTop = 0;
- onRequestAutoFit(item.id, textarea);
-
-requestAnimationFrame(() => {
-  textarea.style.height = "auto";
-  textarea.style.height = `${textarea.scrollHeight}px`;
-  textarea.scrollTop = 0;
-});
-
-onValueChange(item.id, value);
-            }}
-            onBlur={() => {
-              setTimeout(() => {
-                const activeElement =
-                  document.activeElement;
-
-                if (
-                  activeElement instanceof
-                    HTMLElement &&
-                  activeElement.closest(
-                    `[data-text-toolbar="${item.id}"]`
-                  )
-                ) {
-                  return;
-                }
-
-                if (
-                  item.value.trim() === ""
-                ) {
-                  onRemoveEmptyText(item.id);
-                }
-
-                onFinishEditing();
-              }, 0);
-            }}
-          onPointerDown={(event) => {
-  event.stopPropagation();
-
-  onEditingPointerDown(item.id);
-}}
-            placeholder="Type here"
-         rows={1}
-            className={`absolute inset-0 block min-h-[1.2em] resize-none overflow-hidden whitespace-pre-wrap bg-transparent text-center font-bold outline-none touch-none ${
-              wrapsAtBoundary ? "[overflow-wrap:normal]" : ""
-            }`}
-            style={{
-              fontSize: item.fontSize,
-              color: item.color,
-              fontFamily: item.fontFamily,
-              textShadow: TEXT_SHADOW,
-              lineHeight: TEXT_LINE_HEIGHT,
-              textAlign,
-              touchAction: "none",
-              WebkitUserSelect: "none",
-              userSelect: "none",
-              width: "100%",
-              boxSizing: "border-box",
-              border: 0,
-              margin: 0,
-              padding: 0,
-            }}
-          />
-        ) : (
-          <div
-            data-canvas-text-display={item.id}
-            data-text-align={textAlign}
-            onPointerDown={(event) => {
-              event.stopPropagation();
-              onPendingDragStart(
-                item.id,
-                event.clientX,
-                event.clientY,
-                event.pointerId
-              );
-
-              // Safari can reject pointer capture on this text wrapper even
-              // though the same pointer remains valid. Starting the gesture
-              // first keeps desktop text dragging functional in that case.
-              try {
-                event.currentTarget.setPointerCapture(event.pointerId);
-              } catch {
-                // The canvas still receives the bubbling pointer sequence.
-              }
-            }}
-            className={`col-start-1 row-start-1 cursor-move select-none whitespace-pre-wrap text-center font-bold touch-none ${
-              boundedWidth
-                ? "w-full [overflow-wrap:normal]"
-                : "w-fit max-w-full [overflow-wrap:normal]"
-            }`}
-            style={{
-              fontSize: item.fontSize,
-              color: item.color,
-              fontFamily: item.fontFamily,
-              textShadow: TEXT_SHADOW,
-              lineHeight: TEXT_LINE_HEIGHT,
-              textAlign,
-              touchAction: "none",
-              WebkitUserSelect: "none",
-              userSelect: "none",
-            }}
-          >
-            <TextWordContent value={item.value || "Type here"} />
-          </div>
-        )}
     </div>
   );
 }
